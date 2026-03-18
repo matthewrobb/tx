@@ -1,24 +1,16 @@
 # twisted-workflow
 
-> Kanban-style agentic development for Claude Code.
+A kanban-style agentic development workflow for Claude Code.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Skills: 7](https://img.shields.io/badge/skills-7-blueviolet)](.claude-plugin/plugin.json)
-[![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-orange)](https://claude.ai)
+Plan, build, and ship objectives through six phases — with parallel execution, session-independent state, and a sparse config system that stays out of your way.
 
-Plan, build, and ship objectives with parallel execution, session-independent state, and a configurable phase pipeline.
+## How It Works
 
----
+Claude Code sessions end. Context resets. Work disappears.
 
-## Why twisted-workflow?
+twisted-workflow stores every objective in a `.twisted/` directory organized as a kanban board: `todo/`, `in-progress/`, `done/`. Each objective carries its own research, requirements, issues, and plan. Start a session, run `/twisted-work`, and pick up exactly where you left off.
 
-Claude Code sessions end. Context resets. Work gets lost.
-
-twisted-workflow solves this with a `.twisted/` directory that tracks every objective through a kanban board (`todo/` -> `in-progress/` -> `done/`). Each objective carries its own research, requirements, issues, and plan. Pick up where you left off in any session, with any model.
-
-The build phase creates one git worktree per issue and runs them in parallel — no merge conflicts, no waiting.
-
----
+The build phase takes this further: one git worktree per issue, one subagent per worktree, all running in parallel. No merge conflicts. No serial bottlenecks.
 
 ## Quick Start
 
@@ -36,62 +28,54 @@ The build phase creates one git worktree per issue and runs them in parallel —
 /twisted-work
 ```
 
----
-
 ## The Pipeline
 
 ```
-  new ────> define ──> plan ──> build ──> review ──> accept
-  research   requirements  issues    parallel    verify     changelog
-  & name     what & why    & groups  worktrees   & check    & close
+new ──> define ──> plan ──> build ──> review ──> accept
 ```
 
 Enter at any phase. `/twisted-work` detects existing objectives and picks the right entry point.
 
 | Phase | What happens | Model | Mode |
 |---|---|---|---|
-| **new** | Name the objective, then parallel subagents research the codebase | opus | execute |
-| **define** | Aggressive questioning — drills until requirements are concrete | opus | execute |
-| **plan** | Synthesizes ISSUES.md and PLAN.md with dependency-ordered groups | opus | plan |
-| **build** | One worktree per issue, one subagent per worktree, all in parallel | sonnet 1M | execute |
-| **review** | Code review + spec compliance verification | sonnet | plan |
-| **accept** | Changelog entry, move to done, close the branch | sonnet | execute |
+| **new** | Name the objective, spawn parallel research subagents | opus | execute |
+| **define** | Drill requirements until concrete — one category at a time | opus | execute |
+| **plan** | Write ISSUES.md and PLAN.md with dependency-ordered groups | opus | plan |
+| **build** | One worktree per issue, one subagent per worktree, all parallel | sonnet 1M | execute |
+| **review** | Spec compliance check, then code quality review | sonnet | plan |
+| **accept** | Changelog entry, lane move to done, branch closed | sonnet | execute |
 
-Every phase recommends its settings and waits for your confirmation before starting. Override any value at invocation time.
-
----
+Every phase recommends its model, effort, and mode settings, then waits for confirmation. Override anything at invocation time.
 
 ## Commands
 
-| Command | Action |
+| Command | What it does |
 |---|---|
-| `/twisted-work` | Interactive — scan objectives, resume or start new |
+| `/twisted-work` | Scan objectives, resume or start new |
 | `/twisted-work init` | Create `.twisted/` structure, configure settings |
 | `/twisted-work status` | Show all objectives across all lanes |
 | `/twisted-work next` | Advance the most recently active objective |
-| `/twisted-work next {name}` | Advance a specific objective |
-| `/twisted-work resume {name}` | Resume a specific objective at its current phase |
+| `/twisted-work next {name}` | Advance a named objective to its next phase |
+| `/twisted-work resume {name}` | Resume a named objective at its current phase |
 
 Run any phase directly:
 
 ```bash
-/twisted-new        # start research
+/twisted-new        # research and name
 /twisted-define     # gather requirements
-/twisted-plan       # create issues and plan
+/twisted-plan       # create issues and execution plan
 /twisted-build      # execute in parallel worktrees
 /twisted-review     # verify the work
 /twisted-accept     # write changelog, close out
 ```
 
----
-
 ## Directory Structure
 
 ```
 .twisted/
-├── settings.json            # sparse config (your overrides only)
+├── settings.json            # your overrides only
 ├── todo/
-│   └── {objective}/         # planned, not yet started
+│   └── {objective}/         # research, requirements, plan
 │       ├── RESEARCH-1.md
 │       ├── RESEARCH-2.md
 │       ├── REQUIREMENTS.md
@@ -101,20 +85,22 @@ Run any phase directly:
 │   └── {objective}/         # actively being built
 ├── done/
 │   └── {objective}-[date]/  # completed and archived
-└── worktrees/               # gitignored, temporary
+└── worktrees/               # gitignored
 ```
 
-Files never rename. Only the parent folder moves between lanes.
+Files never rename. The parent folder moves between lanes.
 
----
+## Design Principles
+
+- **Session-independent.** All state lives on disk. Resume from any session, any model, any context window.
+- **Sparse config.** `settings.json` stores only your overrides. Built-in defaults fill the rest. Plugin updates apply new defaults without touching your config.
+- **Parallel by default.** Research agents run in parallel. Build agents run in parallel worktrees. Serial work happens only when dependencies require it.
+- **Human in the loop.** Every phase waits for confirmation before starting. Every handoff asks before advancing. Stop at any point and resume later.
+- **Stack-agnostic.** Works with any codebase. No language or framework assumptions.
 
 ## Configuration
 
-`settings.json` stores only your overrides. Everything else falls back to built-in defaults. Plugin updates apply new defaults without touching your config.
-
 Run `/twisted-work init` to view the full merged config and change any value.
-
-### Example
 
 ```json
 {
@@ -149,8 +135,6 @@ Run `/twisted-work init` to view the full merged config and change any value.
 | `directories.done` | `.twisted/done` | Completed objectives |
 | `directories.worktrees` | `.twisted/worktrees` | Temporary worktrees (gitignored) |
 | `files.changelog` | `CHANGELOG.md` | Changelog path |
-| `files.settings` | `.twisted/settings.json` | Settings path |
-| `naming.strategy` | `prefix` | Naming strategy |
 | `naming.increment_padding` | `3` | Zero-padding for auto-named objectives |
 
 #### Phase defaults
@@ -166,78 +150,52 @@ Run `/twisted-work init` to view the full merged config and change any value.
 
 </details>
 
----
-
-## Context Skills
-
-If your project has a navigation or context skill, add it to `context_skills`:
-
-```json
-{
-  "context_skills": ["/my-project-nav"]
-}
-```
-
-twisted-workflow injects these at the start of every phase automatically.
-
----
-
 ## Works With Superpowers
 
-twisted-workflow integrates with [obra/superpowers](https://github.com/obra/superpowers). These skills activate automatically throughout the pipeline:
+twisted-workflow integrates with [superpowers](https://github.com/obra/superpowers). These skills fire automatically throughout the pipeline:
 
-| Superpowers skill | Where it fires |
+| Skill | Where |
 |---|---|
-| `test-driven-development` | `/twisted-build` |
+| `test-driven-development` | During `/twisted-build` |
 | `systematic-debugging` | When issues arise during build |
 | `requesting-code-review` | Between groups in `/twisted-build`, in `/twisted-review` |
 | `verification-before-completion` | `/twisted-review` |
 | `finishing-a-development-branch` | `/twisted-accept` |
 
-Install Superpowers for the full experience:
+Superpowers is optional. twisted-workflow works standalone.
 
 ```bash
 /plugin marketplace add obra/superpowers-marketplace
 /plugin install superpowers@superpowers-marketplace
 ```
 
----
-
 ## FAQ
 
 <details>
 <summary><strong>Can I enter the pipeline mid-way?</strong></summary>
 
-Yes. Run any phase skill directly (e.g., `/twisted-plan`). If the objective folder doesn't exist yet, the skill asks you to name it and creates the folder before proceeding.
-
+Yes. Run any phase skill directly (e.g., `/twisted-plan`). If the objective folder doesn't exist, the skill asks you to name it first.
 
 </details>
 
 <details>
 <summary><strong>What happens if a session ends mid-build?</strong></summary>
 
-All state lives in `.twisted/`. Run `/twisted-work` in a new session — it detects the objective's current phase and offers to resume.
+All state lives in `.twisted/`. Run `/twisted-work` in a new session — it detects the current phase and offers to resume.
 
 </details>
 
 <details>
 <summary><strong>How do parallel worktrees work?</strong></summary>
 
-During `/twisted-build`, each issue in a group gets its own git worktree branch. One subagent works in each worktree simultaneously. After all finish, passing worktrees merge back into the main branch and clean up.
-
-</details>
-
-<details>
-<summary><strong>Do I need Superpowers installed?</strong></summary>
-
-No. twisted-workflow works standalone. Superpowers skills enhance the pipeline with test-driven development, code review, and branch management — but they're optional.
+During `/twisted-build`, each issue in a group gets its own git worktree and branch. One subagent works in each worktree simultaneously. Passing worktrees merge back into the main branch. Worktree directories clean up automatically.
 
 </details>
 
 <details>
 <summary><strong>How do I change the changelog location?</strong></summary>
 
-Set `files.changelog` in your settings:
+Set `files.changelog` in `.twisted/settings.json`:
 
 ```json
 { "files": { "changelog": "docs/CHANGELOG.md" } }
@@ -245,7 +203,9 @@ Set `files.changelog` in your settings:
 
 </details>
 
----
+## Contributing
+
+Issues and pull requests welcome at [matthewrobb/twisted-workflow](https://github.com/matthewrobb/twisted-workflow).
 
 ## License
 

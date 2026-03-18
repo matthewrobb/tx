@@ -1,15 +1,18 @@
 {
-  "title": "Twisted Workflow",
-  "description": "A kanban-style agentic development workflow for Claude Code with parallel execution, session-independent state, and configurable phases.",
-  "category": "workflow",
-  "tags": [
-    "workflow",
-    "kanban",
-    "planning",
-    "development",
-    "project-management"
-  ],
-  "author": "Mrobb",
-  "license": "MIT",
-  "homepage": "https://github.com/Mrobb/twisted-workflow"
+  "name": "twisted-workflow",
+  "description": "Kanban-style agentic development workflow for Claude Code",
+  "owner": {
+    "name": "Matthew Robb"
+  },
+  "plugins": [
+    {
+      "name": "twisted-workflow",
+      "description": "Kanban-style agentic development workflow with parallel execution, session-independent state, and configurable phases",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "Matthew Robb"
+      }
+    }
+  ]
 }
