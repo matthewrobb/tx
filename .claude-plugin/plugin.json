@@ -1,0 +1,35 @@
+{
+  "name": "twisted-workflow",
+  "version": "1.0.0",
+  "description": "A kanban-style agentic development workflow for Claude Code with parallel execution, session-independent state, and configurable phases.",
+  "skills": [
+    {
+      "name": "twisted-work",
+      "path": "skills/twisted-work/SKILL.md"
+    },
+    {
+      "name": "twisted-explore",
+      "path": "skills/twisted-explore/SKILL.md"
+    },
+    {
+      "name": "twisted-define",
+      "path": "skills/twisted-define/SKILL.md"
+    },
+    {
+      "name": "twisted-plan",
+      "path": "skills/twisted-plan/SKILL.md"
+    },
+    {
+      "name": "twisted-build",
+      "path": "skills/twisted-build/SKILL.md"
+    },
+    {
+      "name": "twisted-review",
+      "path": "skills/twisted-review/SKILL.md"
+    },
+    {
+      "name": "twisted-accept",
+      "path": "skills/twisted-accept/SKILL.md"
+    }
+  ]
+}
