@@ -5,7 +5,7 @@ user-invocable: true
 argument-hint: "[init | status | next [objective] | resume {objective}] [--yolo]"
 ---
 
-Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
+The project's CLAUDE.md is loaded in your context. Reference its sections by name — do not read the file again.
 
 # /twisted-work
 
