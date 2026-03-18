@@ -2,7 +2,7 @@
 name: twisted-new
 description: Research phase — spawn parallel agents to explore the codebase and produce RESEARCH-*.md files
 user-invocable: true
-argument-hint: "[objective-name]"
+argument-hint: "[objective-name] [--yolo]"
 ---
 
 Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
@@ -35,7 +35,8 @@ Follow **Objective Naming** from CLAUDE.md exactly:
 ### 2. Recommend Settings
 
 - Show the `new` phase settings from merged config (model, effort, context, mode).
-- Wait for human confirmation or overrides per **Handoff Rules**.
+- If `--yolo`: use merged config values directly, skip confirmation.
+- Otherwise: wait for human confirmation or overrides per **Handoff Rules**.
 
 ### 3. Spawn Parallel Research Agents
 
@@ -53,8 +54,8 @@ Follow **Objective Naming** from CLAUDE.md exactly:
 ### 5. Handoff
 
 - Summarize all findings using **Writing Quality** rules.
-- Ask to hand off to `/twisted-define`.
-- Wait for explicit confirmation — never auto-advance per **Handoff Rules**.
+- If `--yolo`: auto-advance to `/twisted-define --yolo` immediately.
+- Otherwise: ask to hand off to `/twisted-define`, wait for explicit confirmation per **Handoff Rules**.
 
 ## Constraints
 

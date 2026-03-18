@@ -313,6 +313,26 @@ Used by /twisted-work to determine current phase:
 - Never use Plan mode for research or questioning phases
 - Always use Plan mode for planning and verification
 
+## Yolo Mode
+
+- Any skill or /twisted-work command accepts a `--yolo`
+  flag as a runtime parameter
+- `--yolo` is not persisted in settings.json — it is
+  a per-invocation flag
+- When `--yolo` is active:
+  - Skip settings confirmation — use merged config
+    values directly
+  - Skip handoff confirmation — auto-advance to next
+    phase immediately
+  - Skip "continue or stop?" prompts between build
+    groups — continue automatically
+  - /twisted-define still asks its questions — the
+    phase is inherently interactive
+- When `--yolo` is not active: all confirmations and
+  handoffs work as described in Handoff Rules below
+- When /twisted-work invokes a sub-skill with `--yolo`,
+  pass the flag through to the invoked skill
+
 ## Handoff Rules
 
 - Every skill reads CLAUDE.md first
@@ -326,6 +346,9 @@ Used by /twisted-work to determine current phase:
 - Every skill asks for explicit confirmation before
   handing off — never auto-advance
 - Human can stop at any handoff point and resume later
+- All confirmation and handoff behavior is subject to
+  **Yolo Mode** — when `--yolo` is passed, skip
+  confirmations and auto-advance
 - Objective name and folder established at start of
   /twisted-new before any files are written
 - If entering after /twisted-new, ask for objective
@@ -337,7 +360,15 @@ Used by /twisted-work to determine current phase:
 - All twisted files live under .twisted/ — changelog
   at configured path
 - Superpowers skills fire automatically throughout
-- Worktrees in .twisted/worktrees/{objective}-issue-XXX
+- Objective worktree in .twisted/worktrees/{objective}/
+- Group worktrees in .twisted/worktrees/{objective}-group-N/
+- Issue worktrees in .twisted/worktrees/{objective}-issue-XXX/
+- Issue worktrees branch from the group branch
+- Group worktrees branch from the objective branch
+- Issue worktrees merge (normal) into their group branch
+- Group branches squash merge into the objective branch
+  — one commit per group on the objective
+- Objective branch merges into main at /twisted-accept
 - Tests must pass before subagent reports back
 - Spec compliance review always before code quality review
 - Never skip /requesting-code-review between groups
@@ -357,6 +388,11 @@ Used by /twisted-work to determine current phase:
 /twisted-work next               — auto-advance active objective
 /twisted-work next {objective}   — advance named objective
 /twisted-work resume {objective} — resume named objective
+
+Any command accepts --yolo to skip confirmations:
+/twisted-work next --yolo
+/twisted-new --yolo
+/twisted-build --yolo
 ```
 
 ### /twisted-work init steps
@@ -455,29 +491,39 @@ Setup questions:
 2. Move todo/{objective}/ → in-progress/{objective}/
 3. Commit lane move using writing rules
 4. Recommend build settings, wait for confirm
-5. Read ISSUES.md and PLAN.md from in-progress folder
-6. Find first incomplete group
-7. Create one worktree per issue:
-   `git worktree add .twisted/worktrees/{objective}-issue-XXX -b {objective}/issue-XXX`
-8. Spawn one subagent per worktree simultaneously
-9. Each subagent:
-   - Works only in its assigned worktree
-   - Implements issue fully
-   - Writes or updates tests
-   - Passes all tests before reporting back
-   - Marks [ x ] Done in ISSUES.md inside worktree
-   - Commits implementation only — not ISSUES.md separately
-   - Reports back with summary
-10. When all report back:
-    - Run spec compliance review per worktree
-    - Run code quality review per worktree
-    - Merge passing worktrees into main branch
+5. Create objective worktree and branch:
+   `git worktree add .twisted/worktrees/{objective} -b {objective}`
+6. Read ISSUES.md and PLAN.md from in-progress folder
+7. Find first incomplete group
+8. Create group worktree branched from objective:
+   `git worktree add .twisted/worktrees/{objective}-group-N -b {objective}/group-N {objective}`
+9. Create one issue worktree per issue, branched from
+   the group branch:
+   `git worktree add .twisted/worktrees/{objective}-issue-XXX -b {objective}/issue-XXX {objective}/group-N`
+10. Spawn one subagent per issue worktree simultaneously
+11. Each subagent:
+    - Works only in its assigned worktree
+    - Implements issue fully
+    - Writes or updates tests
+    - Passes all tests before reporting back
+    - Marks [ x ] Done in ISSUES.md inside worktree
+    - Commits implementation only — not ISSUES.md separately
+    - Reports back with summary
+12. When all report back:
+    - Run spec compliance review per issue worktree
+    - Run code quality review per issue worktree
+    - Merge passing issue worktrees into group branch
+      (normal merge)
     - ISSUES.md updates come in via merge —
       do NOT update again after merging
-    - Clean up .twisted/worktrees/
-11. Run /requesting-code-review on merged work
-12. After each group ask to continue or stop
-13. When all groups done, ask to hand off to /twisted-review
+    - Clean up issue worktrees from .twisted/worktrees/
+13. Squash merge group branch into objective branch
+    — one commit per group on the objective
+14. Clean up group worktree from .twisted/worktrees/
+15. Run /requesting-code-review on merged work in
+    the objective worktree
+16. After each group ask to continue or stop
+17. When all groups done, ask to hand off to /twisted-review
 
 ### /twisted-review steps
 
@@ -500,12 +546,14 @@ Setup questions:
 4. Check configured changelog path (files.changelog)
    - If exists: prepend entry, newest at top
    - If not: create at configured path
-5. Move in-progress/{objective}/ → done/{objective}-[date]/
-6. Commit using commit_messages.done with writing rules
-7. Commit changelog at configured path
-8. Run /finishing-a-development-branch
-9. Summarize everything using writing rules
-10. "Work accepted and branch closed. All done."
+5. Merge objective branch into main
+6. Clean up objective worktree from .twisted/worktrees/
+7. Move in-progress/{objective}/ → done/{objective}-[date]/
+8. Commit using commit_messages.done with writing rules
+9. Commit changelog at configured path
+10. Run /finishing-a-development-branch
+11. Summarize everything using writing rules
+12. "Work accepted and branch closed. All done."
 
 ## Full Pipeline
 

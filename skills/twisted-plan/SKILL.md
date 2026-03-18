@@ -2,7 +2,7 @@
 name: twisted-plan
 description: Planning phase — produce ISSUES.md and PLAN.md with dependency-ordered parallel groups from research and requirements
 user-invocable: true
-argument-hint: "[objective-name]"
+argument-hint: "[objective-name] [--yolo]"
 ---
 
 Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
@@ -28,7 +28,8 @@ You are the planning phase of the twisted-workflow pipeline. You read research a
 
 - Show the `plan` phase settings from merged config (model, effort, context, mode).
 - Note: plan phase uses **Plan mode** — human reviews before files change.
-- Wait for human confirmation or overrides per **Handoff Rules**.
+- If `--yolo`: use merged config values directly, skip confirmation.
+- Otherwise: wait for human confirmation or overrides per **Handoff Rules**.
 
 ### 3. Read Inputs
 
@@ -63,8 +64,8 @@ You are the planning phase of the twisted-workflow pipeline. You read research a
 ### 7. Handoff
 
 - Summarize the plan using **Writing Quality** rules: number of issues, number of groups, key dependencies.
-- Ask to hand off to `/twisted-build`.
-- Wait for explicit confirmation — never auto-advance per **Handoff Rules**.
+- If `--yolo`: auto-advance to `/twisted-build --yolo` immediately.
+- Otherwise: ask to hand off to `/twisted-build`, wait for explicit confirmation per **Handoff Rules**.
 
 ## Constraints
 

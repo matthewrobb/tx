@@ -2,7 +2,7 @@
 name: twisted-accept
 description: Accept phase — generate changelog, move to done, commit, and close the development branch
 user-invocable: true
-argument-hint: "[objective-name]"
+argument-hint: "[objective-name] [--yolo]"
 ---
 
 Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
@@ -27,7 +27,8 @@ You are the acceptance phase of the twisted-workflow pipeline. You generate the 
 ### 2. Recommend Settings
 
 - Show the `accept` phase settings from merged config (model, effort, context, mode).
-- Wait for human confirmation or overrides per **Handoff Rules**.
+- If `--yolo`: use merged config values directly, skip confirmation.
+- Otherwise: wait for human confirmation or overrides per **Handoff Rules**.
 
 ### 3. Generate Changelog Entry
 
@@ -46,23 +47,29 @@ You are the acceptance phase of the twisted-workflow pipeline. You generate the 
 - If file does not exist: create it at the configured path.
 - Never hardcode the path — always use the config value per **Changelog** rules.
 
-### 5. Move to Done
+### 5. Merge Objective Branch
+
+- Merge the `{objective}` branch into `main`.
+- Clean up the objective worktree from `.twisted/worktrees/`.
+- Delete the objective branch after merge.
+
+### 6. Move to Done
 
 - Move `.twisted/in-progress/{objective}/` to `.twisted/done/{objective}-[date]/`.
 - Date format appended to folder name per **Kanban Transitions**.
 - This follows **Kanban Transitions** — always commit after a lane move.
 
-### 6. Commit
+### 7. Commit
 
 - Commit the lane move using `commit_messages.done` from merged config.
 - Commit the changelog at the configured path.
 - Apply **Writing Quality** rules to all commit messages.
 
-### 7. Close Branch
+### 8. Close Branch
 
 - Run `/finishing-a-development-branch`.
 
-### 8. Final Summary
+### 9. Final Summary
 
 - Summarize everything using **Writing Quality** rules:
   - What was completed.

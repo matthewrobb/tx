@@ -2,7 +2,7 @@
 name: twisted-define
 description: Requirements phase — interrogate the human to produce a precise REQUIREMENTS.md from research findings
 user-invocable: true
-argument-hint: "[objective-name]"
+argument-hint: "[objective-name] [--yolo]"
 ---
 
 Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
@@ -27,7 +27,8 @@ You are the requirements phase of the twisted-workflow pipeline. You read resear
 ### 2. Recommend Settings
 
 - Show the `define` phase settings from merged config (model, effort, context, mode).
-- Wait for human confirmation or overrides per **Handoff Rules**.
+- If `--yolo`: use merged config values directly, skip confirmation.
+- Otherwise: wait for human confirmation or overrides per **Handoff Rules**.
 
 ### 3. Read Research
 
@@ -59,8 +60,9 @@ This is the core of `/twisted-define`. Be aggressive:
 ### 6. Handoff
 
 - Summarize requirements using **Writing Quality** rules.
-- Ask to hand off to `/twisted-plan`.
-- Wait for explicit confirmation — never auto-advance per **Handoff Rules**.
+- If `--yolo`: auto-advance to `/twisted-plan --yolo` immediately.
+- Otherwise: ask to hand off to `/twisted-plan`, wait for explicit confirmation per **Handoff Rules**.
+- Note: `--yolo` skips the handoff confirmation but does NOT skip the interrogation in step 4 — that phase is inherently interactive.
 
 ## Constraints
 

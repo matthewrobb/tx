@@ -2,7 +2,7 @@
 name: twisted-work
 description: Orchestrator for the twisted-workflow pipeline — init, status, next, resume, and interactive mode
 user-invocable: true
-argument-hint: "[init | status | next [objective] | resume {objective}]"
+argument-hint: "[init | status | next [objective] | resume {objective}] [--yolo]"
 ---
 
 Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
@@ -69,8 +69,8 @@ Follow `/twisted-work next / resume` from CLAUDE.md:
 1. If no objective named: find the most recently modified objective across `todo/` and `in-progress/`.
 2. Determine current phase using **Phase Detection**.
 3. Advance to the **next** phase (not current).
-4. Recommend settings for that phase from merged config, wait for confirmation per **Handoff Rules**.
-5. Invoke the corresponding `/twisted-{phase}` skill.
+4. If `--yolo` not active: recommend settings for that phase from merged config, wait for confirmation per **Handoff Rules**.
+5. Invoke the corresponding `/twisted-{phase}` skill, passing `--yolo` through if active.
 
 ---
 
@@ -78,8 +78,8 @@ Follow `/twisted-work next / resume` from CLAUDE.md:
 
 1. Find the named objective across all lanes.
 2. Determine **current** phase using **Phase Detection**.
-3. Recommend settings for current phase, wait for confirmation per **Handoff Rules**.
-4. Invoke the corresponding `/twisted-{phase}` skill at the current phase (not next).
+3. If `--yolo` not active: recommend settings for current phase, wait for confirmation per **Handoff Rules**.
+4. Invoke the corresponding `/twisted-{phase}` skill at the current phase (not next), passing `--yolo` through if active.
 
 ---
 
@@ -99,6 +99,6 @@ Follow `/twisted-work interactive steps` from CLAUDE.md:
 ## Constraints
 
 - Follow all **Shared Constraints** from CLAUDE.md.
-- Follow all **Handoff Rules** — especially: recommend settings, wait for confirm, never auto-advance.
+- Follow all **Handoff Rules** and **Yolo Mode** — when `--yolo` is passed, skip confirmations and pass the flag through to invoked skills.
 - All human-facing text follows **Writing Quality** rules.
 - If no `.twisted/settings.json` found, note: "No .twisted/settings.json found, using defaults. Run /twisted-work init to configure."

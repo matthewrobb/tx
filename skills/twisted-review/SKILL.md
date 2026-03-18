@@ -2,7 +2,7 @@
 name: twisted-review
 description: Review phase — run code review and verification on completed build work before acceptance
 user-invocable: true
-argument-hint: "[objective-name]"
+argument-hint: "[objective-name] [--yolo]"
 ---
 
 Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
@@ -28,12 +28,13 @@ You are the review phase of the twisted-workflow pipeline. You run a final code 
 
 - Show the `review` phase settings from merged config (model, effort, context, mode).
 - Note: review phase uses **Plan mode** — human reviews before any changes.
-- Wait for human confirmation or overrides per **Handoff Rules**.
+- If `--yolo`: use merged config values directly, skip confirmation.
+- Otherwise: wait for human confirmation or overrides per **Handoff Rules**.
 
 ### 3. Code Review
 
-- Run `/requesting-code-review` on all work completed during the build phase.
-- This covers the full scope of changes, not just the last group.
+- Run `/requesting-code-review` on all work on the `{objective}` branch.
+- This covers the full scope of changes across all groups, not just the last one.
 
 ### 4. Verification
 
@@ -47,8 +48,8 @@ You are the review phase of the twisted-workflow pipeline. You run a final code 
 
 ### 6. Handoff
 
-- Ask to hand off to `/twisted-accept`.
-- Wait for explicit confirmation — never auto-advance per **Handoff Rules**.
+- If `--yolo`: auto-advance to `/twisted-accept --yolo` immediately.
+- Otherwise: ask to hand off to `/twisted-accept`, wait for explicit confirmation per **Handoff Rules**.
 
 ## Constraints
 

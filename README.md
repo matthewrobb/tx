@@ -41,9 +41,9 @@ Enter at any phase. `/twisted-work` detects existing objectives and picks the ri
 | **new** | Name the objective, spawn parallel research subagents | opus | execute |
 | **define** | Drill requirements until concrete — one category at a time | opus | execute |
 | **plan** | Write ISSUES.md and PLAN.md with dependency-ordered groups | opus | plan |
-| **build** | One worktree per issue, one subagent per worktree, all parallel | sonnet 1M | execute |
+| **build** | Objective branch from main, issue worktrees in parallel, merge into objective | sonnet 1M | execute |
 | **review** | Spec compliance check, then code quality review | sonnet | plan |
-| **accept** | Changelog entry, lane move to done, branch closed | sonnet | execute |
+| **accept** | Merge objective into main, changelog, lane move to done | sonnet | execute |
 
 Every phase recommends its model, effort, and mode settings, then waits for confirmation. Override anything at invocation time.
 
@@ -67,6 +67,13 @@ Run any phase directly:
 /twisted-build      # execute in parallel worktrees
 /twisted-review     # verify the work
 /twisted-accept     # write changelog, close out
+```
+
+Add `--yolo` to any command to skip confirmations and auto-advance through phases:
+
+```bash
+/twisted-work next --yolo
+/twisted-new --yolo
 ```
 
 ## Directory Structure
@@ -188,7 +195,7 @@ All state lives in `.twisted/`. Run `/twisted-work` in a new session — it dete
 <details>
 <summary><strong>How do parallel worktrees work?</strong></summary>
 
-During `/twisted-build`, each issue in a group gets its own git worktree and branch. One subagent works in each worktree simultaneously. Passing worktrees merge back into the main branch. Worktree directories clean up automatically.
+Three-tier worktree hierarchy. The objective gets a branch off main. Each group gets a branch off the objective. Each issue gets a branch off its group. One subagent works in each issue worktree simultaneously. Issue worktrees merge into the group branch. The group squash merges into the objective — one clean commit per group. The objective merges into main at `/twisted-accept`.
 
 </details>
 
