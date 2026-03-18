@@ -362,7 +362,7 @@ Used by /twisted-work to determine current phase:
 - Superpowers skills fire automatically throughout
 - Objective worktree in .twisted/worktrees/{objective}/
 - Group worktrees in .twisted/worktrees/{objective}-group-N/
-- Issue worktrees in .twisted/worktrees/{objective}-issue-XXX/
+- Issue worktrees in .twisted/worktrees/{objective}-group-N-issue-XXX/
 - Issue worktrees branch from the group branch
 - Group worktrees branch from the objective branch
 - Issue worktrees merge (normal) into their group branch
@@ -499,7 +499,7 @@ Setup questions:
    `git worktree add .twisted/worktrees/{objective}-group-N -b {objective}/group-N {objective}`
 9. Create one issue worktree per issue, branched from
    the group branch:
-   `git worktree add .twisted/worktrees/{objective}-issue-XXX -b {objective}/issue-XXX {objective}/group-N`
+   `git worktree add .twisted/worktrees/{objective}-group-N-issue-XXX -b {objective}/group-N/issue-XXX {objective}/group-N`
 10. Spawn one subagent per issue worktree simultaneously
 11. Each subagent:
     - Works only in its assigned worktree

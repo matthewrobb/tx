@@ -67,7 +67,7 @@ For each group, starting with the first incomplete:
 
 - Create one worktree per issue, branched from the **group branch**:
   ```
-  git worktree add .twisted/worktrees/{objective}-issue-XXX -b {objective}/issue-XXX {objective}/group-N
+  git worktree add .twisted/worktrees/{objective}-group-N-issue-XXX -b {objective}/group-N/issue-XXX {objective}/group-N
   ```
 
 #### c. Spawn Parallel Subagents

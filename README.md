@@ -80,22 +80,25 @@ Add `--yolo` to any command to skip confirmations and auto-advance through phase
 
 ```
 .twisted/
-├── settings.json            # your overrides only
+├── settings.json                        # your overrides only
 ├── todo/
-│   └── {objective}/         # research, requirements, plan
+│   └── {objective}/                     # research, requirements, plan
 │       ├── RESEARCH-1.md
 │       ├── RESEARCH-2.md
 │       ├── REQUIREMENTS.md
 │       ├── ISSUES.md
 │       └── PLAN.md
 ├── in-progress/
-│   └── {objective}/         # actively being built
+│   └── {objective}/                     # actively being built
 ├── done/
-│   └── {objective}-[date]/  # completed and archived
-└── worktrees/               # gitignored
+│   └── {objective}-[date]/              # completed and archived
+└── worktrees/                           # gitignored
+    ├── {objective}/                     # objective branch (from main)
+    ├── {objective}-group-N/             # group branch (from objective)
+    └── {objective}-group-N-issue-XXX/           # issue branch (from group)
 ```
 
-Files never rename. The parent folder moves between lanes.
+Files never rename. The parent folder moves between lanes. Worktrees are temporary — created during build, cleaned up as groups complete.
 
 ## Design Principles
 
