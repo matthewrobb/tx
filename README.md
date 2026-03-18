@@ -217,6 +217,16 @@ Set `files.changelog` in `.twisted/settings.json`:
 
 Issues and pull requests welcome at [matthewrobb/twisted-workflow](https://github.com/matthewrobb/twisted-workflow).
 
+## Updating
+
+```bash
+claude plugin update twisted-workflow@twisted-workflow
+```
+
+Settings stay intact — `settings.json` stores only your overrides, so new defaults apply automatically.
+
+---
+
 ## License
 
 MIT
