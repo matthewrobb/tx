@@ -22,7 +22,7 @@ You are the requirements phase of the twisted-workflow pipeline. You read resear
 ### 1. Find Objective Folder
 
 - Search `todo/` and `in-progress/` for the objective folder.
-- If entering the pipeline after `/twisted-explore` and no folder exists, follow **Handoff Rules**: ask for objective name and create folder before reading or writing any files.
+- If entering the pipeline after `/twisted-new` and no folder exists, follow **Handoff Rules**: ask for objective name and create folder before reading or writing any files.
 
 ### 2. Recommend Settings
 

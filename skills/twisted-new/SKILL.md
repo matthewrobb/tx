@@ -1,5 +1,5 @@
 ---
-name: twisted-explore
+name: twisted-new
 description: Research phase — spawn parallel agents to explore the codebase and produce RESEARCH-*.md files
 user-invocable: true
 argument-hint: "[objective-name]"
@@ -7,7 +7,7 @@ argument-hint: "[objective-name]"
 
 Read CLAUDE.md for shared config, defaults, templates and constraints before starting.
 
-# /twisted-explore
+# /twisted-new
 
 You are the research phase of the twisted-workflow pipeline. You gather information about the codebase through parallel subagents and produce structured research files.
 
@@ -34,7 +34,7 @@ Follow **Objective Naming** from CLAUDE.md exactly:
 
 ### 2. Recommend Settings
 
-- Show the `explore` phase settings from merged config (model, effort, context, mode).
+- Show the `new` phase settings from merged config (model, effort, context, mode).
 - Wait for human confirmation or overrides per **Handoff Rules**.
 
 ### 3. Spawn Parallel Research Agents

@@ -14,7 +14,7 @@ twisted-workflow/
 │   └── marketplace.json
 ├── skills/
 │   ├── twisted-work/SKILL.md
-│   ├── twisted-explore/SKILL.md
+│   ├── twisted-new/SKILL.md
 │   ├── twisted-define/SKILL.md
 │   ├── twisted-plan/SKILL.md
 │   ├── twisted-build/SKILL.md
@@ -66,7 +66,7 @@ silently. Never error on missing keys.
   },
 
   "phases": {
-    "explore": {
+    "new": {
       "model": "opus",
       "effort": "max",
       "context": "default",
@@ -230,7 +230,7 @@ silently. Never error on missing keys.
 ## Kanban Transitions
 
 - Objective folder created in .twisted/todo/ during
-  /twisted-explore
+  /twisted-new
 - Folder stays in todo/ through define and plan phases
 - Folder moves todo/ → in-progress/ when /twisted-build
   starts — commit this move
@@ -248,17 +248,17 @@ Used by /twisted-work to determine current phase:
 
 | Files present | Lane | Current | Next |
 |---|---|---|---|
-| RESEARCH-*.md only | todo | explore | define |
+| RESEARCH-*.md only | todo | new | define |
 | REQUIREMENTS.md | todo | define | plan |
 | ISSUES.md + PLAN.md | todo | plan complete | build |
 | unchecked items in ISSUES.md | in-progress | build | review |
 | all items checked | in-progress | review | accept |
 | any files | done | done | none |
-| no folder found | — | none | explore |
+| no folder found | — | none | new |
 
 ## Objective Naming
 
-- At start of /twisted-explore, before any agents spawn:
+- At start of /twisted-new, before any agents spawn:
   "What is the short name for this objective?
   This will be the folder name for all files.
   Leave blank and I will suggest names after a
@@ -274,7 +274,7 @@ Used by /twisted-work to determine current phase:
   no renaming or moving within todo/
 - All subsequent skills inherit objective name —
   never ask again
-- If entering pipeline after /twisted-explore, ask for
+- If entering pipeline after /twisted-new, ask for
   name at very start of that skill and create folder
   before reading or writing any files
 - If no name given, fall back to zero-padded numeric
@@ -327,8 +327,8 @@ Used by /twisted-work to determine current phase:
   handing off — never auto-advance
 - Human can stop at any handoff point and resume later
 - Objective name and folder established at start of
-  /twisted-explore before any files are written
-- If entering after /twisted-explore, ask for objective
+  /twisted-new before any files are written
+- If entering after /twisted-new, ask for objective
   name and create folder before reading or writing
 
 ## Shared Constraints
@@ -415,11 +415,11 @@ Setup questions:
 - resume: find named objective, invoke current phase
   (not next)
 
-### /twisted-explore steps
+### /twisted-new steps
 
 1. Ask for objective name (or scout and suggest 3 names)
 2. Create .twisted/todo/{objective}/
-3. Recommend explore settings, wait for confirm
+3. Recommend new settings, wait for confirm
 4. Spawn parallel research subagents
 5. Write findings to objective folder using
    research_section template
@@ -512,7 +512,7 @@ Setup questions:
 ```
 /twisted-work init   ← one time setup
 /twisted-work
-  → /twisted-explore
+  → /twisted-new
   → /twisted-define
   → /twisted-plan
   → /twisted-build
