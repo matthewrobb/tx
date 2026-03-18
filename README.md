@@ -23,8 +23,11 @@ The build phase creates one git worktree per issue and runs them in parallel —
 ## Quick Start
 
 ```bash
+# Add the marketplace
+/plugin marketplace add matthewrobb/twisted-workflow
+
 # Install the plugin
-claude plugin add twisted-workflow
+/plugin install twisted-workflow@twisted-workflow
 
 # Set up your project
 /twisted-work init
@@ -194,7 +197,8 @@ twisted-workflow integrates with [obra/superpowers](https://github.com/obra/supe
 Install Superpowers for the full experience:
 
 ```bash
-claude plugin add superpowers
+/plugin marketplace add obra/superpowers-marketplace
+/plugin install superpowers@superpowers-marketplace
 ```
 
 ---
