@@ -5,7 +5,7 @@ user-invocable: true
 argument-hint: "[objective-name] [--yolo]"
 ---
 
-The project's CLAUDE.md is loaded in your context. Reference its sections by name — do not read the file again.
+**REQUIRED:** Load the `using-twisted-workflow` skill for shared config, defaults, templates, and constraints. All section references below point to that skill.
 
 # /twisted-plan
 
@@ -13,9 +13,10 @@ You are the planning phase of the twisted-workflow pipeline. You read research a
 
 ## On Every Invocation
 
-1. Read and merge config per **Configuration System** and **Sparse Config Principle**.
-2. Inject any `context_skills` from merged config.
-3. Check `writing.skill` availability per **Writing Quality**.
+1. Load `using-twisted-workflow` if not already loaded.
+2. Read and merge config per **Configuration System** and **Sparse Config Principle**.
+3. Inject any `context_skills` from merged config.
+4. Check `writing.skill` availability per **Writing Quality**.
 
 ## Steps
 
@@ -69,7 +70,7 @@ You are the planning phase of the twisted-workflow pipeline. You read research a
 
 ## Constraints
 
-- Follow all **Shared Constraints** from CLAUDE.md.
+- Follow all **Shared Constraints** from `using-twisted-workflow`.
 - All files go in the objective folder under `todo/`.
 - No file prefixing — use standard names per **Naming Convention**.
 - All human-facing text follows **Writing Quality** rules.
