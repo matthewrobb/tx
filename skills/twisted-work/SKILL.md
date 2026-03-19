@@ -5,7 +5,7 @@ user-invocable: true
 argument-hint: "[init | status | next [objective] | resume {objective}] [--yolo]"
 ---
 
-The project's CLAUDE.md is loaded in your context. Reference its sections by name — do not read the file again.
+**REQUIRED:** Load the `using-twisted-workflow` skill for shared config, defaults, templates, and constraints. All section references below point to that skill.
 
 # /twisted-work
 
@@ -13,9 +13,10 @@ You are the orchestrator for the twisted-workflow pipeline. You route to the cor
 
 ## On Every Invocation
 
-1. Read and merge config per **Configuration System** and **Sparse Config Principle**.
-2. Inject any `context_skills` from merged config.
-3. Check `writing.skill` availability per **Writing Quality**.
+1. Load `using-twisted-workflow` if not already loaded.
+2. Read and merge config per **Configuration System** and **Sparse Config Principle**.
+3. Inject any `context_skills` from merged config.
+4. Check `writing.skill` availability per **Writing Quality**.
 
 ## Argument Routing
 
@@ -34,7 +35,7 @@ Parse the first argument and route:
 
 ## Init Flow
 
-Follow `/twisted-work init steps` from CLAUDE.md exactly:
+Follow `/twisted-work init steps` from `using-twisted-workflow` exactly:
 
 1. Ensure `.twisted/` directory structure exists per **Directory Structure**.
 2. Apply **Gitignore Rules**.
@@ -53,7 +54,7 @@ Follow `/twisted-work init steps` from CLAUDE.md exactly:
 
 ## Status Flow
 
-Follow `/twisted-work status steps` from CLAUDE.md:
+Follow `/twisted-work status steps` from `using-twisted-workflow`:
 
 1. Scan all lanes (`todo/`, `in-progress/`, `done/`).
 2. For each objective, determine current phase using **Phase Detection** table.
@@ -64,7 +65,7 @@ Follow `/twisted-work status steps` from CLAUDE.md:
 
 ## Next Flow
 
-Follow `/twisted-work next / resume` from CLAUDE.md:
+Follow `/twisted-work next / resume` from `using-twisted-workflow`:
 
 1. If no objective named: find the most recently modified objective across `todo/` and `in-progress/`.
 2. Determine current phase using **Phase Detection**.
@@ -85,7 +86,7 @@ Follow `/twisted-work next / resume` from CLAUDE.md:
 
 ## Interactive Flow
 
-Follow `/twisted-work interactive steps` from CLAUDE.md:
+Follow `/twisted-work interactive steps` from `using-twisted-workflow`:
 
 1. Scan all lanes for existing objectives.
 2. Show status table using **Writing Quality** rules.
@@ -98,7 +99,7 @@ Follow `/twisted-work interactive steps` from CLAUDE.md:
 
 ## Constraints
 
-- Follow all **Shared Constraints** from CLAUDE.md.
+- Follow all **Shared Constraints** from `using-twisted-workflow`.
 - Follow all **Handoff Rules** and **Yolo Mode** — when `--yolo` is passed, skip confirmations and pass the flag through to invoked skills.
 - All human-facing text follows **Writing Quality** rules.
 - If no `.twisted/settings.json` found, note: "No .twisted/settings.json found, using defaults. Run /twisted-work init to configure."

@@ -5,7 +5,7 @@ user-invocable: true
 argument-hint: "[objective-name] [--yolo]"
 ---
 
-The project's CLAUDE.md is loaded in your context. Reference its sections by name — do not read the file again.
+**REQUIRED:** Load the `using-twisted-workflow` skill for shared config, defaults, templates, and constraints. All section references below point to that skill.
 
 # /twisted-new
 
@@ -13,15 +13,16 @@ You are the research phase of the twisted-workflow pipeline. You gather informat
 
 ## On Every Invocation
 
-1. Read and merge config per **Configuration System** and **Sparse Config Principle**.
-2. Inject any `context_skills` from merged config.
-3. Check `writing.skill` availability per **Writing Quality**.
+1. Load `using-twisted-workflow` if not already loaded.
+2. Read and merge config per **Configuration System** and **Sparse Config Principle**.
+3. Inject any `context_skills` from merged config.
+4. Check `writing.skill` availability per **Writing Quality**.
 
 ## Steps
 
 ### 1. Establish Objective Name
 
-Follow **Objective Naming** from CLAUDE.md exactly:
+Follow **Objective Naming** from `using-twisted-workflow` exactly:
 
 - Ask: "What is the short name for this objective? This will be the folder name for all files. Leave blank and I will suggest names after a quick initial scan."
 - If name provided: create `.twisted/todo/{objective}/` immediately.
@@ -59,7 +60,7 @@ Follow **Objective Naming** from CLAUDE.md exactly:
 
 ## Constraints
 
-- Follow all **Shared Constraints** from CLAUDE.md.
+- Follow all **Shared Constraints** from `using-twisted-workflow`.
 - Objective folder must exist before any files are written.
 - All files go in `.twisted/todo/{objective}/`.
 - No file prefixing — use standard names per **Naming Convention**.
