@@ -107,6 +107,7 @@ Files never rename. The parent folder moves between lanes. Worktrees are tempora
 - **Parallel by default.** Research agents run in parallel. Build agents run in parallel worktrees. Serial work happens only when dependencies require it.
 - **Human in the loop.** Every phase waits for confirmation before starting. Every handoff asks before advancing. Stop at any point and resume later.
 - **Stack-agnostic.** Works with any codebase. No language or framework assumptions.
+- **Self-contained skills.** All shared config, defaults, templates, and constraints live in a single internal skill (`using-twisted-workflow`). Phase skills load it on demand — no auto-loading, no duplication.
 
 ## Configuration
 
