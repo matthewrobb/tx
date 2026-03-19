@@ -9,10 +9,5 @@
   "repository": "https://github.com/matthewrobb/twisted-workflow",
   "license": "MIT",
   "keywords": ["workflow", "kanban", "planning", "parallel", "worktrees", "agentic"],
-  "skills": [
-    {
-      "name": "using-twisted-workflow",
-      "path": "skills/using-twisted-workflow/SKILL.md"
-    }
-  ]
+  "skills": "./skills/"
 }
