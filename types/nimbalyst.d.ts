@@ -116,15 +116,12 @@ export type NimbalystTrackerType =
 // Config
 // ---------------------------------------------------------------------------
 
-/** Nimbalyst integration configuration. */
+/**
+ * Nimbalyst-specific configuration.
+ * Nimbalyst tracking is activated by including "nimbalyst" in the `tracking` array.
+ * These settings control nimbalyst-specific behavior when active.
+ */
 export interface NimbalystConfig {
-  /**
-   * Write Nimbalyst-compatible plan and tracker files.
-   * Auto-enabled by the nimbalyst preset.
-   * Default: false.
-   */
-  enabled: boolean;
-
   /**
    * Default priority for new objectives.
    * Default: "medium".

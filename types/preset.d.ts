@@ -13,7 +13,7 @@ import type { TwistedConfig } from "./config";
 
 /** Built-in preset names. */
 export type BuiltInPresetName =
-  | "standalone"
+  | "twisted"
   | "superpowers"
   | "gstack"
   | "nimbalyst"
@@ -24,9 +24,9 @@ export type PresetName = BuiltInPresetName | (string & {});
 
 /**
  * A preset is a partial config — only the fields that differ from defaults.
- * Omits `preset` to prevent circular nesting.
+ * Omits `presets` and `version` to prevent circular nesting.
  */
-export type PresetOverrides = DeepPartial<Omit<TwistedConfig, "preset" | "version">>;
+export type PresetOverrides = DeepPartial<Omit<TwistedConfig, "presets" | "version">>;
 
 /** Map of built-in preset names to their sparse overrides. */
 export type BuiltInPresets = Record<BuiltInPresetName, PresetOverrides>;
