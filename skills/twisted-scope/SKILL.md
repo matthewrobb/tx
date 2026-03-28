@@ -3,6 +3,11 @@ name: twisted-scope
 description: Internal sub-skill — research delegation and requirements interrogation
 ---
 
+**Read first:** These source files contain shared functions referenced below:
+- `src/pipeline/dispatch.ts`
+- `src/state/machine.ts`
+- `src/strategies/paths.ts`
+
 # twisted-scope
 
 Internal sub-skill loaded by `/twisted-work`. Handles **research** and **scope** steps.

@@ -2,10 +2,6 @@
 
 <%~ it.extract("src/config/defaults.ts", "defaults") %>
 
-## Config Resolution
-
-<%~ it.extract("src/config/resolve.ts", "resolveConfig") %>
-
 ## Presets
 
 <%~ it.table(

@@ -15,20 +15,17 @@ export const usingTwistedWorkflow: SkillDefinition = {
   frontmatter: {
     name: "using-twisted-workflow",
     description:
-      "Use when any twisted-workflow skill is active — provides shared config, defaults, state machine, tracking strategies, and pipeline routing",
+      "Shared reference — config defaults, presets, and tracking strategy artifact map",
   },
   content: `\
-# twisted-workflow shared config
+# twisted-workflow shared reference
 
-Loaded automatically by \`/twisted-work\` and passed to internal sub-skills. This is the reference for all shared logic.
+Config defaults, preset definitions, and strategy artifact mapping.
+Sub-skills reference source files in \`src/\` directly for shared logic.
 
 ---
 
 ${render("config.eta")}
-
----
-
-${render("state.eta")}
 
 ---
 

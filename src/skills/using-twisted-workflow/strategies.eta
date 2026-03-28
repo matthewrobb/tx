@@ -1,8 +1,4 @@
-## Tracking Strategies
-
-<%~ it.extract("src/strategies/paths.ts", "getArtifactPaths") %>
-
-### Strategy Artifact Map
+## Tracking Strategy Artifact Map
 
 <%~ it.table(
   ["Step", "twisted", "nimbalyst", "gstack"],
@@ -14,21 +10,3 @@
     ["Tracker", "—", "`nimbalyst-local/tracker/tasks.md`", "—"],
   ]
 ) %>
-
-## Shared Dispatch Patterns
-
-These are used by all sub-skills — the canonical implementations:
-
-<%~ it.extract("src/pipeline/dispatch.ts", "dispatchPhase") %>
-
-<%~ it.extract("src/pipeline/dispatch.ts", "forEachStrategy") %>
-
-## Worktree Paths
-
-<%~ it.extract("src/strategies/worktree.ts", "getWorktreePaths") %>
-
-## Pipeline Routing
-
-<%~ it.extract("src/pipeline/routing.ts", "parseProvider") %>
-
-<%~ it.extract("src/pipeline/routing.ts", "shouldPause") %>

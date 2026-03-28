@@ -14,6 +14,7 @@ import { resolve } from "path";
 import { embedDeclaration, embedSignature, embedRegion } from "./extract.js";
 import { table } from "./markdown.js";
 import { defaults } from "../config/defaults.js";
+import { resolveReadFirst, formatReadFirst } from "./imports.js";
 
 export function createEta(viewsDir: string): Eta {
   return new Eta({
@@ -32,4 +33,20 @@ export function templateData(extra: Record<string, unknown> = {}): Record<string
     defaults,
     ...extra,
   };
+}
+
+/**
+ * Build a skill with automatic "read first" resolution.
+ *
+ * Renders the content, scans it for references to shared modules,
+ * and prepends a "read first" instruction listing the source files
+ * Claude should read before proceeding.
+ */
+export function buildSkillWithImports(
+  content: string,
+  extractedFiles: string[],
+): string {
+  const readFirst = resolveReadFirst(extractedFiles, content);
+  const header = formatReadFirst(readFirst);
+  return header ? header + "\n" + content : content;
 }

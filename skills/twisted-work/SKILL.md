@@ -5,6 +5,11 @@ user-invocable: true
 argument-hint: [init | status [objective] | next [objective] | resume {objective} | scope | decompose | execute | review | ship | config [section] [subsection]] [--yolo]
 ---
 
+**Read first:** These source files contain shared functions referenced below:
+- `src/config/resolve.ts`
+- `src/pipeline/routing.ts`
+- `src/state/machine.ts`
+
 # /twisted-work
 
 The only user-facing skill. Routes to internal sub-skills based on arguments and objective state.
