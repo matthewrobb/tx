@@ -6,28 +6,28 @@ The only user-facing skill. Routes to internal sub-skills based on arguments and
 
 ## Command Routing
 
-<%~ it.extract("src/work/router.ts", "parseCommand") %>
+<%~ extract("src/work/router.ts", "parseCommand") %>
 
-<%~ it.extract("src/work/router.ts", "routeCommand") %>
+<%~ extract("src/work/router.ts", "routeCommand") %>
 
 ---
 
 ## Init Flow
 
-<%~ it.extract("src/work/init.ts", "executeInit") %>
+<%~ extract("src/work/init.ts", "executeInit") %>
 
 ---
 
 ## Next / Resume / Auto-Advance
 
-<%~ it.extract("src/work/advance.ts", "executeNext") %>
+<%~ extract("src/work/advance.ts", "executeNext") %>
 
-<%~ it.extract("src/work/advance.ts", "executeResume") %>
+<%~ extract("src/work/advance.ts", "executeResume") %>
 
 ---
 
 ## Config Display
 
-<%~ it.extract("src/work/config-display.ts", "executeConfig") %>
+<%~ extract("src/work/config-display.ts", "executeConfig") %>
 
-<%~ it.extract("src/work/config-display.ts", "displayConfigOverview") %>
+<%~ extract("src/work/config-display.ts", "displayConfigOverview") %>

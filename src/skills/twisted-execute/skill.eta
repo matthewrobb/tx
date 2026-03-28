@@ -6,18 +6,18 @@ Internal sub-skill loaded by `/twisted-work`. Handles **execute**, **code_review
 
 ## Execute Step
 
-<%~ it.extract("src/execute/run.ts", "readIssuesForExecute") %>
+<%~ extract("src/execute/run.ts", "readIssuesForExecute") %>
 
-<%~ it.extract("src/execute/run.ts", "moveToInProgress") %>
+<%~ extract("src/execute/run.ts", "moveToInProgress") %>
 
-<%~ it.extract("src/execute/run.ts", "executeGroups") %>
+<%~ extract("src/execute/run.ts", "executeGroups") %>
 
 ---
 
 ## Post-Execution Delegation
 
-<%~ it.extract("src/execute/delegation.ts", "executeCodeReview") %>
+<%~ extract("src/execute/delegation.ts", "executeCodeReview") %>
 
-<%~ it.extract("src/execute/delegation.ts", "executeQA") %>
+<%~ extract("src/execute/delegation.ts", "executeQA") %>
 
-<%~ it.extract("src/execute/delegation.ts", "executeShip") %>
+<%~ extract("src/execute/delegation.ts", "executeShip") %>

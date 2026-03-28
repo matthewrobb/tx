@@ -1,12 +1,12 @@
 /**
  * Eta template engine + skill rendering.
  *
- * Templates have access to:
- * - it.extract(filePath, name) — extract a declaration, wrapped in ts code fence
- * - it.signature(filePath, name) — extract just the signature
- * - it.region(filePath, name) — extract a labeled region
- * - it.table(headers, rows) — build-md table
- * - it.defaults — full TwistedConfig defaults
+ * Templates have direct access to (no `it.` prefix needed):
+ * - extract(filePath, name) — extract a declaration, wrapped in ts code fence
+ * - signature(filePath, name) — extract just the signature
+ * - region(filePath, name) — extract a labeled region
+ * - table(headers, rows) — build-md table
+ * - defaults — full TwistedConfig defaults
  */
 
 import { Eta } from "eta";
@@ -21,26 +21,18 @@ function createEta(viewsDir: string): Eta {
   return new Eta({
     views: resolve(viewsDir),
     autoEscape: false,
+    // Destructure it.* into local variables so templates use extract() not it.extract()
+    functionHeader: "const { extract, signature, region, table, defaults } = it;",
   });
 }
 
 function templateData(): Record<string, unknown> {
-  return {
-    extract: embedDeclaration,
-    signature: embedSignature,
-    region: embedRegion,
-    table,
-    defaults,
-  };
+  return { extract: embedDeclaration, signature: embedSignature, region: embedRegion, table, defaults };
 }
 
 /**
  * Render a skill from an .eta template file.
  * Resolves "read first" references automatically.
- *
- * @param dir - Directory containing the .eta file (use import.meta.dirname)
- * @param filename - The .eta template filename
- * @param extractedFiles - Source files this skill extracts from
  */
 export function renderSkill(
   dir: string,
