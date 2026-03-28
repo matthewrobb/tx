@@ -1,16 +1,16 @@
 # twisted-workflow
 
-A kanban-style agentic development workflow for Claude Code.
+A configurable orchestration layer for agentic development with Claude Code.
 
-Plan, build, and ship objectives through six phases — with parallel execution, session-independent state, and a sparse config system that stays out of your way.
+Decompose objectives into parallel issues, execute them across isolated worktrees, and delegate review/QA/shipping to your preferred tools — with session-independent state and preset-based configuration.
 
 ## How It Works
 
 Claude Code sessions end. Context resets. Work disappears.
 
-twisted-workflow stores every objective in a `.twisted/` directory organized as a kanban board: `todo/`, `in-progress/`, `done/`. Each objective carries its own research, requirements, issues, and plan. Start a session, run `/twisted-work`, and pick up exactly where you left off.
+twisted-workflow stores every objective in a `.twisted/` directory organized as a kanban board: `todo/`, `in-progress/`, `done/`. Each objective carries its own state, research, requirements, issues, and plan. Start a session, run `/twisted-work`, and pick up exactly where you left off.
 
-The build phase takes this further: one git worktree per issue, one subagent per worktree, all running in parallel. No merge conflicts. No serial bottlenecks.
+The execute step takes this further: one git worktree per agent, parallel execution across groups, configurable merge strategies. Delegatable phases route to external tools (gstack, Superpowers, Nimbalyst) or use built-in implementations.
 
 ## Quick Start
 
@@ -21,7 +21,7 @@ The build phase takes this further: one git worktree per issue, one subagent per
 # Install the plugin
 /plugin install twisted-workflow@twisted-workflow
 
-# Set up your project
+# Set up your project (detects tools, suggests preset)
 /twisted-work init
 
 # Start your first objective
@@ -31,186 +31,205 @@ The build phase takes this further: one git worktree per issue, one subagent per
 ## The Pipeline
 
 ```
-new ──> define ──> plan ──> build ──> review ──> accept
+research ──> scope ──> arch_review ──> decompose ──> execute ──> code_review ──> qa ──> ship
 ```
 
-Enter at any phase. `/twisted-work` detects existing objectives and picks the right entry point.
+Core steps (scope, decompose, execute) are always owned by twisted-workflow. Delegatable steps (research, arch_review, code_review, qa, ship) route to configured providers or skip entirely.
 
-| Phase | What happens | Model | Mode |
+| Step | What happens | Default model | Mode |
 |---|---|---|---|
-| **new** | Name the objective, spawn parallel research subagents | opus | execute |
-| **define** | Drill requirements until concrete — one category at a time | opus | execute |
-| **plan** | Write ISSUES.md and PLAN.md with dependency-ordered groups | opus | plan |
-| **build** | Objective branch from main, issue worktrees in parallel, merge into objective | sonnet 1M | execute |
-| **review** | Spec compliance check, then code quality review | sonnet | plan |
-| **accept** | Merge objective into main, changelog, lane move to done | sonnet | execute |
+| **research** | Parallel subagents explore the codebase | (delegatable) | execute |
+| **scope** | Drill requirements one category at a time until concrete | opus | execute |
+| **arch_review** | Architecture review before decomposition | (delegatable, skip by default) | — |
+| **decompose** | Break into issues, estimate complexity, assign agents, plan groups | opus | plan |
+| **execute** | Objective branch from main, parallel agent worktrees, group-by-group merge | sonnet 1M | execute |
+| **code_review** | Full review of all changes on the objective branch | (delegatable) | — |
+| **qa** | QA verification | (delegatable, skip by default) | — |
+| **ship** | Merge to main, changelog, lane move to done | (delegatable) | — |
 
-Every phase recommends its model, effort, and mode settings, then waits for confirmation. Override anything at invocation time.
+Auto-advances by default. Pauses when model/effort settings change between steps, context is running low, or `flow.auto_advance` is set to `false` (always pause).
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `/twisted-work` | Scan objectives, resume or start new |
-| `/twisted-work init` | Create `.twisted/` structure, configure settings |
+| `/twisted-work init` | Create `.twisted/`, detect tools, select preset |
 | `/twisted-work status` | Show all objectives across all lanes |
+| `/twisted-work status {name}` | Detailed status for a single objective |
 | `/twisted-work next` | Advance the most recently active objective |
-| `/twisted-work next {name}` | Advance a named objective to its next phase |
-| `/twisted-work resume {name}` | Resume a named objective at its current phase |
+| `/twisted-work next {name}` | Advance a named objective to its next step |
+| `/twisted-work resume {name}` | Resume a named objective at its current step |
+| `/twisted-work scope` | Explicitly trigger the scope step |
+| `/twisted-work decompose` | Explicitly trigger decomposition |
+| `/twisted-work execute` | Explicitly trigger parallel execution |
+| `/twisted-work review` | Explicitly trigger code review delegation |
+| `/twisted-work ship` | Explicitly trigger ship delegation |
+| `/twisted-work config` | Show full config overview |
+| `/twisted-work config {section}` | Drill into a config section |
 
-Run any phase directly:
-
-```bash
-/twisted-new        # research and name
-/twisted-define     # gather requirements
-/twisted-plan       # create issues and execution plan
-/twisted-build      # execute in parallel worktrees
-/twisted-review     # verify the work
-/twisted-accept     # write changelog, close out
-```
-
-Add `--yolo` to any command to skip confirmations and auto-advance through phases:
+Add `--yolo` to any command to skip confirmations and auto-advance:
 
 ```bash
 /twisted-work next --yolo
-/twisted-new --yolo
 ```
 
 ## Directory Structure
 
 ```
 .twisted/
-├── settings.json                        # your overrides only
+├── settings.json                        # sparse overrides only
 ├── todo/
-│   └── {objective}/                     # research, requirements, plan
-│       ├── RESEARCH-1.md
-│       ├── RESEARCH-2.md
+│   └── {objective}/
+│       ├── state.md                     # frontmatter = source of truth
+│       ├── RESEARCH-*.md
 │       ├── REQUIREMENTS.md
 │       ├── ISSUES.md
 │       └── PLAN.md
 ├── in-progress/
-│   └── {objective}/                     # actively being built
+│   └── {objective}/
 ├── done/
-│   └── {objective}-[date]/              # completed and archived
+│   └── {objective}-{date}/
 └── worktrees/                           # gitignored
     ├── {objective}/                     # objective branch (from main)
-    ├── {objective}-group-N/             # group branch (from objective)
-    └── {objective}-group-N-issue-XXX/           # issue branch (from group)
+    └── {objective}-agent-N/             # agent branch (from objective)
 ```
 
-Files never rename. The parent folder moves between lanes. Worktrees are temporary — created during build, cleaned up as groups complete.
-
-## Design Principles
-
-- **Session-independent.** All state lives on disk. Resume from any session, any model, any context window.
-- **Sparse config.** `settings.json` stores only your overrides. Built-in defaults fill the rest. Plugin updates apply new defaults without touching your config.
-- **Parallel by default.** Research agents run in parallel. Build agents run in parallel worktrees. Serial work happens only when dependencies require it.
-- **Human in the loop.** Every phase waits for confirmation before starting. Every handoff asks before advancing. Stop at any point and resume later.
-- **Stack-agnostic.** Works with any codebase. No language or framework assumptions.
-- **Self-contained skills.** All shared config, defaults, templates, and constraints live in a single internal skill (`using-twisted-workflow`). Phase skills load it on demand — no auto-loading, no duplication.
+Frontmatter in `state.md` is the source of truth. Folders mirror frontmatter by default (configurable). Files never rename — the parent folder moves between lanes. Worktrees are temporary.
 
 ## Configuration
 
-Run `/twisted-work init` to view the full merged config and change any value.
+Run `/twisted-work init` to detect tools and select a preset. Run `/twisted-work config` to view and modify any setting.
+
+Three-layer sparse override system:
+
+```
+deepMerge(defaults, presets[name] ?? {}, projectSettings ?? {})
+```
+
+`settings.json` stores only your overrides. Plugin updates apply new defaults automatically.
 
 ```json
 {
-  "context_skills": ["/my-project-nav"],
-  "phases": {
-    "build": { "model": "sonnet", "context": "1m" }
-  },
-  "files": {
-    "changelog": "docs/CHANGELOG.md"
-  },
-  "writing": {
-    "skill": "writing-clearly-and-concisely"
-  }
+  "preset": "gstack+superpowers",
+  "execution": { "strategy": "task-tool", "worktree_tiers": 2 },
+  "files": { "changelog": "docs/CHANGELOG.md" }
 }
 ```
+
+### Presets
+
+| Preset | What it configures |
+|---|---|
+| `standalone` | Pure defaults, no external tools |
+| `superpowers` | TDD discipline + Superpowers code review |
+| `gstack` | gstack for research, review, QA, shipping |
+| `gstack+superpowers` | gstack delegation + Superpowers build discipline |
+| `full-stack` | gstack + Superpowers + Nimbalyst skills |
+| `minimal` | Skip all delegatable phases, deferred tests |
 
 <details>
 <summary><strong>Full config reference</strong></summary>
 
 | Key | Default | Description |
 |---|---|---|
-| `context_skills` | `[]` | Skills injected at the start of every phase |
-| `writing.skill` | `"writing-clearly-and-concisely"` | Writing style skill for human-facing text |
+| `preset` | `null` | Active preset name |
+| `context_skills` | `[]` | Skills injected at the start of every step |
+| `writing.skill` | `"writing-clearly-and-concisely"` | Writing quality skill |
 | `writing.fallback` | `true` | Use built-in writing rules if skill unavailable |
-| `phases.{phase}.model` | varies | Model per phase |
-| `phases.{phase}.effort` | varies | `low`, `medium`, or `max` |
-| `phases.{phase}.context` | varies | `default` or `1m` |
-| `phases.{phase}.mode` | varies | `execute` or `plan` |
-| `directories.root` | `.twisted` | Root directory |
-| `directories.todo` | `.twisted/todo` | Planned objectives |
-| `directories.in_progress` | `.twisted/in-progress` | Active objectives |
-| `directories.done` | `.twisted/done` | Completed objectives |
-| `directories.worktrees` | `.twisted/worktrees` | Temporary worktrees (gitignored) |
-| `files.changelog` | `CHANGELOG.md` | Changelog path |
+| `execution.strategy` | `"task-tool"` | `task-tool`, `agent-teams`, `manual`, `auto` |
+| `execution.discipline` | `null` | Build discipline provider (e.g., `superpowers:test-driven-development`) |
+| `execution.worktree_tiers` | `2` | `1` (flat), `2` (objective→agent), `3` (objective→group→agent) |
+| `execution.group_parallel` | `true` | Run independent groups concurrently |
+| `execution.merge_strategy` | `"normal"` | `normal`, `squash`, `rebase` |
+| `execution.review_frequency` | `"after-all"` | `per-group`, `risk-based`, `after-all` |
+| `execution.test_requirement` | `"must-pass"` | `must-pass`, `best-effort`, `deferred` |
+| `decompose.estimation` | `"fibonacci"` | `fibonacci`, `linear`, `tshirt`, `custom` |
+| `decompose.batch_threshold` | `2` | Complexity ≤ this → batch into one agent |
+| `decompose.split_threshold` | `8` | Complexity ≥ this → auto-split into sub-issues |
+| `decompose.categories` | `["scope", "behavior", "constraints", "acceptance"]` | Interrogation categories |
+| `flow.auto_advance` | `true` | Auto-advance between steps (`false` = always pause) |
+| `flow.pause_on_config_change` | `true` | Pause when next step has different settings |
+| `flow.pause_on_low_context` | `true` | Pause when context is running low |
+| `state.use_folders` | `true` | Use folder-based kanban lanes |
+| `phases.scope` | `opus/max/default/execute` | Model/effort/context/mode for scope |
+| `phases.decompose` | `opus/max/default/plan` | Model/effort/context/mode for decompose |
+| `phases.execute` | `sonnet/medium/1m/execute` | Model/effort/context/mode for execute |
+| `pipeline.{phase}.provider` | varies | Provider for each delegatable phase |
+| `pipeline.{phase}.fallback` | varies | Fallback provider |
+| `directories.root` | `".twisted"` | Root directory |
+| `directories.worktrees` | `".twisted/worktrees"` | Worktree directory (gitignored) |
+| `files.settings` | `".twisted/settings.json"` | Settings file path |
+| `files.changelog` | `"CHANGELOG.md"` | Changelog path |
+| `files.changelog_sort` | `"newest-first"` | `newest-first` or `oldest-first` |
+| `state.folder_kanban` | `{todo, in_progress, done}` | Folder paths for kanban lanes |
+| `naming.strategy` | `"prefix"` | Naming strategy for auto-generated names |
 | `naming.increment_padding` | `3` | Zero-padding for auto-named objectives |
-
-#### Phase defaults
-
-| Phase | Model | Effort | Context | Mode |
-|---|---|---|---|---|
-| new | opus | max | default | execute |
-| define | opus | max | default | execute |
-| plan | opus | max | default | plan |
-| build | sonnet | medium | 1m | execute |
-| review | sonnet | medium | default | plan |
-| accept | sonnet | low | default | execute |
 
 </details>
 
-## Works With Superpowers
+## Provider Delegation
 
-twisted-workflow integrates with [superpowers](https://github.com/obra/superpowers). These skills fire automatically throughout the pipeline:
+Delegatable phases route to external tools:
 
-| Skill | Where |
+| Format | Example |
 |---|---|
-| `test-driven-development` | During `/twisted-build` |
-| `systematic-debugging` | When issues arise during build |
-| `requesting-code-review` | Between groups in `/twisted-build`, in `/twisted-review` |
-| `verification-before-completion` | `/twisted-review` |
-| `finishing-a-development-branch` | `/twisted-accept` |
+| `"built-in"` | twisted-workflow's own implementation |
+| `"gstack:/{command}"` | `"gstack:/office-hours"`, `"gstack:/review"` |
+| `"superpowers:{skill}"` | `"superpowers:requesting-code-review"` |
+| `"nimbalyst:{skill}"` | `"nimbalyst:deep-researcher"` |
+| `"skip"` | Omit this phase |
+| `"ask"` | Ask user each time |
 
-Superpowers is optional. twisted-workflow works standalone.
+## Works With
 
-```bash
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
-```
+twisted-workflow integrates with these tools through provider delegation and presets:
+
+| Tool | Integration |
+|---|---|
+| [Superpowers](https://github.com/obra/superpowers) | Build discipline (TDD), code review |
+| [gstack](https://github.com/gstack) | Research, architecture review, code review, QA, shipping |
+| [Nimbalyst](https://nimbalyst.com) | Deep research, branch review |
+
+All integrations are optional. twisted-workflow works standalone.
+
+## Complexity-Driven Agent Assignment
+
+During decomposition, each issue gets a complexity estimate. Thresholds drive agent assignment:
+
+| Complexity | Strategy | Example |
+|---|---|---|
+| ≤ batch threshold (2) | Batch into one agent | Three config changes → one agent |
+| Standard range (3–7) | One agent per issue | Normal feature work |
+| ≥ split threshold (8) | Auto-split into sub-issues | Major refactor → multiple agents |
 
 ## FAQ
 
 <details>
 <summary><strong>Can I enter the pipeline mid-way?</strong></summary>
 
-Yes. Run any phase skill directly (e.g., `/twisted-plan`). If the objective folder doesn't exist, the skill asks you to name it first.
+Yes. Use explicit step subcommands like `/twisted-work scope` or `/twisted-work execute`. If the objective folder doesn't exist, the skill asks you to name it first.
 
 </details>
 
 <details>
-<summary><strong>What happens if a session ends mid-build?</strong></summary>
+<summary><strong>What happens if a session ends mid-execution?</strong></summary>
 
-All state lives in `.twisted/`. Run `/twisted-work` in a new session — it detects the current phase and offers to resume.
+All state lives in `state.md` frontmatter. Run `/twisted-work` in a new session — it reads the frontmatter and offers to resume at the exact step and group.
 
 </details>
 
 <details>
 <summary><strong>How do parallel worktrees work?</strong></summary>
 
-Three-tier worktree hierarchy. The objective gets a branch off main. Each group gets a branch off the objective. Each issue gets a branch off its group. One subagent works in each issue worktree simultaneously. Issue worktrees merge into the group branch. The group squash merges into the objective — one clean commit per group. The objective merges into main at `/twisted-accept`.
+Configurable worktree tiers. Default is 2 tiers: the objective gets a branch off main, each agent gets a branch off the objective. Agents work in parallel, merge back into the objective branch using the configured merge strategy. Optional 3rd tier adds group-level branches for structured history.
 
 </details>
 
 <details>
-<summary><strong>How do I change the changelog location?</strong></summary>
+<summary><strong>How is this different from gstack or Nimbalyst?</strong></summary>
 
-Set `files.changelog` in `.twisted/settings.json`:
-
-```json
-{ "files": { "changelog": "docs/CHANGELOG.md" } }
-```
+gstack provides specialist roles (plan/review/ship). Nimbalyst provides session management and visual kanban. twisted-workflow is the orchestration layer between them — it decomposes objectives into parallel issues, coordinates execution across worktrees, and delegates individual phases to whichever tool you prefer.
 
 </details>
 

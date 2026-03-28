@@ -1,0 +1,27 @@
+{
+  "execution": {
+    "discipline": "superpowers:test-driven-development"
+  },
+  "pipeline": {
+    "research": {
+      "provider": "gstack:/office-hours",
+      "fallback": "built-in"
+    },
+    "arch_review": {
+      "provider": "gstack:/plan-eng-review",
+      "fallback": "skip"
+    },
+    "code_review": {
+      "provider": "superpowers:requesting-code-review",
+      "fallback": "gstack:/review"
+    },
+    "qa": {
+      "provider": "gstack:/qa",
+      "fallback": "skip"
+    },
+    "ship": {
+      "provider": "gstack:/ship",
+      "fallback": "built-in"
+    }
+  }
+}
