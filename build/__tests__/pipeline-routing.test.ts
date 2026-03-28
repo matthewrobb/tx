@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import { parseProvider, hasConfigChange, shouldPause, getPhaseSettings } from "./routing.js";
-import { defaults } from "../config/defaults.js";
+import { parseProvider, hasConfigChange, shouldPause, getPhaseSettings } from "../../src/pipeline/routing.js";
+import { defaults } from "../../src/config/defaults.js";
 
 describe("parseProvider", () => {
   test("built-in", () => {

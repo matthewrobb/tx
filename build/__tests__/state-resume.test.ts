@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import { advanceState, createInitialState, nextStep } from "./machine.js";
-import { defaults } from "../config/defaults.js";
+import { advanceState, createInitialState, nextStep } from "../../src/state/machine.js";
+import { defaults } from "../../src/config/defaults.js";
 import {
   stateAtResearch,
   stateAtScope,

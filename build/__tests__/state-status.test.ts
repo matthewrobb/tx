@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { toNimbalystStatus, inferPlanType, toTrackerStatus, calculateProgress } from "./status.js";
+import { toNimbalystStatus, inferPlanType, toTrackerStatus, calculateProgress } from "../../src/state/status.js";
 
 describe("toNimbalystStatus", () => {
   test("blocked maps to blocked", () => {

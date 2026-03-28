@@ -8,8 +8,8 @@ import {
   advanceState,
   stepsRemaining,
   stepsCompleted,
-} from "./machine.js";
-import { defaults } from "../config/defaults.js";
+} from "../../src/state/machine.js";
+import { defaults } from "../../src/config/defaults.js";
 
 const pipeline = defaults.pipeline;
 
