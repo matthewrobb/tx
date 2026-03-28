@@ -85,7 +85,6 @@ export interface ResearchAgent {
   concerns: string[];
 }
 ```
-
 ---
 
 ## Scope Step
@@ -215,4 +214,3 @@ export function writeAndAdvance(
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
-

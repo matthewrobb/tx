@@ -1,3 +1,9 @@
+# /twisted-work
+
+The only user-facing skill. Routes to internal sub-skills based on arguments and objective state.
+
+---
+
 ## Command Routing
 
 <%~ it.extract("src/work/router.ts", "parseCommand") %>

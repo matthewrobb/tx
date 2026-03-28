@@ -1,36 +1,13 @@
-import { readFileSync } from "fs";
-import { resolve } from "path";
 import type { SkillDefinition } from "../../lib/skill.js";
-import { createEta, templateData, buildSkillWithImports } from "../../lib/eta.js";
-
-const DIR = resolve(import.meta.dirname);
-const eta = createEta(DIR);
-const data = templateData();
-
-function render(filename: string): string {
-  return eta.renderString(readFileSync(resolve(DIR, filename), "utf-8"), data);
-}
-
-const EXTRACTED_FROM = [
-  "src/execute/run.ts",
-  "src/execute/delegation.ts",
-];
-
-const body = `\
-# twisted-execute
-
-Internal sub-skill loaded by \`/twisted-work\`. Handles **execute**, **code_review**, **qa**, and **ship** steps.
-
----
-
-${render("execute.eta")}
-`;
+import { renderSkill } from "../../lib/eta.js";
 
 export const twistedExecute: SkillDefinition = {
   frontmatter: {
     name: "twisted-execute",
-    description:
-      "Internal sub-skill — parallel execution with worktrees, delegated review/qa/ship, and state tracking",
+    description: "Internal sub-skill — parallel execution with worktrees, delegated review/qa/ship, and state tracking",
   },
-  content: buildSkillWithImports(body, EXTRACTED_FROM),
+  content: renderSkill(import.meta.dirname, "skill.eta", [
+    "src/execute/run.ts",
+    "src/execute/delegation.ts",
+  ]),
 };

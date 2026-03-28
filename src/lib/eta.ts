@@ -1,5 +1,5 @@
 /**
- * Eta template engine configuration with extraction helpers.
+ * Eta template engine + skill rendering.
  *
  * Templates have access to:
  * - it.extract(filePath, name) — extract a declaration, wrapped in ts code fence
@@ -10,42 +10,46 @@
  */
 
 import { Eta } from "eta";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 import { embedDeclaration, embedSignature, embedRegion } from "./extract.js";
 import { table } from "./markdown.js";
 import { defaults } from "../config/defaults.js";
 import { resolveReadFirst, formatReadFirst } from "./imports.js";
 
-export function createEta(viewsDir: string): Eta {
+function createEta(viewsDir: string): Eta {
   return new Eta({
     views: resolve(viewsDir),
     autoEscape: false,
   });
 }
 
-/** Data passed to every Eta template via the `it` object. */
-export function templateData(extra: Record<string, unknown> = {}): Record<string, unknown> {
+function templateData(): Record<string, unknown> {
   return {
     extract: embedDeclaration,
     signature: embedSignature,
     region: embedRegion,
     table,
     defaults,
-    ...extra,
   };
 }
 
 /**
- * Build a skill with automatic "read first" resolution.
+ * Render a skill from an .eta template file.
+ * Resolves "read first" references automatically.
  *
- * Renders the content, scans it for references to shared modules,
- * and prepends a "read first" instruction listing the source files
- * Claude should read before proceeding.
+ * @param dir - Directory containing the .eta file (use import.meta.dirname)
+ * @param filename - The .eta template filename
+ * @param extractedFiles - Source files this skill extracts from
  */
-export function buildSkillWithImports(
-  content: string,
+export function renderSkill(
+  dir: string,
+  filename: string,
   extractedFiles: string[],
 ): string {
+  const eta = createEta(dir);
+  const template = readFileSync(resolve(dir, filename), "utf-8");
+  const content = eta.renderString(template, templateData());
   const readFirst = resolveReadFirst(extractedFiles, content);
   const header = formatReadFirst(readFirst);
   return header ? header + "\n" + content : content;
