@@ -26,17 +26,19 @@ function readSkill(name: string): string {
 describe("using-twisted-workflow content", () => {
   const skill = () => readSkill("using-twisted-workflow");
 
-  // --- Defaults ---
+  // --- Config resolution ---
 
-  test("references tracking config with correct default", () => {
-    expect(skill()).toContain('tracking: ["twisted"]');
+  test("embeds resolveConfig function", () => {
+    expect(skill()).toContain("resolveConfig");
   });
 
-  test("contains all pipeline phases from PIPELINE_ORDER", () => {
+  test("embeds deepMerge function", () => {
+    expect(skill()).toContain("deepMerge");
+  });
+
+  test("points to defaults file instead of embedding", () => {
     const content = skill();
-    for (const step of PIPELINE_ORDER) {
-      expect(content).toContain(step);
-    }
+    expect(content).toContain("src/config/defaults.ts");
   });
 
   test("contains all preset names", () => {
@@ -87,13 +89,13 @@ describe("using-twisted-workflow content", () => {
     expect(content).toContain("preset");
   });
 
-  // --- Defaults contain string templates ---
+  // --- Presets reference files ---
 
-  test("defaults contain commit message templates", () => {
+  test("presets table includes file paths", () => {
     const content = skill();
-    // defaults object is embedded and includes string templates
-    expect(content).toContain("commit_messages");
-    expect(content).toContain("handoff_messages");
+    expect(content).toContain("presets/twisted.json");
+    expect(content).toContain("presets/nimbalyst.json");
+    expect(content).toContain("presets/gstack.json");
   });
 
   // --- Shared logic is in source files, not embedded ---

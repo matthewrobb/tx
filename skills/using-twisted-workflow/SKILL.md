@@ -1,210 +1,107 @@
 ---
 name: using-twisted-workflow
-description: "Shared reference — config defaults, presets, and tracking strategy artifact map"
+description: "Shared reference — config resolution, presets, and tracking strategy artifact map"
 ---
 
 # twisted-workflow shared reference
 
-Config defaults, preset definitions, and tracking strategy artifact mapping. Sub-skills reference source files in `src/` directly for shared logic.
+Config resolution, preset composition, and tracking strategy artifact mapping.
 
 ---
 
-## Built-in Defaults
+## Config Resolution
+
+Read `src/config/resolve.ts` for the full implementation. Read `src/config/defaults.ts` for default values. Read `presets/{name}.json` for each active preset's overrides.
 
 ```ts
-export const defaults: TwistedConfig = {
-  version: "2.0",
-  presets: [],
-  tracking: ["twisted"],
+/**
+ * Resolve a complete TwistedConfig from sparse user settings.
+ *
+ * @param settings - The user's settings.json content (sparse overrides)
+ * @param presetRegistry - Map of preset names → overrides (defaults to built-in presets)
+ * @returns Fully resolved TwistedConfig with no missing fields
+ */
+export function resolveConfig(
+  settings: TwistedSettings = {},
+  presetRegistry: Record<string, PresetOverrides> = allPresets,
+): TwistedConfig {
+  // Extract preset names from settings
+  const presetNames = settings.presets ?? [];
 
-  tools: {
-    detected: {
-      gstack: false,
-      superpowers: false,
-      nimbalyst_skills: false,
-    },
-    last_scan: null,
-  },
+  // Load presets — unknown names are silently skipped
+  const presetOverrides = presetNames
+    .map((name) => presetRegistry[name])
+    .filter((p): p is PresetOverrides => p !== undefined);
 
-  pipeline: {
-    research: { provider: "built-in", fallback: "built-in", options: {} },
-    arch_review: { provider: "skip", fallback: "skip", options: {} },
-    code_review: { provider: "built-in", fallback: "built-in", options: {} },
-    qa: { provider: "skip", fallback: "skip", options: {} },
-    ship: { provider: "built-in", fallback: "built-in", options: {} },
-  },
+  // Apply right-to-left so the first preset has highest priority
+  const reversedPresets = [...presetOverrides].reverse();
 
-  execution: {
-    strategy: "task-tool",
-    discipline: null,
-    worktree_tiers: 2,
-    group_parallel: true,
-    merge_strategy: "normal",
-    review_frequency: "after-all",
-    test_requirement: "must-pass",
-  },
+  // Extract project settings (everything except presets)
+  const { presets: _, ...projectSettings } = settings;
 
-  phases: {
-    scope: { model: "opus", effort: "max", context: "default", mode: "execute" },
-    decompose: { model: "opus", effort: "max", context: "default", mode: "plan" },
-    execute: { model: "sonnet", effort: "medium", context: "1m", mode: "execute" },
-  },
+  // 3-layer merge
+  return deepMerge(
+    defaults,
+    ...reversedPresets,
+    projectSettings as Partial<TwistedConfig>,
+  );
+}
+```
 
-  decompose: {
-    estimation: "fibonacci",
-    batch_threshold: 2,
-    split_threshold: 8,
-    categories: ["scope", "behavior", "constraints", "acceptance"],
-  },
+```ts
+/**
+ * Deep merge utility for sparse config overrides.
+ *
+ * Rules:
+ * - Nested objects merge recursively
+ * - Scalars and arrays replace (no array merging)
+ * - Undefined values are skipped
+ */
 
-  templates: {
-    issue: {
-      fields: [
-        { name: "id", format: "ISSUE-{id}" },
-        { name: "title", type: "string" },
-        { name: "type", type: "enum", values: ["bug", "refactor", "feature", "test"] },
-        { name: "area", type: "string" },
-        { name: "file", type: "string" },
-        { name: "current_state", type: "string" },
-        { name: "target_state", type: "string" },
-        { name: "dependencies", type: "list" },
-        { name: "group", type: "number" },
-        { name: "complexity", type: "number" },
-        { name: "done", type: "checkbox" },
-      ],
-    },
-    changelog_entry: [
-      "## {date} — {objective}",
-      "### Completed",
-      "{completed}",
-      "### Deferred",
-      "{deferred}",
-      "### Decisions",
-      "{decisions}",
-    ],
-  },
+export function deepMerge<T extends Record<string, unknown>>(
+  target: T,
+  ...sources: Array<Partial<T>>
+): T {
+  const result = { ...target };
 
-  state: {
-    use_folders: true,
-    folder_kanban: {
-      todo: ".twisted/todo",
-      in_progress: ".twisted/in-progress",
-      done: ".twisted/done",
-    },
-  },
+  for (const source of sources) {
+    if (!source) continue;
 
-  flow: {
-    auto_advance: true,
-    pause_on_config_change: true,
-    pause_on_low_context: true,
-  },
+    for (const key of Object.keys(source) as Array<keyof T>) {
+      const sourceVal = source[key];
+      if (sourceVal === undefined) continue;
 
-  writing: {
-    skill: "writing-clearly-and-concisely",
-    fallback: true,
-  },
+      const targetVal = result[key];
 
-  nimbalyst: {
-    default_priority: "medium",
-    default_owner: "claude",
-  },
+      if (
+        isPlainObject(targetVal) &&
+        isPlainObject(sourceVal)
+      ) {
+        result[key] = deepMerge(
+          targetVal as Record<string, unknown>,
+          sourceVal as Record<string, unknown>,
+        ) as T[keyof T];
+      } else {
+        result[key] = sourceVal as T[keyof T];
+      }
+    }
+  }
 
-  directories: {
-    root: ".twisted",
-    worktrees: ".twisted/worktrees",
-  },
-
-  files: {
-    settings: ".twisted/settings.json",
-    changelog: "CHANGELOG.md",
-    changelog_sort: "newest-first",
-  },
-
-  naming: {
-    strategy: "prefix",
-    increment_padding: 3,
-  },
-
-  strings: {
-    commit_messages: {
-      init: "chore: add twisted workflow",
-      plan: "chore: add {objective} research and plan",
-      done: "chore: complete {objective}",
-      lane_move: "chore: move {objective} from {from} to {to}",
-      group_merge: "feat({objective}): complete group {group}",
-    },
-    status_line: "{objective}  {status}  {step}  {progress}  {updated}",
-    status_detail: [
-      "Objective: {objective}",
-      "Status:    {status}",
-      "Step:      {step}",
-      "Progress:  {steps_completed}/{steps_remaining} steps, {issues_done}/{issues_total} issues",
-      "Group:     {group_current}/{groups_total}",
-      "Created:   {created}",
-      "Updated:   {updated}",
-    ].join("\n"),
-    phase_recommendation: [
-      "Next step: {step}",
-      "  Model:   {model}",
-      "  Effort:  {effort}",
-      "  Context: {context}",
-      "  Mode:    {mode}",
-    ].join("\n"),
-    research_section: "## Agent {n} — {focus}",
-    handoff_messages: {
-      research_to_scope: "Research complete ({research_count} agents). Starting scope.",
-      scope_to_decompose: "Requirements captured across {category_count} categories. Starting decomposition.",
-      decompose_to_execute: "{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to execute.",
-      execute_to_review: "Execution complete ({issues_done}/{issues_total} issues). Starting review.",
-      review_to_ship: "Review passed. Ready to ship.",
-      ship_done: "Objective {objective} complete.",
-    },
-    research_agent_prompt: [
-      'Research the codebase for objective "{objective}".',
-      "Focus area: {focus}",
-      "Codebase context: {codebase_context}",
-      "",
-      "Return structured findings: key files, patterns, concerns.",
-    ].join("\n"),
-    execution_agent_prompt: [
-      'Implement the following issues for objective "{objective}":',
-      "",
-      "Issue IDs: {issue_ids}",
-      "{issue_details}",
-      "",
-      "Work in worktree: {worktree_path}",
-      "Branch: {branch_name}",
-      "Test requirement: {test_requirement}",
-      "{discipline}",
-      "",
-      "Commit your implementation. Mark issues as done. Report results.",
-    ].join("\n"),
-    interrogation_prompt:
-      "Let's drill into {category}. Tell me everything about this area — be specific and concrete. I will push back on anything vague.",
-    changelog_entry: [
-      "## {date} — {objective}",
-      "### Completed",
-      "{completed}",
-      "### Deferred",
-      "{deferred}",
-      "### Decisions",
-      "{decisions}",
-    ],
-  },
-
-  context_skills: [],
-};
+  return result;
+}
 ```
 
 ## Presets
 
-| Preset        | What it overrides                                           |
-| ------------- | ----------------------------------------------------------- |
-| `twisted`     | tracking → twisted artifact format                          |
-| `superpowers` | TDD discipline, code review → Superpowers                   |
-| `gstack`      | tracking → gstack, all delegatable phases → gstack commands |
-| `nimbalyst`   | tracking → nimbalyst, research + code review → Nimbalyst    |
-| `minimal`     | all delegatable phases → skip, tests deferred               |
+Each preset is a sparse JSON file in `presets/`. Read the file for the active preset to see what it overrides.
+
+| Preset        | File                       | What it overrides                                           |
+| ------------- | -------------------------- | ----------------------------------------------------------- |
+| `twisted`     | `presets/twisted.json`     | tracking → twisted artifact format                          |
+| `superpowers` | `presets/superpowers.json` | TDD discipline, code review → Superpowers                   |
+| `gstack`      | `presets/gstack.json`      | tracking → gstack, all delegatable phases → gstack commands |
+| `nimbalyst`   | `presets/nimbalyst.json`   | tracking → nimbalyst, research + code review → Nimbalyst    |
+| `minimal`     | `presets/minimal.json`     | all delegatable phases → skip, tests deferred               |
 
 First preset wins on conflict. Compose in any order:
 
