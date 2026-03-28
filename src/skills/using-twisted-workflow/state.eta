@@ -1,0 +1,13 @@
+## State Machine
+
+<%~ it.extract("src/state/machine.ts", "PIPELINE_ORDER") %>
+
+<%~ it.extract("src/state/machine.ts", "advanceState") %>
+
+<%~ it.extract("src/state/machine.ts", "createInitialState") %>
+
+## Status Mapping (Nimbalyst)
+
+<%~ it.extract("src/state/status.ts", "toNimbalystStatus") %>
+
+<%~ it.extract("src/state/status.ts", "inferPlanType") %>

@@ -67,6 +67,8 @@ export function getArtifactPaths(
       };
 
     case "nimbalyst":
+      // objDir unused — nimbalyst paths are project-relative
+      // objective encoded in filename, not directory
       return {
         research: `nimbalyst-local/plans/${objective}.md`,
         requirements: `nimbalyst-local/plans/${objective}.md`,

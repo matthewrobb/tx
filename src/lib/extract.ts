@@ -22,8 +22,23 @@ function getSourceFile(filePath: string): ts.SourceFile {
 }
 
 /**
+ * Get the full text of a node including leading JSDoc/comments.
+ */
+function getNodeWithComments(node: ts.Node, source: ts.SourceFile): string {
+  const sourceText = source.getFullText();
+  const nodeStart = node.getStart(source);
+  const nodeEnd = node.getEnd();
+
+  // Look for leading comments (JSDoc, // comments)
+  const commentRanges = ts.getLeadingCommentRanges(sourceText, node.getFullStart());
+  const commentStart = commentRanges?.[0]?.pos ?? nodeStart;
+
+  return sourceText.slice(commentStart, nodeEnd).trim();
+}
+
+/**
  * Extract a named top-level declaration (function, interface, type, const) from a .ts file.
- * Returns the full source text of the declaration.
+ * Returns the full source text of the declaration INCLUDING leading JSDoc/comments.
  */
 export function extractDeclaration(filePath: string, name: string): string {
   const source = getSourceFile(filePath);
@@ -34,19 +49,19 @@ export function extractDeclaration(filePath: string, name: string): string {
 
     // function declarations: function foo() {}
     if (ts.isFunctionDeclaration(node) && node.name?.text === name) {
-      result = node.getText(source);
+      result = getNodeWithComments(node, source);
       return;
     }
 
     // interface declarations: interface Foo {}
     if (ts.isInterfaceDeclaration(node) && node.name.text === name) {
-      result = node.getText(source);
+      result = getNodeWithComments(node, source);
       return;
     }
 
     // type alias declarations: type Foo = ...
     if (ts.isTypeAliasDeclaration(node) && node.name.text === name) {
-      result = node.getText(source);
+      result = getNodeWithComments(node, source);
       return;
     }
 
@@ -54,8 +69,7 @@ export function extractDeclaration(filePath: string, name: string): string {
     if (ts.isVariableStatement(node)) {
       for (const decl of node.declarationList.declarations) {
         if (ts.isIdentifier(decl.name) && decl.name.text === name) {
-          // Include export keyword if present
-          result = node.getText(source);
+          result = getNodeWithComments(node, source);
           return;
         }
       }
@@ -63,7 +77,7 @@ export function extractDeclaration(filePath: string, name: string): string {
 
     // enum declarations: enum Foo {}
     if (ts.isEnumDeclaration(node) && node.name.text === name) {
-      result = node.getText(source);
+      result = getNodeWithComments(node, source);
       return;
     }
   });
@@ -88,7 +102,7 @@ export function extractSignature(filePath: string, name: string): string {
     if (result) return;
 
     if (ts.isFunctionDeclaration(node) && node.name?.text === name && node.body) {
-      const fullText = node.getText(source);
+      const fullText = getNodeWithComments(node, source);
       const bodyText = node.body.getText(source);
       result = fullText.replace(bodyText, "{ /* ... */ }");
       return;

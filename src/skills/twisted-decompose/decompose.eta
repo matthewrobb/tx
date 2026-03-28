@@ -1,0 +1,34 @@
+## Arch Review Step
+
+<%~ it.extract("src/decompose/arch-review.ts", "executeArchReview") %>
+
+---
+
+## Decompose Step
+
+### Read Inputs
+
+<%~ it.extract("src/decompose/breakdown.ts", "readInputsForDecompose") %>
+
+### Estimate Complexity + Assign Agents
+
+<%~ it.extract("src/decompose/breakdown.ts", "estimateComplexity") %>
+
+### Break Into Issues + Compute Groups
+
+<%~ it.extract("src/decompose/breakdown.ts", "decomposeIntoIssues") %>
+
+### Write Output (Strategy-Aware)
+
+<%~ it.extract("src/decompose/breakdown.ts", "writeDecomposeOutput") %>
+
+### Output Locations Per Strategy
+
+<%~ it.table(
+  ["Strategy", "Plan output", "Issues output", "Tracker"],
+  [
+    ["`twisted`", "`{objDir}/PLAN.md`", "`{objDir}/ISSUES.md`", "—"],
+    ["`nimbalyst`", "`nimbalyst-local/plans/{objective}.md` (checklist)", "embedded in plan doc", "`nimbalyst-local/tracker/tasks.md`"],
+    ["`gstack`", "`{objDir}/PLAN.md` (gstack format)", "`{objDir}/ISSUES.md`", "—"],
+  ]
+) %>

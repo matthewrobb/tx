@@ -1,0 +1,26 @@
+## Tracking Strategies
+
+<%~ it.extract("src/strategies/paths.ts", "getArtifactPaths") %>
+
+### Strategy Artifact Map
+
+<%~ it.table(
+  ["Step", "twisted", "nimbalyst", "gstack"],
+  [
+    ["Research", "`{objDir}/RESEARCH-{n}.md`", "`nimbalyst-local/plans/{objective}.md`", "`{objDir}/DESIGN.md`"],
+    ["Requirements", "`{objDir}/REQUIREMENTS.md`", "same plan doc (append)", "`{objDir}/DESIGN.md` (append)"],
+    ["Plan", "`{objDir}/PLAN.md`", "same plan doc (checklist)", "`{objDir}/PLAN.md` (gstack format)"],
+    ["Issues", "`{objDir}/ISSUES.md`", "embedded in plan doc", "`{objDir}/ISSUES.md`"],
+    ["Tracker", "—", "`nimbalyst-local/tracker/tasks.md`", "—"],
+  ]
+) %>
+
+## Worktree Paths
+
+<%~ it.extract("src/strategies/worktree.ts", "getWorktreePaths") %>
+
+## Pipeline Routing
+
+<%~ it.extract("src/pipeline/routing.ts", "parseProvider") %>
+
+<%~ it.extract("src/pipeline/routing.ts", "shouldPause") %>
