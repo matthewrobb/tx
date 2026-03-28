@@ -3,6 +3,11 @@ name: twisted-decompose
 description: Internal sub-skill — complexity estimation, issue breakdown, dependency analysis, and execution planning
 ---
 
+**Read first:** These source files contain shared functions referenced below:
+- `src/pipeline/dispatch.ts`
+- `src/state/machine.ts`
+- `src/strategies/writer.ts`
+
 # twisted-decompose
 
 Internal sub-skill loaded by `/twisted-work`. Handles **arch_review** and **decompose** steps.
