@@ -38,7 +38,7 @@ function getNodeWithComments(node: ts.Node, source: ts.SourceFile): string {
 
 /**
  * Extract a named top-level declaration (function, interface, type, const) from a .ts file.
- * Returns the full source text of the declaration INCLUDING leading JSDoc/comments.
+ * Returns the full source text INCLUDING leading JSDoc/comments.
  */
 export function extractDeclaration(filePath: string, name: string): string {
   const source = getSourceFile(filePath);
