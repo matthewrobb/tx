@@ -1,7 +1,7 @@
 {
   "name": "twisted-workflow",
-  "description": "Kanban-style agentic development workflow with parallel execution, session-independent state, and configurable phases",
-  "version": "1.2.0",
+  "description": "Configurable orchestration layer for agentic development — parallel execution, provider delegation, session-independent state, and preset-based configuration",
+  "version": "2.0.0",
   "author": {
     "name": "Matthew Robb"
   },
