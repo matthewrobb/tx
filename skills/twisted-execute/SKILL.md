@@ -42,6 +42,7 @@ export function readIssuesForExecute(
   }
 }
 ```
+
 ```typescript
 /**
  * Move objective to in-progress if still in todo.
@@ -74,6 +75,7 @@ export function moveToInProgress(
   return state;
 }
 ```
+
 ```typescript
 /**
  * Execute groups in dependency order.
@@ -189,6 +191,7 @@ export function executeGroups(
   return advanceState(currentState, config.pipeline, "built-in");
 }
 ```
+
 ---
 
 ## Post-Execution Delegation
@@ -210,6 +213,7 @@ export function executeCodeReview(
   return newState;
 }
 ```
+
 ```typescript
 /**
  * Delegate QA.
@@ -222,6 +226,7 @@ export function executeQA(
   return newState;
 }
 ```
+
 ```typescript
 /**
  * Execute the ship step.
@@ -263,3 +268,4 @@ export function executeShip(
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
+

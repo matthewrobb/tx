@@ -30,6 +30,7 @@ export function executeArchReview(
   return newState;
 }
 ```
+
 ---
 
 ## Decompose Step
@@ -68,6 +69,7 @@ export function readInputsForDecompose(
   }
 }
 ```
+
 ```typescript
 /**
  * Estimate complexity for each issue using the configured scale.
@@ -93,6 +95,7 @@ export function estimateComplexity(
   return { ...issue, complexity: { value, label: String(value), assignment } };
 }
 ```
+
 ```typescript
 /**
  * Break requirements into issues, assign groups, compute dependency graph.
@@ -119,6 +122,7 @@ export function decomposeIntoIssues(
   return { issues, groups, graph };
 }
 ```
+
 ```typescript
 /**
  * Write decompose output and advance state.
@@ -143,3 +147,4 @@ export function writeDecomposeOutput(
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
+
