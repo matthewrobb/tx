@@ -25,6 +25,7 @@ import type { DirectoryConfig, FilePathConfig, NamingConfig } from "./directorie
 import type { PresetName, DeepPartial } from "./preset";
 import type { StringTemplates } from "./strings";
 import type { NimbalystConfig } from "./nimbalyst";
+import type { TrackingStrategy } from "./tracking";
 
 /** Fully resolved configuration — all fields present and required. */
 export interface TwistedConfig {
@@ -33,6 +34,13 @@ export interface TwistedConfig {
 
   /** Active presets. First wins — earlier presets override later ones on conflict. */
   presets: PresetName[];
+
+  /**
+   * Tracking strategies. Determines artifact formats across the full pipeline.
+   * First entry = primary (what downstream steps read from). All entries written.
+   * Default: ["twisted"].
+   */
+  tracking: TrackingStrategy[];
 
   /** Detected external tools. */
   tools: ToolsConfig;
@@ -175,6 +183,8 @@ export type {
   NimbalystTrackerStatus,
   NimbalystTrackerType,
 } from "./nimbalyst";
+
+export type { TrackingStrategy } from "./tracking";
 
 export type {
   DirectoryConfig,

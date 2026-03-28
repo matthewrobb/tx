@@ -2,7 +2,7 @@
 name: twisted-work
 description: Orchestrator for the twisted-workflow pipeline — state-driven router with init, status, config, next, resume, and step subcommands
 user-invocable: true
-argument-hint: "[init | status [objective] | next [objective] | resume {objective} | scope | decompose | execute | review | ship | config [section] [subsection]] [--yolo]"
+argument-hint: [init | status [objective] | next [objective] | resume {objective} | scope | decompose | execute | review | ship | config [section] [subsection]] [--yolo]
 ---
 
 **REQUIRED:** Load the `using-twisted-workflow` skill for shared config, defaults, presets, string templates, and constraints. All section references below point to that skill.

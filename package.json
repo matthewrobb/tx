@@ -1,0 +1,16 @@
+{
+  "name": "twisted-workflow",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "bun run src/build.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "build-md": "^0.4.5",
+    "eta": "^4.5.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

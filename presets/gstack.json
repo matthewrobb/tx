@@ -1,4 +1,7 @@
 {
+  "tracking": [
+    "gstack"
+  ],
   "pipeline": {
     "research": {
       "provider": "gstack:/office-hours",

@@ -1,0 +1,27 @@
+import type { PresetOverrides } from "../../types/preset.js";
+
+export const gstack: PresetOverrides = {
+  tracking: ["gstack"],
+  pipeline: {
+    research: {
+      provider: "gstack:/office-hours",
+      fallback: "built-in",
+    },
+    arch_review: {
+      provider: "gstack:/plan-eng-review",
+      fallback: "skip",
+    },
+    code_review: {
+      provider: "gstack:/review",
+      fallback: "built-in",
+    },
+    qa: {
+      provider: "gstack:/qa",
+      fallback: "skip",
+    },
+    ship: {
+      provider: "gstack:/ship",
+      fallback: "built-in",
+    },
+  },
+};
