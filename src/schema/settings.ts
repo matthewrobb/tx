@@ -1,0 +1,428 @@
+/**
+ * JSON Schema generator for .twisted/settings.json.
+ *
+ * Produces a JSON Schema that mirrors TwistedSettings (DeepPartial<TwistedConfig>).
+ * All properties optional. Enums from type definitions. Descriptions from JSDoc.
+ */
+
+export function generateSchema(): object {
+  return {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    title: "twisted-workflow settings",
+    description:
+      "Configuration for twisted-workflow. All fields are optional — only include values you want to override from defaults.",
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      $schema: {
+        type: "string",
+        description: "JSON Schema reference (auto-added by /twisted-work init).",
+      },
+      presets: {
+        type: "array",
+        items: {
+          type: "string",
+          anyOf: [
+            {
+              enum: ["twisted", "superpowers", "gstack", "nimbalyst", "minimal"],
+              description: "Built-in preset name.",
+            },
+            { type: "string", description: "Custom preset name." },
+          ],
+        },
+        description:
+          "Preset array. First wins on conflict — put the most important one first. Default: []",
+      },
+      tracking: {
+        type: "array",
+        items: {
+          type: "string",
+          anyOf: [
+            {
+              enum: ["twisted", "nimbalyst", "gstack"],
+              description: "Built-in tracking strategy.",
+            },
+            { type: "string", description: "Custom tracking strategy." },
+          ],
+        },
+        description:
+          'Tracking strategies. First entry = primary (what downstream steps read from). All entries written. Default: ["twisted"]',
+      },
+      tools: {
+        type: "object",
+        description: "Detected external tools. Usually set by /twisted-work init.",
+        additionalProperties: false,
+        properties: {
+          detected: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              gstack: { type: "boolean", description: "Whether gstack is installed." },
+              superpowers: { type: "boolean", description: "Whether Superpowers is installed." },
+              nimbalyst_skills: { type: "boolean", description: "Whether Nimbalyst skills are installed." },
+            },
+          },
+          last_scan: {
+            type: ["string", "null"],
+            description: "ISO-8601 timestamp of last tool scan.",
+          },
+        },
+      },
+      pipeline: {
+        type: "object",
+        description: "Provider routing for delegatable pipeline phases.",
+        additionalProperties: false,
+        properties: pipelineProperties(),
+      },
+      execution: {
+        type: "object",
+        description: "Parallel execution settings.",
+        additionalProperties: false,
+        properties: {
+          strategy: {
+            type: "string",
+            enum: ["task-tool", "agent-teams", "manual", "auto"],
+            description: "How agents are spawned for parallel work. Default: task-tool",
+          },
+          discipline: {
+            type: ["string", "null"],
+            description:
+              'Build discipline provider invoked within each agent. Example: "superpowers:test-driven-development". Default: null',
+          },
+          worktree_tiers: {
+            type: "integer",
+            enum: [1, 2, 3],
+            description:
+              "Number of worktree tiers. 1=flat, 2=objective→agent (default), 3=objective→group→agent.",
+          },
+          group_parallel: {
+            type: "boolean",
+            description: "Whether independent groups can execute in parallel. Default: true",
+          },
+          merge_strategy: {
+            type: "string",
+            enum: ["normal", "squash", "rebase"],
+            description: "Git merge strategy for agent worktrees → objective branch. Default: normal",
+          },
+          review_frequency: {
+            type: "string",
+            enum: ["per-group", "risk-based", "after-all"],
+            description: "When code review runs during execution. Default: after-all",
+          },
+          test_requirement: {
+            type: "string",
+            enum: ["must-pass", "best-effort", "deferred"],
+            description: "Test pass requirement before agent completion. Default: must-pass",
+          },
+        },
+      },
+      phases: {
+        type: "object",
+        description: "Model/effort/context/mode per core pipeline step.",
+        additionalProperties: false,
+        properties: {
+          scope: phaseSettingsSchema("Scope step. Default: opus/max/default/execute"),
+          decompose: phaseSettingsSchema("Decompose step. Default: opus/max/default/plan"),
+          execute: phaseSettingsSchema("Execute step. Default: sonnet/medium/1m/execute"),
+        },
+      },
+      decompose: {
+        type: "object",
+        description: "Decompose step settings — estimation, thresholds, interrogation categories.",
+        additionalProperties: false,
+        properties: {
+          estimation: {
+            type: "string",
+            enum: ["fibonacci", "linear", "tshirt", "custom"],
+            description: "Complexity estimation scale. Default: fibonacci",
+          },
+          batch_threshold: {
+            type: "integer",
+            description: "Issues with complexity ≤ this value are batched into one agent. Default: 2",
+          },
+          split_threshold: {
+            type: "integer",
+            description: "Issues with complexity ≥ this value are auto-split into sub-issues. Default: 8",
+          },
+          custom_scale: {
+            type: "array",
+            items: { type: "number" },
+            description: 'Custom scale values when estimation is "custom". Ascending numeric values.',
+          },
+          categories: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              'Interrogation categories for the scope step. Default: ["scope", "behavior", "constraints", "acceptance"]',
+          },
+        },
+      },
+      templates: {
+        type: "object",
+        description: "Issue and changelog templates.",
+        additionalProperties: false,
+        properties: {
+          issue: {
+            type: "object",
+            description: "Issue template used during the decompose step.",
+            properties: {
+              fields: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string", description: "Field identifier." },
+                    format: { type: "string", description: "Display format with {id} placeholders." },
+                    type: {
+                      type: "string",
+                      enum: ["string", "number", "checkbox", "enum", "list"],
+                      description: "Data type.",
+                    },
+                    values: {
+                      type: "array",
+                      items: { type: "string" },
+                      description: 'Allowed values when type is "enum".',
+                    },
+                    required: { type: "boolean", description: "Whether this field is required. Default: true" },
+                  },
+                  required: ["name"],
+                },
+                description: "Ordered list of fields in each issue.",
+              },
+            },
+          },
+          changelog_entry: {
+            type: "array",
+            items: { type: "string" },
+            description: "Changelog entry template as format strings.",
+          },
+        },
+      },
+      state: {
+        type: "object",
+        description: "State management — folder kanban toggle.",
+        additionalProperties: false,
+        properties: {
+          use_folders: {
+            type: "boolean",
+            description:
+              "Use folder-based kanban lanes (todo/in-progress/done). When false, all objectives in flat directories. Default: true",
+          },
+          folder_kanban: {
+            type: "object",
+            description: "Folder paths for kanban lanes (only used when use_folders is true).",
+            additionalProperties: false,
+            properties: {
+              todo: { type: "string", description: 'Default: ".twisted/todo"' },
+              in_progress: { type: "string", description: 'Default: ".twisted/in-progress"' },
+              done: { type: "string", description: 'Default: ".twisted/done"' },
+            },
+          },
+        },
+      },
+      flow: {
+        type: "object",
+        description: "Auto-advance behavior and pause conditions.",
+        additionalProperties: false,
+        properties: {
+          auto_advance: {
+            type: "boolean",
+            description:
+              "Auto-advance between pipeline steps. Set to false to always pause. Default: true",
+          },
+          pause_on_config_change: {
+            type: "boolean",
+            description:
+              "Pause when the next step has different model/effort/context/mode settings. Default: true",
+          },
+          pause_on_low_context: {
+            type: "boolean",
+            description: "Pause when context window utilization is high. Default: true",
+          },
+        },
+      },
+      writing: {
+        type: "object",
+        description: "Writing quality skill.",
+        additionalProperties: false,
+        properties: {
+          skill: {
+            type: ["string", "null"],
+            description:
+              'Name of the writing quality skill to invoke. Set to null to disable. Default: "writing-clearly-and-concisely"',
+          },
+          fallback: {
+            type: "boolean",
+            description: "Use built-in writing rules when the configured skill is unavailable. Default: true",
+          },
+        },
+      },
+      nimbalyst: {
+        type: "object",
+        description:
+          'Nimbalyst-specific settings. Active when "nimbalyst" is in the tracking array.',
+        additionalProperties: false,
+        properties: {
+          default_priority: {
+            type: "string",
+            enum: ["low", "medium", "high", "critical"],
+            description: "Default priority for new objectives in Nimbalyst. Default: medium",
+          },
+          default_owner: {
+            type: "string",
+            description: 'Default owner for tracked items. Default: "claude"',
+          },
+        },
+      },
+      directories: {
+        type: "object",
+        description: "Directory paths.",
+        additionalProperties: false,
+        properties: {
+          root: { type: "string", description: 'Root directory for all twisted-workflow state. Default: ".twisted"' },
+          worktrees: {
+            type: "string",
+            description: 'Directory for git worktrees (gitignored). Default: ".twisted/worktrees"',
+          },
+        },
+      },
+      files: {
+        type: "object",
+        description: "File paths and sort orders.",
+        additionalProperties: false,
+        properties: {
+          settings: { type: "string", description: 'Path to settings file. Default: ".twisted/settings.json"' },
+          changelog: { type: "string", description: 'Changelog path. Default: "CHANGELOG.md"' },
+          changelog_sort: {
+            type: "string",
+            enum: ["newest-first", "oldest-first"],
+            description: "Sort order for changelog entries. Default: newest-first",
+          },
+        },
+      },
+      naming: {
+        type: "object",
+        description: "Objective naming configuration.",
+        additionalProperties: false,
+        properties: {
+          strategy: {
+            type: "string",
+            enum: ["prefix"],
+            description: 'Naming strategy for auto-generated names. Default: "prefix"',
+          },
+          increment_padding: {
+            type: "integer",
+            description: "Zero-padding width for numeric names. Default: 3",
+          },
+        },
+      },
+      strings: {
+        type: "object",
+        description: "Configurable string templates for all user-facing text. Override individual templates.",
+        properties: {
+          commit_messages: {
+            type: "object",
+            properties: {
+              init: { type: "string" },
+              plan: { type: "string", description: "Placeholder: {objective}" },
+              done: { type: "string", description: "Placeholder: {objective}" },
+              lane_move: { type: "string", description: "Placeholders: {objective}, {from}, {to}" },
+              group_merge: { type: "string", description: "Placeholders: {objective}, {group}" },
+            },
+          },
+          status_line: { type: "string", description: "Placeholders: {objective}, {status}, {step}, {progress}, {updated}" },
+          status_detail: { type: "string" },
+          phase_recommendation: { type: "string" },
+          research_section: { type: "string", description: "Placeholders: {n}, {focus}" },
+          handoff_messages: {
+            type: "object",
+            properties: {
+              research_to_scope: { type: "string" },
+              scope_to_decompose: { type: "string" },
+              decompose_to_execute: { type: "string" },
+              execute_to_review: { type: "string" },
+              review_to_ship: { type: "string" },
+              ship_done: { type: "string" },
+            },
+          },
+          research_agent_prompt: { type: "string" },
+          execution_agent_prompt: { type: "string" },
+          interrogation_prompt: { type: "string" },
+          changelog_entry: { type: "array", items: { type: "string" } },
+        },
+      },
+      context_skills: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          'Skills injected at the start of every pipeline step. Example: ["/my-project-nav"]. Default: []',
+      },
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function phaseProviderSchema(): object {
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      provider: {
+        type: "string",
+        description:
+          'Provider string. Examples: "built-in", "skip", "ask", "gstack:/review", "superpowers:requesting-code-review", "nimbalyst:deep-researcher"',
+      },
+      fallback: {
+        type: "string",
+        description: "Fallback provider if primary is unavailable.",
+      },
+      options: {
+        type: "object",
+        description: "Provider-specific options.",
+      },
+    },
+  };
+}
+
+function pipelineProperties(): Record<string, object> {
+  return {
+    research: { ...phaseProviderSchema(), description: 'Research phase provider. Default: built-in' },
+    arch_review: { ...phaseProviderSchema(), description: 'Architecture review provider. Default: skip' },
+    code_review: { ...phaseProviderSchema(), description: 'Code review provider. Default: built-in' },
+    qa: { ...phaseProviderSchema(), description: 'QA provider. Default: skip' },
+    ship: { ...phaseProviderSchema(), description: 'Ship provider. Default: built-in' },
+  };
+}
+
+function phaseSettingsSchema(description: string): object {
+  return {
+    type: "object",
+    description,
+    additionalProperties: false,
+    properties: {
+      model: {
+        type: "string",
+        enum: ["opus", "sonnet", "haiku"],
+        description: "Claude model.",
+      },
+      effort: {
+        type: "string",
+        enum: ["low", "medium", "high", "max"],
+        description: "Reasoning effort level (Opus only).",
+      },
+      context: {
+        type: "string",
+        enum: ["default", "1m"],
+        description: 'Context window size. "1m" for extended context.',
+      },
+      mode: {
+        type: "string",
+        enum: ["execute", "plan"],
+        description: '"execute" for autonomous work, "plan" for human review before changes.',
+      },
+    },
+  };
+}
