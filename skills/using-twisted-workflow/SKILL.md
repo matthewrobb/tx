@@ -5,8 +5,7 @@ description: Shared reference — config defaults, presets, and tracking strateg
 
 # twisted-workflow shared reference
 
-Config defaults, preset definitions, and tracking strategy artifact mapping.
-Sub-skills reference source files in `src/` directly for shared logic.
+Config defaults, preset definitions, and tracking strategy artifact mapping. Sub-skills reference source files in `src/` directly for shared logic.
 
 ---
 
@@ -196,6 +195,7 @@ export const defaults: TwistedConfig = {
   context_skills: [],
 };
 ```
+
 ## Presets
 
 | Preset        | What it overrides                                           |
@@ -207,6 +207,7 @@ export const defaults: TwistedConfig = {
 | `minimal`     | all delegatable phases → skip, tests deferred               |
 
 First preset wins on conflict. Compose in any order:
+
 - `["superpowers", "gstack"]` → Superpowers wins for code review, gstack fills the rest
 - `["gstack", "superpowers"]` → gstack wins for code review, TDD still active
 

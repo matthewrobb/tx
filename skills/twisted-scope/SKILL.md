@@ -43,6 +43,7 @@ export function executeResearch(
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
+
 ### Built-in Research
 
 ```typescript
@@ -71,6 +72,7 @@ export function runBuiltInResearch(
   );
 }
 ```
+
 ```typescript
 // ---------------------------------------------------------------------------
 // Research writing
@@ -85,6 +87,7 @@ export interface ResearchAgent {
   concerns: string[];
 }
 ```
+
 ---
 
 ## Scope Step
@@ -131,6 +134,7 @@ export function establishObjective(
   return { objective, objDir, state };
 }
 ```
+
 ```typescript
 /**
  * Read research from the primary tracking strategy's location.
@@ -158,6 +162,7 @@ export function readResearchForScope(
   }
 }
 ```
+
 ```typescript
 /**
  * Interrogate the human one category at a time.
@@ -192,6 +197,7 @@ export function interrogate(
   return results;
 }
 ```
+
 ```typescript
 /**
  * Write requirements and advance state.
@@ -214,3 +220,4 @@ export function writeAndAdvance(
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
+

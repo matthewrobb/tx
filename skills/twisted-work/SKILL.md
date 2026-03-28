@@ -50,6 +50,7 @@ export function parseCommand(rawArgs: string): ParsedCommand {
   }
 }
 ```
+
 ```typescript
 /**
  * Route a parsed command to the correct handler.
@@ -100,6 +101,7 @@ export function routeCommand(
   }
 }
 ```
+
 ---
 
 ## Init Flow
@@ -160,6 +162,7 @@ export function executeInit(
   commitInit(config);
 }
 ```
+
 ---
 
 ## Next / Resume / Auto-Advance
@@ -238,6 +241,7 @@ export function executeNext(
   }
 }
 ```
+
 ```typescript
 /**
  * Execute /twisted-work resume — resume at the CURRENT step (not next).
@@ -254,6 +258,7 @@ export function executeResume(
   executeNext(config, state, yolo);
 }
 ```
+
 ---
 
 ## Config Display
@@ -292,6 +297,7 @@ export function executeConfig(
   displaySection(config, params.section);
 }
 ```
+
 ```typescript
 /**
  * Show full config overview.
@@ -324,3 +330,4 @@ export function displayConfigOverview(config: TwistedConfig): void {
   display(`  flow        — auto-advance: ${config.flow.auto_advance}`);
 }
 ```
+
