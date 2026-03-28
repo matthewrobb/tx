@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
-import { getArtifactPaths, getAllArtifactPaths, objectiveDir } from "./paths.js";
-import { defaults } from "../config/defaults.js";
+import { getArtifactPaths, getAllArtifactPaths, objectiveDir } from "../../src/strategies/paths.js";
+import { defaults } from "../../src/config/defaults.js";
 
 describe("objectiveDir", () => {
   test("with folders enabled, todo status", () => {

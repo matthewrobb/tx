@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { getWorktreePaths, getWorktreeCommands } from "./worktree.js";
+import { getWorktreePaths, getWorktreeCommands } from "../../src/strategies/worktree.js";
 
 describe("getWorktreePaths", () => {
   const dir = ".twisted/worktrees";

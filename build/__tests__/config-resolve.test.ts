@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
-import { resolveConfig, getPrimaryStrategy, getActiveStrategies } from "./resolve.js";
-import { deepMerge } from "./merge.js";
-import { defaults } from "./defaults.js";
+import { resolveConfig, getPrimaryStrategy, getActiveStrategies } from "../../src/config/resolve.js";
+import { deepMerge } from "../../src/config/merge.js";
+import { defaults } from "../../src/config/defaults.js";
 
 describe("deepMerge", () => {
   test("merges nested objects recursively", () => {

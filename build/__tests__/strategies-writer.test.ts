@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { computeExecutionOrder } from "./writer.js";
+import { computeExecutionOrder } from "../../src/strategies/writer.js";
 import type { IssueGroup } from "../../types/issues.js";
 
 describe("computeExecutionOrder", () => {

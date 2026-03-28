@@ -19,7 +19,7 @@ import {
   issues,
   issueGroups,
   dependencyGraph,
-} from "../../src/__fixtures__/objectives.js";
+} from "../__fixtures__/objectives.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const OUT = resolve(ROOT, ".test-output");
