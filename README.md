@@ -299,15 +299,35 @@ gstack provides specialist roles (plan/review/ship). Nimbalyst provides session 
 
 ## Development
 
-The plugin is built from TypeScript source. Generated files (skills, presets, schema) are committed to git.
+TypeScript source in `src/` is the source of truth for all behavior. The build script extracts real functions via the TypeScript compiler API and embeds them in generated SKILL.md files as code blocks. Generated files (skills, presets, schema) are committed to git.
 
 ```bash
 bun install          # install dependencies
 bun run build        # generate skills/, presets/, schemas/
-bun test             # run all tests (218 tests)
+bun test             # 223 tests across 13 files
 ```
 
-The functional core (`src/config/`, `src/state/`, `src/strategies/`, `src/pipeline/`) implements all deterministic logic. Skills reference this code instead of describing it in prose. Tests cover config resolution, state machine, strategy dispatch, and filesystem output for all preset combinations.
+**Runtime** (`src/`) — the code Claude reads at execution time:
+
+| Module | Purpose |
+|---|---|
+| `src/config/` | Config resolution, defaults, deepMerge |
+| `src/state/` | State machine, step sequencing, status mapping |
+| `src/strategies/` | Artifact paths, strategy-aware writer, worktrees |
+| `src/pipeline/` | Provider routing, dispatch, pause logic |
+| `src/scope/` | Research, interrogation, requirements |
+| `src/decompose/` | Complexity estimation, issue breakdown |
+| `src/execute/` | Parallel execution, delegation |
+| `src/work/` | Command routing, init, advance, config display |
+
+**Tooling** (`build/`) — generates SKILL.md files, never read by Claude:
+
+| Module | Purpose |
+|---|---|
+| `build/skills/` | MarkdownDocument builders (5 files) |
+| `build/lib/` | TypeScript AST extraction, skill assembly |
+| `build/schema/` | JSON Schema generator |
+| `build/__tests__/` | 223 tests including 12 filesystem scenarios |
 
 ## Contributing
 
