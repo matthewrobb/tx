@@ -3,11 +3,9 @@ name: twisted-execute
 description: Internal sub-skill — parallel execution with worktrees, delegated review/qa/ship, and state tracking
 ---
 
-**Read first:** These source files contain shared functions referenced below:
-- `src/pipeline/dispatch.ts`
-- `src/state/machine.ts`
-- `src/strategies/paths.ts`
-- `src/strategies/worktree.ts`
+**Read first:**
+Types: `types/config.d.ts`, `types/issues.d.ts`, `types/state.d.ts`
+Shared logic: `src/pipeline/dispatch.ts`, `src/state/machine.ts`, `src/strategies/paths.ts`, `src/strategies/worktree.ts`
 
 # twisted-execute
 

@@ -5,10 +5,9 @@ user-invocable: true
 argument-hint: [init | status [objective] | next [objective] | resume {objective} | scope | decompose | execute | review | ship | config [section] [subsection]] [--yolo]
 ---
 
-**Read first:** These source files contain shared functions referenced below:
-- `src/config/resolve.ts`
-- `src/pipeline/routing.ts`
-- `src/state/machine.ts`
+**Read first:**
+Types: `types/commands.d.ts`, `types/config.d.ts`, `types/phases.d.ts`, `types/state.d.ts`
+Shared logic: `src/config/resolve.ts`, `src/pipeline/routing.ts`, `src/state/machine.ts`
 
 # /twisted-work
 
