@@ -244,12 +244,11 @@ describe("twisted-scope content", () => {
 
   test("scope: requirements output is strategy-aware", () => {
     const content = skill();
-    expect(content).toContain("REQUIREMENTS.md");
-    // Should mention nimbalyst and gstack requirements output too
-    expect(
-      content.includes("nimbalyst") &&
-      content.includes("gstack")
-    ).toBe(true);
+    // writeAndAdvance calls forEachStrategy + writeRequirements
+    expect(content).toContain("writeRequirements");
+    // readResearchForScope has strategy-specific switch cases
+    expect(content).toContain("nimbalyst");
+    expect(content).toContain("gstack");
   });
 
   test("references state update after research and scope", () => {
@@ -315,12 +314,11 @@ describe("twisted-decompose content", () => {
 
   test("output is strategy-aware for all three strategies", () => {
     const content = skill();
-    // twisted output
-    expect(content).toContain("ISSUES.md");
-    expect(content).toContain("PLAN.md");
-    // nimbalyst output
+    // writeDecomposeOutput calls forEachStrategy + writeIssuesAndPlan
+    expect(content).toContain("writeIssuesAndPlan");
+    // readInputsForDecompose has strategy-specific switch cases
     expect(content).toContain("nimbalyst");
-    // gstack output
+    // gstack
     expect(content).toContain("gstack");
   });
 

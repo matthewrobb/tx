@@ -1,28 +1,9 @@
 ## Scope Step
 
-### Establish Objective (if needed)
-
 <%~ it.extract("src/scope/objective.ts", "establishObjective") %>
-
-### Read Research
 
 <%~ it.extract("src/scope/requirements.ts", "readResearchForScope") %>
 
-### Interrogate the Human
-
 <%~ it.extract("src/scope/interrogate.ts", "interrogate") %>
 
-### Write Requirements + Advance State
-
 <%~ it.extract("src/scope/requirements.ts", "writeAndAdvance") %>
-
-### Output Locations Per Strategy
-
-<%~ it.table(
-  ["Strategy", "Output location", "Format"],
-  [
-    ["`twisted`", "`{objDir}/REQUIREMENTS.md`", "RequirementsFrontmatter + requirements by category"],
-    ["`nimbalyst`", "`nimbalyst-local/plans/{objective}.md` (append)", "Acceptance Criteria, Key Components, Behavioral Requirements, Constraints"],
-    ["`gstack`", "`{objDir}/DESIGN.md` (append)", "Scope + Acceptance Criteria sections appended to design doc"],
-  ]
-) %>

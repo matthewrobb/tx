@@ -15,6 +15,14 @@
   ]
 ) %>
 
+## Shared Dispatch Patterns
+
+These are used by all sub-skills — the canonical implementations:
+
+<%~ it.extract("src/pipeline/dispatch.ts", "dispatchPhase") %>
+
+<%~ it.extract("src/pipeline/dispatch.ts", "forEachStrategy") %>
+
 ## Worktree Paths
 
 <%~ it.extract("src/strategies/worktree.ts", "getWorktreePaths") %>
