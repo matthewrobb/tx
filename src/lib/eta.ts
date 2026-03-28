@@ -1,17 +1,35 @@
 /**
- * Eta template engine configuration with build-md helpers.
+ * Eta template engine configuration with extraction helpers.
+ *
+ * Templates have access to:
+ * - it.extract(filePath, name) — extract a declaration, wrapped in ts code fence
+ * - it.signature(filePath, name) — extract just the signature
+ * - it.region(filePath, name) — extract a labeled region
+ * - it.table(headers, rows) — build-md table
+ * - it.defaults — full TwistedConfig defaults
  */
 
 import { Eta } from "eta";
 import { resolve } from "path";
+import { embedDeclaration, embedSignature, embedRegion } from "./extract.js";
+import { table } from "./markdown.js";
+import { defaults } from "../config/defaults.js";
 
 export function createEta(viewsDir: string): Eta {
   return new Eta({
     views: resolve(viewsDir),
     autoEscape: false,
-    // Make build-md's md tagged template and MarkdownDocument available in all templates
-    functionHeader: `
-      const { md, MarkdownDocument } = require('build-md');
-    `,
   });
+}
+
+/** Data passed to every Eta template via the `it` object. */
+export function templateData(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    extract: embedDeclaration,
+    signature: embedSignature,
+    region: embedRegion,
+    table,
+    defaults,
+    ...extra,
+  };
 }

@@ -1,187 +1,227 @@
 ---
 name: twisted-scope
-description: Internal sub-skill — research delegation and requirements interrogation, produces RESEARCH-*.md and REQUIREMENTS.md
+description: Internal sub-skill — research delegation and requirements interrogation
 ---
-
-**REQUIRED:** Load the `using-twisted-workflow` skill for shared config, defaults, presets, string templates, and constraints. All section references below point to that skill.
 
 # twisted-scope
 
-You are the scope sub-skill, loaded by `/twisted-work`. You handle two pipeline steps: **research** and **scope**. You are not user-invocable — `/twisted-work` loads you when needed.
-
-## On Every Invocation
-
-1. Receive the resolved config and objective state from `/twisted-work`.
-2. Determine which step to execute: research or scope (from `state.md` frontmatter).
-3. Execute the appropriate step below.
+Internal sub-skill loaded by `/twisted-work`. Handles **research** and **scope** steps.
 
 ---
 
 ## Research Step
 
-### 1. Check Provider
+```typescript
+export function executeResearch(
+  config: TwistedConfig,
+  state: ObjectiveState,
+  objective: string,
+  objDir: string,
+  yolo: boolean,
+): ObjectiveState {
+  const { provider, fallback } = config.pipeline.research;
 
-Look up `pipeline.research.provider` in the resolved config:
+  // Skip — mark complete and advance
+  if (provider === "skip") {
+    return advanceState(state, config.pipeline);
+  }
 
-- If `"skip"`: mark research complete, update `state.md`, return.
-- If `"built-in"`: execute **Built-in Research** below.
-- If external provider: delegate per **Provider Delegation**, then update `state.md`, return.
+  // Delegate to external provider
+  if (provider !== "built-in") {
+    const parsed = parseProvider(provider);
+    // parsed.type: "nimbalyst" | "gstack" | "superpowers" | ...
+    // parsed.skill: "deep-researcher" | parsed.command: "/office-hours"
+    // If provider unavailable, try fallback
+    invoke(provider, fallback);
 
-### 2. Built-in Research
+    return advanceState(state, config.pipeline, provider);
+  }
 
-#### a. Determine Research Areas
+  // Built-in research — spawn parallel agents
+  const agents = runBuiltInResearch(config, objective);
 
-Analyze the objective description and codebase to identify distinct research focus areas. Each area should be independently explorable without overlap.
+  // Write for ALL active tracking strategies
+  for (const strategy of config.tracking) {
+    writeResearch(strategy, objective, objDir, agents, {
+      nimbalystConfig: config.nimbalyst,
+    });
+  }
 
-#### b. Spawn Parallel Research Agents
-
-Spawn parallel subagents using the `strings.research_agent_prompt` template:
-
+  // Handoff: display config.strings.handoff_messages.research_to_scope
+  return advanceState(state, config.pipeline, "built-in");
+}
 ```
-Research the codebase for objective "{objective}".
-Focus area: {focus}
-Codebase context: {codebase_context}
+### Built-in Research (when provider === "built-in")
 
-Return structured findings: key files, patterns, concerns.
+```typescript
+export function runBuiltInResearch(
+  config: TwistedConfig,
+  objective: string,
+): ResearchAgent[] {
+  // Determine focus areas — judgment call based on objective + codebase
+  const focusAreas = determineFocusAreas(objective);
+
+  // Spawn one subagent per focus area in parallel
+  const agents = parallel(
+    focusAreas.map((focus, i) => {
+      const prompt = config.strings.research_agent_prompt
+        .replace("{objective}", objective)
+        .replace("{focus}", focus)
+        .replace("{codebase_context}", summarizeContext());
+
+      // Each agent returns: { agentNumber, focus, findings, keyFiles, patterns, concerns }
+      return spawnSubagent(prompt, i + 1, focus);
+    }),
+  );
+
+  return agents;
+}
 ```
+### Research Agent Data
 
-Each agent explores its focus area and returns structured findings:
-- Key files relevant to the focus area.
-- Patterns found in the codebase.
-- Concerns or risks identified.
-
-#### c. Write Research Files
-
-Use `writeResearch` from `src/strategies/writer.ts` to write output in the correct format for the active tracking strategy. Output locations per strategy:
-
-| Strategy | Research output |
-|---|---|
-| `twisted` | `RESEARCH-*.md` in the objective folder |
-| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` |
-| `gstack` | `DESIGN.md` in the objective folder |
-
-For the twisted strategy, use the `strings.research_section` template for section headings:
-
+```typescript
+export interface ResearchAgent {
+  agentNumber: number;
+  focus: string;
+  findings: string;
+  keyFiles: string[];
+  patterns: string[];
+  concerns: string[];
+}
 ```
-## Agent {n} — {focus}
-```
+### Write Locations Per Strategy
 
-Each research file has `ResearchFrontmatter`:
-
-```yaml
----
-objective: {objective}
-agent_number: {n}
-focus: {focus}
-created: "{date}"
-status: done
----
-```
-
-Split across files by agent group: `RESEARCH-1.md`, `RESEARCH-2.md`, etc. One file per agent.
-
-### 3. Update State
-
-Update `state.md` frontmatter:
-- Add `research` to `steps_completed`.
-- Set `step` to `scope` (or skip to next non-skipped step).
-- Remove `research` from `steps_remaining`.
-- Record `tools_used.research` with the provider used.
-- Update `updated` timestamp.
-
-### 4. Handoff
-
-Display `strings.handoff_messages.research_to_scope` with the research count.
-
-If auto-advance continues, proceed to **Scope Step**. Otherwise return to `/twisted-work`.
+| Strategy | Output location | Format |
+| --- | --- | --- |
+| `twisted` | `{objDir}/RESEARCH-{n}.md` | ResearchFrontmatter + findings per agent |
+| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` | NimbalystPlanFrontmatter, Goals + Problem Description |
+| `gstack` | `{objDir}/DESIGN.md` | gstack design doc: Vision, Constraints, Alternatives, Detailed Design |
 
 ---
 
 ## Scope Step
 
-### 1. Establish Objective Name (if needed)
+### Establish Objective (if needed)
 
-If no objective folder exists yet (entering pipeline mid-stream), follow **Objective Naming** from `using-twisted-workflow`:
+```typescript
+export function establishObjective(
+  config: TwistedConfig,
+): { objective: string; objDir: string; state: ObjectiveState } {
+  // Ask: "What is the short name for this objective?
+  //        Leave blank for auto-suggestions."
+  const name = askUser("objective name prompt");
 
-- Ask: "What is the short name for this objective? Leave blank for auto-suggestions."
-- Create the objective directory and initial `state.md` once the name is confirmed.
+  let objective: string;
+  if (name) {
+    objective = name;
+  } else {
+    // Spawn single fast scout agent for minimal codebase scan
+    // Suggest 3 names using config.writing quality rules
+    const suggestions = suggestNames(3, config.writing);
+    objective = askUser(pickFrom(suggestions));
+  }
 
-### 2. Read Research
+  // Fallback: zero-padded numeric increment
+  // e.g. "001", "002" based on total folders across all lanes
+  if (!objective) {
+    objective = nextIncrementName(config.naming);
+  }
 
-Read all `RESEARCH-*.md` files from the objective folder. Synthesize a working understanding of findings before questioning.
+  const objDir = objectiveDir(
+    objective,
+    "todo",
+    config.state,
+    config.directories,
+  );
+  createDir(objDir);
 
-If no research files exist (research was skipped or this is a direct entry), proceed to interrogation with only the objective description as context.
+  const state = createInitialState(objective, config.pipeline);
+  writeStateFrontmatter(objDir, state);
 
-### 3. Interrogate the Human
-
-This is the core of scope. Use the categories from `decompose.categories` in the resolved config (default: `["scope", "behavior", "constraints", "acceptance"]`).
-
-For each category, use `strings.interrogation_prompt`:
-
+  return { objective, objDir, state };
+}
 ```
-Let's drill into {category}. Tell me everything about this area — be specific and concrete. I will push back on anything vague.
+### Read Research
+
+```typescript
+export function readResearchForScope(
+  config: TwistedConfig,
+  objective: string,
+  objDir: string,
+): string | null {
+  const primaryStrategy = config.tracking[0] ?? "twisted";
+  const paths = getArtifactPaths(primaryStrategy, objective, objDir);
+
+  switch (primaryStrategy) {
+    case "twisted":
+      // Read all RESEARCH-*.md files from objDir
+      return readGlob(`${objDir}/RESEARCH-*.md`);
+    case "nimbalyst":
+      // Read plan doc — research is in Goals + Problem Description sections
+      return readFile(`nimbalyst-local/plans/${objective}.md`);
+    case "gstack":
+      // Read design doc — research is in Vision + Detailed Design sections
+      return readFile(`${objDir}/DESIGN.md`);
+    default:
+      return readGlob(`${objDir}/RESEARCH-*.md`);
+  }
+}
 ```
+### Interrogate the Human
 
-Rules:
-- Question **one category at a time** — do not dump a list of questions.
-- Push back on vague answers. If an answer is ambiguous, say so and ask again.
-- Drill until every requirement is concrete and testable.
-- Do not interpret or embellish — capture exactly what the human said.
-- Do not move to the next category until the current one is locked down.
-- This phase is inherently interactive — `--yolo` does NOT skip the interrogation.
+```typescript
+export function interrogate(
+  config: TwistedConfig,
+): Record<string, string[]> {
+  const results: Record<string, string[]> = {};
 
-### 4. Write Requirements
+  // Default categories: ["scope", "behavior", "constraints", "acceptance"]
+  for (const category of config.decompose.categories) {
+    // ONE category at a time — do NOT batch or dump a list of questions
+    const prompt = config.strings.interrogation_prompt
+      .replace("{category}", category);
+    display(prompt);
 
-Requirements output is strategy-aware. Use `writeRequirements` from `src/strategies/writer.ts`:
+    // Push back on vague answers:
+    //   "needs to be fast" → "what latency target? p50? p99?"
+    //   "should handle errors" → "which errors? what recovery behavior?"
+    //   "make it scalable" → "what load? how many concurrent users?"
+    // Drill until every requirement is concrete and testable.
+    // Do NOT move to next category until this one is locked down.
+    const requirements = drillUntilConcrete();
 
-| Strategy | Requirements output |
-|---|---|
-| `twisted` | `REQUIREMENTS.md` in the objective folder |
-| `nimbalyst` | Appended to `nimbalyst-local/plans/{objective}.md` |
-| `gstack` | Appended to `DESIGN.md` in the objective folder |
+    results[category] = requirements;
+  }
 
-For the twisted strategy, write `REQUIREMENTS.md` to the objective folder with `RequirementsFrontmatter`:
-
-```yaml
----
-objective: {objective}
-created: "{date}"
-updated: "{timestamp}"
-categories_completed:
-  - scope
-  - behavior
-  - constraints
-  - acceptance
-categories_remaining: []
-complete: true
----
+  return results;
+}
 ```
+### Write Requirements + Advance State
 
-Content is a faithful record of what the human stated, organized by category. No interpretation.
+```typescript
+export function writeAndAdvance(
+  config: TwistedConfig,
+  state: ObjectiveState,
+  objective: string,
+  objDir: string,
+  categories: Record<string, string[]>,
+): ObjectiveState {
+  // Write for ALL active tracking strategies
+  for (const strategy of config.tracking) {
+    writeRequirements(strategy, objective, objDir, categories, {
+      nimbalystConfig: config.nimbalyst,
+    });
+  }
 
-### 5. Update State
+  // Handoff: display config.strings.handoff_messages.scope_to_decompose
+  return advanceState(state, config.pipeline, "built-in");
+}
+```
+### Output Locations Per Strategy
 
-Update `state.md` frontmatter:
-- Add `scope` to `steps_completed`.
-- Set `step` to the next non-skipped step (arch_review or decompose).
-- Remove `scope` from `steps_remaining`.
-- Record `tools_used.scope: "built-in"`.
-- Update `updated` timestamp.
+| Strategy | Output location | Format |
+| --- | --- | --- |
+| `twisted` | `{objDir}/REQUIREMENTS.md` | RequirementsFrontmatter + requirements by category |
+| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` (append) | Acceptance Criteria, Key Components, Behavioral Requirements, Constraints |
+| `gstack` | `{objDir}/DESIGN.md` (append) | Scope + Acceptance Criteria sections appended to design doc |
 
-### 6. Handoff
-
-Display `strings.handoff_messages.scope_to_decompose` with the category count.
-
-Return to `/twisted-work` for auto-advance to continue.
-
----
-
-## Constraints
-
-- Follow all **Shared Constraints** from `using-twisted-workflow`.
-- Objective folder must exist before any files are written.
-- All files go in the objective folder under its current lane.
-- All human-facing text uses string templates from the resolved config.
-- Never fabricate requirements the human did not state.
-- Research files use `ResearchFrontmatter`. Requirements use `RequirementsFrontmatter`.
-- State transitions are atomic — update all frontmatter fields at once.
