@@ -14,82 +14,58 @@ Internal sub-skill loaded by `/twisted-work`. Handles **research** and **scope**
 ```typescript
 /**
  * Execute the research step.
- * Checks the provider config and either delegates, skips, or runs built-in research.
+ * Uses dispatchPhase for provider check — see using-twisted-workflow for details.
  */
 export function executeResearch(
   config: TwistedConfig,
   state: ObjectiveState,
   objective: string,
   objDir: string,
-  yolo: boolean,
 ): ObjectiveState {
-  const { provider, fallback } = config.pipeline.research;
+  const { action, newState } = dispatchPhase("research", config, state);
+  if (action !== "built-in") return newState;
 
-  // Skip — mark complete and advance
-  if (provider === "skip") {
-    return advanceState(state, config.pipeline);
-  }
-
-  // Delegate to external provider
-  if (provider !== "built-in") {
-    const parsed = parseProvider(provider);
-    // parsed.type: "nimbalyst" | "gstack" | "superpowers" | ...
-    // parsed.skill: "deep-researcher" | parsed.command: "/office-hours"
-    // If provider unavailable, try fallback
-    invoke(provider, fallback);
-
-    return advanceState(state, config.pipeline, provider);
-  }
-
-  // Built-in research — spawn parallel agents
+  // Built-in research
   const agents = runBuiltInResearch(config, objective);
 
-  // Write for ALL active tracking strategies
-  for (const strategy of config.tracking) {
+  forEachStrategy(config, (strategy) => {
     writeResearch(strategy, objective, objDir, agents, {
       nimbalystConfig: config.nimbalyst,
     });
-  }
+  });
 
   // Handoff: display config.strings.handoff_messages.research_to_scope
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
-### Built-in Research (when provider === "built-in")
+### Built-in Research
 
 ```typescript
 /**
  * Built-in research — spawn parallel subagents to explore the codebase.
  *
  * Each agent gets a distinct focus area and returns structured findings.
- * Focus areas are determined by analyzing the objective against the codebase.
- * Each area should be independently explorable without overlap.
+ * Focus areas are determined by analyzing the objective against the codebase —
+ * judgment call, each area independently explorable without overlap.
  */
 export function runBuiltInResearch(
   config: TwistedConfig,
   objective: string,
 ): ResearchAgent[] {
-  // Determine focus areas — judgment call based on objective + codebase
   const focusAreas = determineFocusAreas(objective);
 
-  // Spawn one subagent per focus area in parallel
-  const agents = parallel(
+  return parallel(
     focusAreas.map((focus, i) => {
       const prompt = config.strings.research_agent_prompt
         .replace("{objective}", objective)
         .replace("{focus}", focus)
         .replace("{codebase_context}", summarizeContext());
 
-      // Each agent returns: { agentNumber, focus, findings, keyFiles, patterns, concerns }
       return spawnSubagent(prompt, i + 1, focus);
     }),
   );
-
-  return agents;
 }
 ```
-### Research Agent Data
-
 ```typescript
 // ---------------------------------------------------------------------------
 // Research writing
@@ -104,19 +80,10 @@ export interface ResearchAgent {
   concerns: string[];
 }
 ```
-### Write Locations Per Strategy
-
-| Strategy | Output location | Format |
-| --- | --- | --- |
-| `twisted` | `{objDir}/RESEARCH-{n}.md` | ResearchFrontmatter + findings per agent |
-| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` | NimbalystPlanFrontmatter, Goals + Problem Description |
-| `gstack` | `{objDir}/DESIGN.md` | gstack design doc: Vision, Constraints, Alternatives, Detailed Design |
 
 ---
 
 ## Scope Step
-
-### Establish Objective (if needed)
 
 ```typescript
 /**
@@ -160,8 +127,6 @@ export function establishObjective(
   return { objective, objDir, state };
 }
 ```
-### Read Research
-
 ```typescript
 /**
  * Read research from the primary tracking strategy's location.
@@ -177,21 +142,18 @@ export function readResearchForScope(
 
   switch (primaryStrategy) {
     case "twisted":
-      // Read all RESEARCH-*.md files from objDir
       return readGlob(`${objDir}/RESEARCH-*.md`);
     case "nimbalyst":
-      // Read plan doc — research is in Goals + Problem Description sections
+      // Plan doc — research is in Goals + Problem Description sections
       return readFile(`nimbalyst-local/plans/${objective}.md`);
     case "gstack":
-      // Read design doc — research is in Vision + Detailed Design sections
+      // Design doc — research is in Vision + Detailed Design sections
       return readFile(`${objDir}/DESIGN.md`);
     default:
       return readGlob(`${objDir}/RESEARCH-*.md`);
   }
 }
 ```
-### Interrogate the Human
-
 ```typescript
 /**
  * Interrogate the human one category at a time.
@@ -226,12 +188,10 @@ export function interrogate(
   return results;
 }
 ```
-### Write Requirements + Advance State
-
 ```typescript
 /**
  * Write requirements and advance state.
- * Writes for ALL active tracking strategies.
+ * Uses forEachStrategy — see using-twisted-workflow for the shared pattern.
  */
 export function writeAndAdvance(
   config: TwistedConfig,
@@ -240,22 +200,14 @@ export function writeAndAdvance(
   objDir: string,
   categories: Record<string, string[]>,
 ): ObjectiveState {
-  // Write for ALL active tracking strategies
-  for (const strategy of config.tracking) {
+  forEachStrategy(config, (strategy) => {
     writeRequirements(strategy, objective, objDir, categories, {
       nimbalystConfig: config.nimbalyst,
     });
-  }
+  });
 
   // Handoff: display config.strings.handoff_messages.scope_to_decompose
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
-### Output Locations Per Strategy
-
-| Strategy | Output location | Format |
-| --- | --- | --- |
-| `twisted` | `{objDir}/REQUIREMENTS.md` | RequirementsFrontmatter + requirements by category |
-| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` (append) | Acceptance Criteria, Key Components, Behavioral Requirements, Constraints |
-| `gstack` | `{objDir}/DESIGN.md` (append) | Scope + Acceptance Criteria sections appended to design doc |
 

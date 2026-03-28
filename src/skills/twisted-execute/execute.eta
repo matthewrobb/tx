@@ -1,14 +1,8 @@
 ## Execute Step
 
-### Read Issues
-
 <%~ it.extract("src/execute/run.ts", "readIssuesForExecute") %>
 
-### Move to In-Progress
-
 <%~ it.extract("src/execute/run.ts", "moveToInProgress") %>
-
-### Execute Groups
 
 <%~ it.extract("src/execute/run.ts", "executeGroups") %>
 
@@ -16,14 +10,8 @@
 
 ## Post-Execution Delegation
 
-### Code Review
-
 <%~ it.extract("src/execute/delegation.ts", "executeCodeReview") %>
 
-### QA
-
 <%~ it.extract("src/execute/delegation.ts", "executeQA") %>
-
-### Ship
 
 <%~ it.extract("src/execute/delegation.ts", "executeShip") %>
