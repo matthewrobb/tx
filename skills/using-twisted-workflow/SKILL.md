@@ -1,731 +1,544 @@
 ---
 name: using-twisted-workflow
-description: Use when any twisted-workflow skill is active — provides shared config defaults, presets, string templates, and constraints that all phases reference
+description: Use when any twisted-workflow skill is active — provides shared config, defaults, state machine, tracking strategies, and pipeline routing
 ---
 
 # twisted-workflow shared config
 
-This skill is loaded automatically by `/twisted-work` and passed to internal sub-skills. It contains the authoritative defaults, presets, templates, rules, and constraints they reference by section name.
+Loaded automatically by `/twisted-work` and passed to internal sub-skills. This is the reference for all shared logic.
 
-## Directory Structure
-
-All twisted workflow files live under `.twisted/` in a kanban-style lane structure:
-
-With folders enabled (default):
-```
-.twisted/
-├── settings.json
-├── todo/
-│   └── {objective}/
-│       ├── state.md
-│       ├── RESEARCH-*.md
-│       └── REQUIREMENTS.md
-├── in-progress/
-│   └── {objective}/
-│       ├── state.md
-│       ├── RESEARCH-*.md
-│       ├── REQUIREMENTS.md
-│       ├── ISSUES.md
-│       └── PLAN.md
-├── done/
-│   └── {objective}-{date}/
-│       └── (all files)
-└── worktrees/             ← gitignored
-```
-
-With folders disabled (`state.use_folders: false`):
-```
-.twisted/
-├── settings.json
-└── {objective}/
-    ├── state.md          ← status field determines kanban position
-    ├── RESEARCH-*.md
-    ├── REQUIREMENTS.md
-    ├── ISSUES.md
-    └── PLAN.md
-```
+---
 
 ## Built-in Defaults
 
-Complete `TwistedConfig` — all fields present. Every skill merges `.twisted/settings.json` with these defaults. Config values override defaults. Missing keys fall back silently.
+```typescript
+export const defaults: TwistedConfig = {
+  version: "2.0",
+  presets: [],
+  tracking: ["twisted"],
 
-```json
-{
-  "version": "2.0",
-  "presets": [],
-  "tracking": ["twisted"],
-
-  "tools": {
-    "detected": {
-      "gstack": false,
-      "superpowers": false,
-      "nimbalyst_skills": false
+  tools: {
+    detected: {
+      gstack: false,
+      superpowers: false,
+      nimbalyst_skills: false,
     },
-    "last_scan": null
+    last_scan: null,
   },
 
-  "pipeline": {
-    "research": {
-      "provider": "built-in",
-      "fallback": "built-in",
-      "options": {}
+  pipeline: {
+    research: { provider: "built-in", fallback: "built-in", options: {} },
+    arch_review: { provider: "skip", fallback: "skip", options: {} },
+    code_review: { provider: "built-in", fallback: "built-in", options: {} },
+    qa: { provider: "skip", fallback: "skip", options: {} },
+    ship: { provider: "built-in", fallback: "built-in", options: {} },
+  },
+
+  execution: {
+    strategy: "task-tool",
+    discipline: null,
+    worktree_tiers: 2,
+    group_parallel: true,
+    merge_strategy: "normal",
+    review_frequency: "after-all",
+    test_requirement: "must-pass",
+  },
+
+  phases: {
+    scope: { model: "opus", effort: "max", context: "default", mode: "execute" },
+    decompose: { model: "opus", effort: "max", context: "default", mode: "plan" },
+    execute: { model: "sonnet", effort: "medium", context: "1m", mode: "execute" },
+  },
+
+  decompose: {
+    estimation: "fibonacci",
+    batch_threshold: 2,
+    split_threshold: 8,
+    categories: ["scope", "behavior", "constraints", "acceptance"],
+  },
+
+  templates: {
+    issue: {
+      fields: [
+        { name: "id", format: "ISSUE-{id}" },
+        { name: "title", type: "string" },
+        { name: "type", type: "enum", values: ["bug", "refactor", "feature", "test"] },
+        { name: "area", type: "string" },
+        { name: "file", type: "string" },
+        { name: "current_state", type: "string" },
+        { name: "target_state", type: "string" },
+        { name: "dependencies", type: "list" },
+        { name: "group", type: "number" },
+        { name: "complexity", type: "number" },
+        { name: "done", type: "checkbox" },
+      ],
     },
-    "arch_review": {
-      "provider": "skip",
-      "fallback": "skip",
-      "options": {}
-    },
-    "code_review": {
-      "provider": "built-in",
-      "fallback": "built-in",
-      "options": {}
-    },
-    "qa": {
-      "provider": "skip",
-      "fallback": "skip",
-      "options": {}
-    },
-    "ship": {
-      "provider": "built-in",
-      "fallback": "built-in",
-      "options": {}
-    }
-  },
-
-  "execution": {
-    "strategy": "task-tool",
-    "discipline": null,
-    "worktree_tiers": 2,
-    "group_parallel": true,
-    "merge_strategy": "normal",
-    "review_frequency": "after-all",
-    "test_requirement": "must-pass"
-  },
-
-  "phases": {
-    "scope": {
-      "model": "opus",
-      "effort": "max",
-      "context": "default",
-      "mode": "execute"
-    },
-    "decompose": {
-      "model": "opus",
-      "effort": "max",
-      "context": "default",
-      "mode": "plan"
-    },
-    "execute": {
-      "model": "sonnet",
-      "effort": "medium",
-      "context": "1m",
-      "mode": "execute"
-    }
-  },
-
-  "decompose": {
-    "estimation": "fibonacci",
-    "batch_threshold": 2,
-    "split_threshold": 8,
-    "categories": ["scope", "behavior", "constraints", "acceptance"]
-  },
-
-  "templates": {
-    "issue": {
-      "fields": [
-        { "name": "id", "format": "ISSUE-{id}" },
-        { "name": "title", "type": "string" },
-        { "name": "type", "type": "enum", "values": ["bug", "refactor", "feature", "test"] },
-        { "name": "area", "type": "string" },
-        { "name": "file", "type": "string" },
-        { "name": "current_state", "type": "string" },
-        { "name": "target_state", "type": "string" },
-        { "name": "dependencies", "type": "list" },
-        { "name": "group", "type": "number" },
-        { "name": "complexity", "type": "number" },
-        { "name": "done", "type": "checkbox" }
-      ]
-    },
-  },
-
-  "state": {
-    "use_folders": true,
-    "folder_kanban": {
-      "todo": ".twisted/todo",
-      "in_progress": ".twisted/in-progress",
-      "done": ".twisted/done"
-    }
-  },
-
-  "flow": {
-    "auto_advance": true,
-    "pause_on_config_change": true,
-    "pause_on_low_context": true
-  },
-
-  "writing": {
-    "skill": "writing-clearly-and-concisely",
-    "fallback": true
-  },
-
-  "nimbalyst": {
-    "enabled": false,
-    "default_priority": "medium",
-    "default_owner": "claude"
-  },
-
-  "directories": {
-    "root": ".twisted",
-    "worktrees": ".twisted/worktrees"
-  },
-
-  "files": {
-    "settings": ".twisted/settings.json",
-    "changelog": "CHANGELOG.md",
-    "changelog_sort": "newest-first"
-  },
-
-  "naming": {
-    "strategy": "prefix",
-    "increment_padding": 3
-  },
-
-  "strings": {
-    "commit_messages": {
-      "init": "chore: add twisted workflow",
-      "plan": "chore: add {objective} research and plan",
-      "done": "chore: complete {objective}",
-      "lane_move": "chore: move {objective} from {from} to {to}",
-      "group_merge": "feat({objective}): complete group {group}"
-    },
-    "status_line": "{objective}  {status}  {step}  {progress}  {updated}",
-    "status_detail": "Objective: {objective}\nStatus: {status}\nStep: {step}\nProgress: {steps_completed}/{steps_remaining} steps, {issues_done}/{issues_total} issues\nGroup: {group_current}/{groups_total}\nCreated: {created}\nUpdated: {updated}",
-    "phase_recommendation": "Next step: {step}\n  Model: {model}\n  Effort: {effort}\n  Context: {context}\n  Mode: {mode}",
-    "research_section": "## Agent {n} — {focus}",
-    "handoff_messages": {
-      "research_to_scope": "Research complete ({research_count} agents). Starting scope.",
-      "scope_to_decompose": "Requirements captured across {category_count} categories. Starting decomposition.",
-      "decompose_to_execute": "{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to execute.",
-      "execute_to_review": "Execution complete ({issues_done}/{issues_total} issues). Starting review.",
-      "review_to_ship": "Review passed. Ready to ship.",
-      "ship_done": "Objective {objective} complete."
-    },
-    "research_agent_prompt": "Research the codebase for objective \"{objective}\".\nFocus area: {focus}\nCodebase context: {codebase_context}\n\nReturn structured findings: key files, patterns, concerns.",
-    "execution_agent_prompt": "Implement the following issues for objective \"{objective}\":\n\nIssue IDs: {issue_ids}\n{issue_details}\n\nWork in worktree: {worktree_path}\nBranch: {branch_name}\nTest requirement: {test_requirement}\n{discipline}\n\nCommit your implementation. Mark issues as done. Report results.",
-    "interrogation_prompt": "Let's drill into {category}. Tell me everything about this area — be specific and concrete. I will push back on anything vague.",
-    "changelog_entry": [
+    changelog_entry: [
       "## {date} — {objective}",
       "### Completed",
       "{completed}",
       "### Deferred",
       "{deferred}",
       "### Decisions",
-      "{decisions}"
-    ]
+      "{decisions}",
+    ],
   },
 
-  "context_skills": []
+  state: {
+    use_folders: true,
+    folder_kanban: {
+      todo: ".twisted/todo",
+      in_progress: ".twisted/in-progress",
+      done: ".twisted/done",
+    },
+  },
+
+  flow: {
+    auto_advance: true,
+    pause_on_config_change: true,
+    pause_on_low_context: true,
+  },
+
+  writing: {
+    skill: "writing-clearly-and-concisely",
+    fallback: true,
+  },
+
+  nimbalyst: {
+    default_priority: "medium",
+    default_owner: "claude",
+  },
+
+  directories: {
+    root: ".twisted",
+    worktrees: ".twisted/worktrees",
+  },
+
+  files: {
+    settings: ".twisted/settings.json",
+    changelog: "CHANGELOG.md",
+    changelog_sort: "newest-first",
+  },
+
+  naming: {
+    strategy: "prefix",
+    increment_padding: 3,
+  },
+
+  strings: {
+    commit_messages: {
+      init: "chore: add twisted workflow",
+      plan: "chore: add {objective} research and plan",
+      done: "chore: complete {objective}",
+      lane_move: "chore: move {objective} from {from} to {to}",
+      group_merge: "feat({objective}): complete group {group}",
+    },
+    status_line: "{objective}  {status}  {step}  {progress}  {updated}",
+    status_detail: [
+      "Objective: {objective}",
+      "Status:    {status}",
+      "Step:      {step}",
+      "Progress:  {steps_completed}/{steps_remaining} steps, {issues_done}/{issues_total} issues",
+      "Group:     {group_current}/{groups_total}",
+      "Created:   {created}",
+      "Updated:   {updated}",
+    ].join("\n"),
+    phase_recommendation: [
+      "Next step: {step}",
+      "  Model:   {model}",
+      "  Effort:  {effort}",
+      "  Context: {context}",
+      "  Mode:    {mode}",
+    ].join("\n"),
+    research_section: "## Agent {n} — {focus}",
+    handoff_messages: {
+      research_to_scope: "Research complete ({research_count} agents). Starting scope.",
+      scope_to_decompose: "Requirements captured across {category_count} categories. Starting decomposition.",
+      decompose_to_execute: "{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to execute.",
+      execute_to_review: "Execution complete ({issues_done}/{issues_total} issues). Starting review.",
+      review_to_ship: "Review passed. Ready to ship.",
+      ship_done: "Objective {objective} complete.",
+    },
+    research_agent_prompt: [
+      'Research the codebase for objective "{objective}".',
+      "Focus area: {focus}",
+      "Codebase context: {codebase_context}",
+      "",
+      "Return structured findings: key files, patterns, concerns.",
+    ].join("\n"),
+    execution_agent_prompt: [
+      'Implement the following issues for objective "{objective}":',
+      "",
+      "Issue IDs: {issue_ids}",
+      "{issue_details}",
+      "",
+      "Work in worktree: {worktree_path}",
+      "Branch: {branch_name}",
+      "Test requirement: {test_requirement}",
+      "{discipline}",
+      "",
+      "Commit your implementation. Mark issues as done. Report results.",
+    ].join("\n"),
+    interrogation_prompt:
+      "Let's drill into {category}. Tell me everything about this area — be specific and concrete. I will push back on anything vague.",
+    changelog_entry: [
+      "## {date} — {objective}",
+      "### Completed",
+      "{completed}",
+      "### Deferred",
+      "{deferred}",
+      "### Decisions",
+      "{decisions}",
+    ],
+  },
+
+  context_skills: [],
+};
+```
+## Config Resolution
+
+```typescript
+/**
+ * Resolve a complete TwistedConfig from sparse user settings.
+ *
+ * @param settings - The user's settings.json content (sparse overrides)
+ * @param presetRegistry - Map of preset names → overrides (defaults to built-in presets)
+ * @returns Fully resolved TwistedConfig with no missing fields
+ */
+export function resolveConfig(
+  settings: TwistedSettings = {},
+  presetRegistry: Record<string, PresetOverrides> = allPresets,
+): TwistedConfig {
+  // Extract preset names from settings
+  const presetNames = settings.presets ?? [];
+
+  // Load presets — unknown names are silently skipped
+  const presetOverrides = presetNames
+    .map((name) => presetRegistry[name])
+    .filter((p): p is PresetOverrides => p !== undefined);
+
+  // Apply right-to-left so the first preset has highest priority
+  const reversedPresets = [...presetOverrides].reverse();
+
+  // Extract project settings (everything except presets)
+  const { presets: _, ...projectSettings } = settings;
+
+  // 3-layer merge
+  return deepMerge(
+    defaults,
+    ...reversedPresets,
+    projectSettings as Partial<TwistedConfig>,
+  );
 }
 ```
+## Presets
 
-## Default String Templates
+| Preset | What it overrides |
+| --- | --- |
+| `twisted` | tracking → twisted artifact format |
+| `superpowers` | TDD discipline, code review → Superpowers |
+| `gstack` | tracking → gstack, all delegatable phases → gstack commands |
+| `nimbalyst` | tracking → nimbalyst, research + code review → Nimbalyst |
+| `minimal` | all delegatable phases → skip, tests deferred |
+First preset wins on conflict. Compose in any order:
+- `["superpowers", "gstack"]` → Superpowers wins for code review, gstack fills the rest
+- `["gstack", "superpowers"]` → gstack wins for code review, TDD still active
 
-All user-facing text uses these templates. Placeholders use `{name}` syntax. Skills reference `strings.*` from the resolved config — never hardcode text that has a template.
 
-### Commit Messages (`strings.commit_messages`)
-
-| Key | Default | Placeholders |
-|---|---|---|
-| `init` | `chore: add twisted workflow` | — |
-| `plan` | `chore: add {objective} research and plan` | `{objective}` |
-| `done` | `chore: complete {objective}` | `{objective}` |
-| `lane_move` | `chore: move {objective} from {from} to {to}` | `{objective}`, `{from}`, `{to}` |
-| `group_merge` | `feat({objective}): complete group {group}` | `{objective}`, `{group}` |
-
-### Status Display (`strings.status_line`, `strings.status_detail`)
-
-**Status line** (one per objective in list view):
-```
-{objective}  {status}  {step}  {progress}  {updated}
-```
-
-**Status detail** (single objective detail view):
-```
-Objective:  {objective}
-Status:     {status}
-Step:       {step}
-Progress:   {steps_completed}/{steps_remaining} steps, {issues_done}/{issues_total} issues
-Group:      {group_current}/{groups_total}
-Created:    {created}
-Updated:    {updated}
-```
-
-### Phase Recommendation (`strings.phase_recommendation`)
-
-```
-Next step: {step}
-  Model:   {model}
-  Effort:  {effort}
-  Context: {context}
-  Mode:    {mode}
-```
-
-### Research Section (`strings.research_section`)
-
-```
-## Agent {n} — {focus}
-```
-
-### Handoff Messages (`strings.handoff_messages`)
-
-| Key | Default | Placeholders |
-|---|---|---|
-| `research_to_scope` | `Research complete ({research_count} agents). Starting scope.` | `{research_count}` |
-| `scope_to_decompose` | `Requirements captured across {category_count} categories. Starting decomposition.` | `{category_count}` |
-| `decompose_to_execute` | `{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to execute.` | `{issue_count}`, `{group_count}`, `{agent_count}` |
-| `execute_to_review` | `Execution complete ({issues_done}/{issues_total} issues). Starting review.` | `{issues_done}`, `{issues_total}` |
-| `review_to_ship` | `Review passed. Ready to ship.` | — |
-| `ship_done` | `Objective {objective} complete.` | `{objective}` |
-
-### Agent Prompts (`strings.research_agent_prompt`, `strings.execution_agent_prompt`)
-
-**Research agent prompt:**
-```
-Research the codebase for objective "{objective}".
-Focus area: {focus}
-Codebase context: {codebase_context}
-
-Return structured findings: key files, patterns, concerns.
-```
-
-**Execution agent prompt:**
-```
-Implement the following issues for objective "{objective}":
-
-Issue IDs: {issue_ids}
-{issue_details}
-
-Work in worktree: {worktree_path}
-Branch: {branch_name}
-Test requirement: {test_requirement}
-{discipline}
-
-Commit your implementation. Mark issues as done. Report results.
-```
-
-### Interrogation Prompt (`strings.interrogation_prompt`)
-
-```
-Let's drill into {category}. Tell me everything about this area — be specific and concrete. I will push back on anything vague.
-```
-
-### Changelog Entry (`strings.changelog_entry`)
-
-```
-## {date} — {objective}
-### Completed
-{completed}
-### Deferred
-{deferred}
-### Decisions
-{decisions}
-```
-
-## Built-in Presets
-
-Presets are sparse overrides on **Built-in Defaults**. Only the fields that differ are specified. Preset JSON files live in `presets/` at the plugin root.
-
-`presets` is an array. The first preset has the highest priority — earlier presets override later ones on conflict. Put the most important one first.
-
-```
-Layer 1: Built-in defaults          ← complete, valid config
-Layer 2: Presets (first wins)        ← cascaded right-to-left, so the first/leftmost preset wins
-Layer 3: Per-project (optional)      ← sparse delta on top of everything
-
-Result: deepMerge(defaults, ...presets.reverse().map(load), projectSettings ?? {})
-```
-
-| Preset | File | What it overrides |
-|---|---|---|
-| `twisted` | `presets/twisted.json` | Nothing — pure defaults |
-| `superpowers` | `presets/superpowers.json` | TDD discipline, code review → Superpowers |
-| `gstack` | `presets/gstack.json` | research, arch_review, code_review, qa, ship → gstack |
-| `nimbalyst` | `presets/nimbalyst.json` | research, code review → Nimbalyst |
-| `minimal` | `presets/minimal.json` | All delegatable phases → skip, tests deferred |
-
-### Composing Presets
-
-The first preset has priority. Put the most important one first:
-
-| `presets` value | Effect |
-|---|---|
-| `[]` | Pure defaults (same as `["twisted"]`) |
-| `["superpowers"]` | TDD + Superpowers code review |
-| `["gstack"]` | All delegatable phases → gstack |
-| `["superpowers", "gstack"]` | Superpowers wins for code review (it's first), gstack fills in the rest |
-| `["gstack", "superpowers"]` | gstack wins for code review (it's first), TDD discipline still applies |
-| `["nimbalyst", "superpowers", "gstack"]` | Nimbalyst wins for research + code review, then Superpowers, then gstack for the rest |
-
-Load each preset file and apply right-to-left so the first preset ends up on top. Each file contains a `PresetOverrides` object — a sparse partial of `TwistedConfig` (omitting `presets` and `version`).
-
-## Three-Layer Config Resolution
-
-1. Start with **Built-in Defaults** (complete `TwistedConfig` — every field present).
-2. If `presets` is set in `settings.json`, load each preset file and apply right-to-left so the first/leftmost preset has highest priority.
-3. Deep-merge all remaining fields from `settings.json` onto the result.
-4. The final result is a complete `TwistedConfig` with no missing fields.
-
-Rules:
-- `settings.json` stores only customized keys — never a full snapshot.
-- Future default changes apply automatically without manual config updates.
-- Never error on missing keys — fall back to defaults silently.
-- Deep merge: nested objects merge recursively, scalars and arrays replace.
-- Unknown preset names are silently skipped (future-proofing for custom presets).
+---
 
 ## State Machine
 
-Frontmatter in `state.md` is the source of truth for every objective. All state transitions are atomic frontmatter updates, then folder moves (when enabled).
+```typescript
+/**
+ * Full pipeline step sequence in execution order.
+ * Delegatable steps may be skipped based on provider config.
+ */
+export const PIPELINE_ORDER: readonly ObjectiveStep[] = [
+  "research",
+  "scope",
+  "arch_review",
+  "decompose",
+  "execute",
+  "code_review",
+  "qa",
+  "ship",
+] as const;
+```
+```typescript
+/**
+ * Advance the state to the next step.
+ * Returns a new state object (immutable).
+ */
+export function advanceState(
+  state: ObjectiveState,
+  pipeline: PipelineConfig,
+  provider?: string,
+): ObjectiveState {
+  const next = nextStep(state.step, pipeline);
 
-### ObjectiveState Frontmatter
+  if (!next) {
+    // Final step complete — mark as done
+    return {
+      ...state,
+      status: "done",
+      steps_completed: [...state.steps_completed, state.step],
+      steps_remaining: [],
+      updated: new Date().toISOString(),
+      tools_used: provider
+        ? { ...state.tools_used, [state.step]: provider }
+        : state.tools_used,
+    };
+  }
 
-```yaml
+  const newStatus = statusForStep(next);
+
+  return {
+    ...state,
+    status: newStatus,
+    step: next,
+    steps_completed: [...state.steps_completed, state.step],
+    steps_remaining: stepsRemaining(next, pipeline),
+    updated: new Date().toISOString(),
+    tools_used: provider
+      ? { ...state.tools_used, [state.step]: provider }
+      : state.tools_used,
+  };
+}
+```
+```typescript
+/**
+ * Create the initial ObjectiveState for a new objective.
+ */
+export function createInitialState(
+  objective: string,
+  pipeline: PipelineConfig,
+): ObjectiveState {
+  const effective = getEffectiveSteps(pipeline);
+  const firstStep = effective[0] ?? "scope";
+
+  return {
+    objective,
+    status: "todo",
+    step: firstStep,
+    steps_completed: [],
+    steps_remaining: effective.slice(1),
+    group_current: null,
+    groups_total: null,
+    issues_done: 0,
+    issues_total: null,
+    created: new Date().toISOString().split("T")[0]!,
+    updated: new Date().toISOString(),
+    tools_used: {},
+  };
+}
+```
+## Status Mapping (Nimbalyst)
+
+```typescript
+// ---------------------------------------------------------------------------
+// Nimbalyst status mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Map twisted-workflow state to Nimbalyst plan status.
+ */
+export function toNimbalystStatus(
+  status: ObjectiveStatus,
+  step: ObjectiveStep,
+): NimbalystStatus {
+  if (status === "blocked") return "blocked";
+  if (status === "done") return "completed";
+
+  switch (step) {
+    case "research":
+    case "scope":
+      return "draft";
+    case "arch_review":
+    case "decompose":
+      return "ready-for-development";
+    case "execute":
+      return "in-development";
+    case "code_review":
+    case "qa":
+      return "in-review";
+    case "ship":
+      return "in-review";
+    default:
+      return "draft";
+  }
+}
+```
+```typescript
+/**
+ * Infer Nimbalyst planType from objective content.
+ * Falls back to "feature" if no specific type is detected.
+ */
+export function inferPlanType(description: string): NimbalystPlanType {
+  const lower = description.toLowerCase();
+  if (lower.includes("bug") || lower.includes("fix")) return "bug-fix";
+  if (lower.includes("refactor") || lower.includes("restructure")) return "refactor";
+  if (lower.includes("architect") || lower.includes("system design")) return "system-design";
+  if (lower.includes("research") || lower.includes("investigate")) return "research";
+  return "feature";
+}
+```
+
 ---
-objective: auth-refactor
-status: in-progress
-step: execute
-steps_completed:
-  - research
-  - scope
-  - decompose
-steps_remaining:
-  - code_review
-  - qa
-  - ship
-group_current: 2
-groups_total: 4
-issues_done: 4
-issues_total: 7
-created: "2026-03-26"
-updated: "2026-03-26T14:30:00Z"
-tools_used:
-  research: built-in
-  scope: built-in
-  decompose: built-in
----
-```
-
-### Pipeline Step Sequence
-
-Full ordered sequence of all steps:
-
-```
-research → scope → arch_review → decompose → execute → code_review → qa → ship
-```
-
-Delegatable steps configured as `"skip"` are omitted at runtime. Core steps (scope, decompose, execute) are always present.
-
-### Step Transitions
-
-When a step completes:
-1. Move current step to `steps_completed`.
-2. Determine next step from the pipeline sequence, skipping any delegatable steps with `provider: "skip"`.
-3. Set `step` to the next step.
-4. Update `steps_remaining` to exclude the new current step.
-5. Update `updated` timestamp.
-6. If `status` needs to change (e.g., starting execute → `in-progress`), update `status` and move folder.
-
-### Status Transitions
-
-| From | To | Trigger |
-|---|---|---|
-| — | `todo` | Objective created |
-| `todo` | `in-progress` | Execute step starts |
-| `in-progress` | `done` | Ship step completes |
-| any | `blocked` | Manual or error |
-
-## Auto-Advance Logic
-
-The pipeline pauses between steps based on `flow` config:
-
-1. **Always** (`flow.auto_advance: false`): Pause after every step, regardless of other settings. The user confirms before each step begins.
-2. **Config change** (`flow.pause_on_config_change: true`): Pause when the next step has different `model`, `effort`, `context`, or `mode` settings than the current step. Show the `strings.phase_recommendation` template and wait for confirmation.
-3. **Low context** (`flow.pause_on_low_context: true`): Pause when context window utilization is high. Suggest starting a new session.
-
-When `flow.auto_advance` is `true` (default): the pipeline advances automatically, pausing only when condition 2 or 3 triggers.
-
-When `--yolo` is active: skip all pauses (including "always"), use merged config values directly, auto-advance through every step.
-
-## Provider Delegation
-
-Delegatable phases (research, arch_review, code_review, qa, ship) route to their configured provider:
-
-| Provider format | Action |
-|---|---|
-| `"built-in"` | Use twisted-workflow's own implementation |
-| `"gstack:/{command}"` | Invoke the gstack slash command |
-| `"superpowers:{skill}"` | Invoke the Superpowers skill |
-| `"nimbalyst:{skill}"` | Invoke the Nimbalyst skill |
-| `"skip"` | Omit this phase entirely |
-| `"ask"` | Ask the user which provider to use |
-
-When the primary provider is unavailable, fall back to the `fallback` provider. If both are unavailable, report the error and pause.
-
-## Objective Naming
-
-- At the start of scope (when no objective exists), ask: "What is the short name for this objective? Leave blank for auto-suggestions."
-- If name provided: create the objective directory immediately.
-- If blank:
-  - Spawn a single fast scout agent for a minimal codebase scan.
-  - Suggest 3 names using **Writing Quality** rules.
-  - Wait for confirmation.
-  - Create directory once confirmed.
-- If no name given and none selected: fall back to zero-padded numeric increment based on total folders across all lanes.
-- Done folder appends date: `{objective}-{date}`.
-- All subsequent steps inherit the objective name — never ask again.
-
-## Writing Quality
-
-- Before generating any human-facing text, check if the skill named in `writing.skill` is available.
-- Human-facing text includes: commit messages, changelog entries, status displays, handoff messages, summaries, objective name suggestions, phase recommendations.
-- If writing skill available: invoke it for all human-facing text generation.
-- If not available and `writing.fallback` is `true`:
-  - Prefer active voice.
-  - One idea per sentence.
-  - No filler words or hedging.
-  - Commit messages: imperative mood, under 72 chars, specific.
-  - Summaries: what changed, not what was attempted.
-  - Status: facts only, no commentary.
-  - Handoff messages: action + outcome, nothing more.
-- If not available and `writing.fallback` is `false`: proceed without special writing guidance.
-
-## Gitignore Rules
-
-- `/twisted-work init` checks if the project is a git repo.
-- If yes, checks `.gitignore` for `.twisted/worktrees/`.
-- If not present, adds:
-  ```
-  # twisted workflow worktrees
-  .twisted/worktrees/
-  ```
-- Committed: `.twisted/settings.json`, lane directories, objective files.
-- Gitignored: `.twisted/worktrees/`.
-
-## Kanban Transitions
-
-With `state.use_folders: true`:
-
-- Objective folder created in the `todo` lane directory during scope.
-- Folder stays in `todo` through scope, arch_review, and decompose steps.
-- Folder moves `todo` → `in-progress` when the execute step starts. Commit this move.
-- Folder moves `in-progress` → `done/{objective}-{date}` when ship completes. Commit this move.
-- Files inside the folder never change name — only the parent folder moves between lanes.
-- Never move a folder backward through lanes.
-- Always commit after a lane move using `strings.commit_messages.lane_move`.
-
-With `state.use_folders: false`:
-
-- All objectives live in flat `.twisted/{objective}/` directories.
-- The `status` field in `state.md` frontmatter determines the kanban position.
-- No folder moves — only frontmatter updates.
-
-## Changelog
-
-- Path comes from `files.changelog` in merged config.
-- All reads, writes, and commits use the configured path.
-- Never hardcode — always use the config value.
-- On ship completion:
-  - If file exists at configured path: prepend new entry (newest first) or append (oldest first) based on `files.changelog_sort`.
-  - If not: create at configured path.
-  - Use `strings.changelog_entry` template.
-  - Commit as part of the ship commit.
-
-## Mode Guide
-
-| Mode | Use when |
-|---|---|
-| `execute` | Work is autonomous or conversational |
-| `plan` | Human should review before files change |
-
-- Never use plan mode for research or interrogation steps.
-- Always use plan mode for decompose (human reviews issue breakdown before files change).
-
-## Yolo Mode
-
-- Any `/twisted-work` subcommand accepts a `--yolo` flag as a runtime parameter.
-- `--yolo` is not persisted in `settings.json` — it is a per-invocation flag.
-- When `--yolo` is active:
-  - Skip settings confirmation — use merged config values directly.
-  - Skip handoff pauses — auto-advance to next step immediately.
-  - Skip "continue or stop?" prompts between execution groups.
-  - Scope interrogation still asks its questions — the phase is inherently interactive.
-- When `--yolo` is not active: all confirmations and pauses work as described in **Auto-Advance Logic**.
-- When `/twisted-work` invokes a sub-skill with `--yolo`, pass the flag through.
-
-## Tool Detection
-
-During `/twisted-work init` or `/twisted-work config tools`:
-
-1. Scan for gstack: look for gstack skills in the project or global skill directories.
-2. Scan for Superpowers: look for Superpowers skills (e.g., `test-driven-development`, `requesting-code-review`).
-3. Scan for Nimbalyst skills: look for Nimbalyst skill directories.
-4. Record results in `tools.detected` and update `tools.last_scan`.
-5. Suggest a preset array based on detected tools (most important first):
-   - gstack + Superpowers + Nimbalyst → `["nimbalyst", "superpowers", "gstack"]`
-   - gstack + Superpowers → `["superpowers", "gstack"]`
-   - gstack only → `["gstack"]`
-   - Superpowers only → `["superpowers"]`
-   - Nothing detected → `[]`
-
-## Worktree Hierarchy
-
-Worktree layout depends on `execution.worktree_tiers`:
-
-**1 tier** (objective only):
-```
-.twisted/worktrees/{objective}/          ← branched from main
-```
-Agents work directly on the objective branch. No isolation between agents.
-
-**2 tiers** (default — objective → agent):
-```
-.twisted/worktrees/{objective}/          ← branched from main
-.twisted/worktrees/{objective}-agent-N/  ← branched from objective
-```
-Each agent gets its own worktree. Agents merge into the objective branch.
-
-**3 tiers** (objective → group → agent):
-```
-.twisted/worktrees/{objective}/                        ← branched from main
-.twisted/worktrees/{objective}-group-N/                ← branched from objective
-.twisted/worktrees/{objective}-group-N-agent-M/        ← branched from group
-```
-Agents merge into group, groups merge into objective. Structured history.
-
-## Nimbalyst Integration (Experimental)
-
-When `nimbalyst.enabled` is `true` (auto-enabled by the nimbalyst preset), twisted-workflow writes Nimbalyst-compatible files in `nimbalyst-local/` so Nimbalyst's Task Mode can discover them.
-
-Based on the Nimbalyst skills repos (`Nimbalyst/skills`, `Nimbalyst/developer-claude-code-commands`) as of March 2026.
-
-### Plan File
-
-Write a plan file to `nimbalyst-local/plans/{objective}.md` with Nimbalyst plan frontmatter:
-
-```yaml
----
-planId: plan-{objective}
-title: {objective title}
-status: in-development
-planType: feature
-priority: medium
-owner: claude
-stakeholders: []
-tags: []
-created: "2026-03-27"
-updated: "2026-03-27T14:30:00Z"
-progress: 57
-startDate: "2026-03-27"
----
-```
-
-**Never** use midnight timestamps (00:00:00.000Z) for the `updated` field.
-
-#### Plan Content
-
-After frontmatter, include:
-1. Title
-2. Goals (from objective description)
-3. Key components or phases (from PLAN.md groups)
-4. Acceptance criteria (from REQUIREMENTS.md)
-5. Implementation progress checklist (from ISSUES.md)
-
-```markdown
-## Implementation Progress
-
-- [x] ISSUE-001: Extract token validation
-- [x] ISSUE-002: Add session store
-- [ ] ISSUE-003: Fix race condition in refresh
-- [ ] ISSUE-004: Update API routes
-```
-
-The `progress` field is computed as: `(checked items / total items) * 100`, rounded to nearest integer.
-
-#### Plan Status Mapping
-
-| twisted-workflow state | Nimbalyst plan status |
-|---|---|
-| `todo` (step: research, scope) | `draft` |
-| `todo` (step: decompose) | `ready-for-development` |
-| `in-progress` (step: execute) | `in-development` |
-| `in-progress` (step: code_review, qa) | `in-review` |
-| `done` | `completed` |
-| `blocked` | `blocked` |
-
-#### Plan Type Mapping
-
-| objective content | Nimbalyst planType |
-|---|---|
-| Bug fixes | `bug-fix` |
-| Code restructuring | `refactor` |
-| Architecture work | `system-design` |
-| Research objectives | `research` |
-| Everything else | `feature` |
-
-### Tracker Items
-
-Append tracker items to `nimbalyst-local/tracker/tasks.md` (or `bugs.md` for bug-type issues) using Nimbalyst's inline tag format:
-
-```markdown
-- [ISSUE-001] Extract token validation #task[id:task_01JQXYZ status:done priority:medium created:2026-03-27]
-- [ISSUE-002] Add session store #task[id:task_01JQXYA status:done priority:medium created:2026-03-27]
-- [ISSUE-003] Fix race condition #bug[id:bug_01JQXYB status:in-progress priority:high created:2026-03-27]
-- [ISSUE-004] Update API routes #task[id:task_01JQXYC status:to-do priority:medium created:2026-03-27]
-```
-
-Format: `- [description] #[type][id:[type]_[ulid] status:[status] priority:[priority] created:YYYY-MM-DD]`
-
-Generate a ULID for each item's `id` field. Tracker status values: `to-do`, `in-progress`, `done`, `blocked`.
-
-Use `#bug` for issues with `type: "bug"`, `#task` for all other types.
-
-### When to Update
-
-Update Nimbalyst files whenever `state.md` is updated:
-- Step transitions → update plan status
-- Issue completion → check off in plan, update tracker status, recalculate progress
-- Group completion → recalculate progress
-- Objective completion → plan status `completed`, all tracker items `done`
-
-Create the `nimbalyst-local/plans/` and `nimbalyst-local/tracker/` directories if they don't exist.
-
-### Priority
-
-Use `nimbalyst.default_priority` from config for new objectives. Read the existing plan file's priority before updating — preserve user overrides.
 
 ## Tracking Strategies
 
-The `tracking` config array determines where artifacts are written. Default: tracking: ["twisted"]. The primary strategy (`tracking[0]`) controls output format. Use `getArtifactPaths` from `src/strategies/paths.ts` to resolve file locations per strategy.
+```typescript
+/**
+ * Get artifact paths for a given strategy and objective.
+ */
+export function getArtifactPaths(
+  strategy: TrackingStrategy,
+  objective: string,
+  objDir: string,
+): ArtifactPaths {
+  switch (strategy) {
+    case "twisted":
+      return {
+        research: (n: number) => `${objDir}/RESEARCH-${n}.md`,
+        requirements: `${objDir}/REQUIREMENTS.md`,
+        plan: `${objDir}/PLAN.md`,
+        issues: `${objDir}/ISSUES.md`,
+        tracker: null,
+        design: null,
+      };
 
-| Strategy | Research output | Requirements output | Plan output | Design doc |
-|---|---|---|---|---|
-| `twisted` | `RESEARCH-*.md` | `REQUIREMENTS.md` | `PLAN.md` + `ISSUES.md` | — |
-| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` | `nimbalyst-local/plans/{objective}.md` | `nimbalyst-local/plans/{objective}.md` | — |
-| `gstack` | `DESIGN.md` | `DESIGN.md` | `PLAN.md` + `ISSUES.md` | `DESIGN.md` |
+    case "nimbalyst":
+      // objDir unused — nimbalyst paths are project-relative
+      // objective encoded in filename, not directory
+      return {
+        research: `nimbalyst-local/plans/${objective}.md`,
+        requirements: `nimbalyst-local/plans/${objective}.md`,
+        plan: `nimbalyst-local/plans/${objective}.md`,
+        issues: null, // issues embedded as checklist in plan doc
+        tracker: `nimbalyst-local/tracker/tasks.md`,
+        design: null,
+      };
 
-Use `writeResearch`, `writeRequirements`, and `writeIssuesAndPlan` from `src/strategies/writer.ts` to write artifacts in the correct format for each strategy.
+    case "gstack":
+      return {
+        research: `${objDir}/DESIGN.md`,
+        requirements: `${objDir}/DESIGN.md`,
+        plan: `${objDir}/PLAN.md`,
+        issues: `${objDir}/ISSUES.md`, // always written for execute
+        tracker: null,
+        design: `${objDir}/DESIGN.md`,
+      };
 
-## Functional Core References
+    default:
+      // Unknown strategy falls back to twisted
+      return getArtifactPaths("twisted", objective, objDir);
+  }
+}
+```
+### Strategy Artifact Map
 
-State transitions use `advanceState` and `nextStep` from `src/state/machine.ts`. Config resolution uses `resolveConfig` from `src/config/resolve.ts`. Artifact paths use `getArtifactPaths` from `src/strategies/paths.ts`. Pipeline routing uses `shouldPause` from `src/pipeline/routing.ts`.
+| Step | twisted | nimbalyst | gstack |
+| --- | --- | --- | --- |
+| Research | `{objDir}/RESEARCH-{n}.md` | `nimbalyst-local/plans/{objective}.md` | `{objDir}/DESIGN.md` |
+| Requirements | `{objDir}/REQUIREMENTS.md` | same plan doc (append) | `{objDir}/DESIGN.md` (append) |
+| Plan | `{objDir}/PLAN.md` | same plan doc (checklist) | `{objDir}/PLAN.md` (gstack format) |
+| Issues | `{objDir}/ISSUES.md` | embedded in plan doc | `{objDir}/ISSUES.md` |
+| Tracker | — | `nimbalyst-local/tracker/tasks.md` | — |
+## Worktree Paths
 
-## Shared Constraints
+```typescript
+/**
+ * Generate worktree paths for a given tier configuration.
+ */
+export function getWorktreePaths(
+  worktreeDir: string,
+  objective: string,
+  tiers: WorktreeTiers,
+): WorktreePaths {
+  const base = `${worktreeDir}/${objective}`;
 
-- Works with any codebase regardless of stack.
-- All twisted files live under `.twisted/` — changelog at configured path.
-- Frontmatter in `state.md` is the source of truth for objective state.
-- State transitions are atomic frontmatter updates, then folder moves (when enabled).
-- Config merges with built-in defaults on every invocation — missing keys fall back silently.
-- All human-facing text uses **Writing Quality** rules.
-- Changelog always at configured path, never hardcoded.
-- String templates from resolved config define all user-facing text — never hardcode text that has a template.
-- Every configurable value must match the corresponding type in `types/`.
+  switch (tiers) {
+    case 1:
+      return {
+        objective: base,
+        group: null,
+        agent: null,
+      };
+
+    case 2:
+      return {
+        objective: base,
+        group: null,
+        agent: (_g, n) => `${base}-agent-${n}`,
+      };
+
+    case 3:
+      return {
+        objective: base,
+        group: (g) => `${base}-group-${g}`,
+        agent: (g, n) => `${base}-group-${g}-agent-${n}`,
+      };
+  }
+}
+```
+## Pipeline Routing
+
+```typescript
+/**
+ * Parse a provider string into its components.
+ *
+ * "built-in" → { type: "built-in" }
+ * "skip" → { type: "skip" }
+ * "ask" → { type: "ask" }
+ * "gstack:/review" → { type: "gstack", command: "/review" }
+ * "superpowers:test-driven-development" → { type: "superpowers", skill: "test-driven-development" }
+ * "nimbalyst:deep-researcher" → { type: "nimbalyst", skill: "deep-researcher" }
+ */
+export function parseProvider(provider: ProviderString): {
+  type: string;
+  command?: string;
+  skill?: string;
+} {
+  if (provider === "built-in" || provider === "skip" || provider === "ask") {
+    return { type: provider };
+  }
+
+  const colonIdx = provider.indexOf(":");
+  if (colonIdx === -1) return { type: provider };
+
+  const type = provider.slice(0, colonIdx);
+  const rest = provider.slice(colonIdx + 1);
+
+  if (type === "gstack") return { type, command: rest };
+  return { type, skill: rest };
+}
+```
+```typescript
+/**
+ * Determine if the pipeline should pause before advancing to the next step.
+ * Returns the pause reason, or null if no pause is needed.
+ */
+export function shouldPause(
+  fromStep: ObjectiveStep,
+  toStep: ObjectiveStep,
+  flow: FlowConfig,
+  phases: PhasesConfig,
+  yolo: boolean,
+): PauseReason | null {
+  if (yolo) return null;
+
+  if (!flow.auto_advance) return "user_requested";
+
+  if (flow.pause_on_config_change && hasConfigChange(fromStep, toStep, phases)) {
+    return "config_change";
+  }
+
+  // pause_on_low_context is checked at runtime (context window utilization)
+  // — can't evaluate statically, so we return null here and let the
+  // runtime check handle it.
+
+  return null;
+}
+```
+

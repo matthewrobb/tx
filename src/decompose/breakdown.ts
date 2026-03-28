@@ -1,46 +1,14 @@
----
-name: twisted-decompose
-description: Internal sub-skill — complexity estimation, issue breakdown, dependency analysis, and execution planning
----
-
-# twisted-decompose
-
-Internal sub-skill loaded by `/twisted-work`. Handles **arch_review** and **decompose** steps.
-
----
-
-## Arch Review Step
-
-```typescript
 /**
- * Execute the arch_review step.
- * This step has no built-in implementation — it is always delegated or skipped.
+ * Issue breakdown — complexity estimation, agent assignment, dependency analysis.
  */
-export function executeArchReview(
-  config: TwistedConfig,
-  state: ObjectiveState,
-): ObjectiveState {
-  const { provider, fallback } = config.pipeline.arch_review;
 
-  if (provider === "skip") {
-    return advanceState(state, config.pipeline);
-  }
+import type { TwistedConfig } from "../../types/config.js";
+import type { ObjectiveState } from "../../types/state.js";
+import type { Issue, IssueGroup, DependencyGraph } from "../../types/issues.js";
+import { advanceState } from "../state/machine.js";
+import { writeIssuesAndPlan } from "../strategies/writer.js";
+import { getArtifactPaths } from "../strategies/paths.js";
 
-  // Delegate to external provider
-  // e.g. "gstack:/plan-eng-review" → invoke gstack engineering review
-  const parsed = parseProvider(provider);
-  invoke(provider, fallback);
-
-  return advanceState(state, config.pipeline, provider);
-}
-```
----
-
-## Decompose Step
-
-### Read Inputs
-
-```typescript
 /**
  * Read research + requirements from the primary tracking strategy's location.
  */
@@ -74,10 +42,7 @@ export function readInputsForDecompose(
       };
   }
 }
-```
-### Estimate Complexity + Assign Agents
 
-```typescript
 /**
  * Estimate complexity for each issue using the configured scale.
  *
@@ -115,10 +80,7 @@ export function estimateComplexity(
     },
   };
 }
-```
-### Break Into Issues + Compute Groups
 
-```typescript
 /**
  * Break requirements into issues, assign groups, compute dependency graph.
  *
@@ -153,10 +115,7 @@ export function decomposeIntoIssues(
 
   return { issues, groups, graph };
 }
-```
-### Write Output (Strategy-Aware)
 
-```typescript
 /**
  * Write decompose output and advance state.
  * Writes for ALL active tracking strategies.
@@ -185,12 +144,3 @@ export function writeDecomposeOutput(
   // Handoff: display config.strings.handoff_messages.decompose_to_execute
   return advanceState(state, config.pipeline, "built-in");
 }
-```
-### Output Locations Per Strategy
-
-| Strategy | Plan output | Issues output | Tracker |
-| --- | --- | --- | --- |
-| `twisted` | `{objDir}/PLAN.md` | `{objDir}/ISSUES.md` | — |
-| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` (checklist) | embedded in plan doc | `nimbalyst-local/tracker/tasks.md` |
-| `gstack` | `{objDir}/PLAN.md` (gstack format) | `{objDir}/ISSUES.md` | — |
-

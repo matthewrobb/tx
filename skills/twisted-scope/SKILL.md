@@ -12,6 +12,10 @@ Internal sub-skill loaded by `/twisted-work`. Handles **research** and **scope**
 ## Research Step
 
 ```typescript
+/**
+ * Execute the research step.
+ * Checks the provider config and either delegates, skips, or runs built-in research.
+ */
 export function executeResearch(
   config: TwistedConfig,
   state: ObjectiveState,
@@ -54,6 +58,13 @@ export function executeResearch(
 ### Built-in Research (when provider === "built-in")
 
 ```typescript
+/**
+ * Built-in research — spawn parallel subagents to explore the codebase.
+ *
+ * Each agent gets a distinct focus area and returns structured findings.
+ * Focus areas are determined by analyzing the objective against the codebase.
+ * Each area should be independently explorable without overlap.
+ */
 export function runBuiltInResearch(
   config: TwistedConfig,
   objective: string,
@@ -80,6 +91,10 @@ export function runBuiltInResearch(
 ### Research Agent Data
 
 ```typescript
+// ---------------------------------------------------------------------------
+// Research writing
+// ---------------------------------------------------------------------------
+
 export interface ResearchAgent {
   agentNumber: number;
   focus: string;
@@ -104,6 +119,10 @@ export interface ResearchAgent {
 ### Establish Objective (if needed)
 
 ```typescript
+/**
+ * Establish the objective name and create the objective directory.
+ * Called when entering the pipeline without an existing objective.
+ */
 export function establishObjective(
   config: TwistedConfig,
 ): { objective: string; objDir: string; state: ObjectiveState } {
@@ -144,6 +163,10 @@ export function establishObjective(
 ### Read Research
 
 ```typescript
+/**
+ * Read research from the primary tracking strategy's location.
+ * Falls back gracefully if research was skipped or doesn't exist.
+ */
 export function readResearchForScope(
   config: TwistedConfig,
   objective: string,
@@ -170,6 +193,13 @@ export function readResearchForScope(
 ### Interrogate the Human
 
 ```typescript
+/**
+ * Interrogate the human one category at a time.
+ *
+ * --yolo does NOT skip this — it is inherently interactive.
+ * The human's answers ARE the requirements — capture exactly what
+ * they said. No interpretation, no synthesis, no embellishment.
+ */
 export function interrogate(
   config: TwistedConfig,
 ): Record<string, string[]> {
@@ -199,6 +229,10 @@ export function interrogate(
 ### Write Requirements + Advance State
 
 ```typescript
+/**
+ * Write requirements and advance state.
+ * Writes for ALL active tracking strategies.
+ */
 export function writeAndAdvance(
   config: TwistedConfig,
   state: ObjectiveState,

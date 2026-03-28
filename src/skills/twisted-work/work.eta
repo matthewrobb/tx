@@ -1,0 +1,27 @@
+## Command Routing
+
+<%~ it.extract("src/work/router.ts", "parseCommand") %>
+
+<%~ it.extract("src/work/router.ts", "routeCommand") %>
+
+---
+
+## Init Flow
+
+<%~ it.extract("src/work/init.ts", "executeInit") %>
+
+---
+
+## Next / Resume / Auto-Advance
+
+<%~ it.extract("src/work/advance.ts", "executeNext") %>
+
+<%~ it.extract("src/work/advance.ts", "executeResume") %>
+
+---
+
+## Config Display
+
+<%~ it.extract("src/work/config-display.ts", "executeConfig") %>
+
+<%~ it.extract("src/work/config-display.ts", "displayConfigOverview") %>

@@ -1,0 +1,24 @@
+## Built-in Defaults
+
+<%~ it.extract("src/config/defaults.ts", "defaults") %>
+
+## Config Resolution
+
+<%~ it.extract("src/config/resolve.ts", "resolveConfig") %>
+
+## Presets
+
+<%~ it.table(
+  ["Preset", "What it overrides"],
+  [
+    ["`twisted`", "tracking → twisted artifact format"],
+    ["`superpowers`", "TDD discipline, code review → Superpowers"],
+    ["`gstack`", "tracking → gstack, all delegatable phases → gstack commands"],
+    ["`nimbalyst`", "tracking → nimbalyst, research + code review → Nimbalyst"],
+    ["`minimal`", "all delegatable phases → skip, tests deferred"],
+  ]
+) %>
+
+First preset wins on conflict. Compose in any order:
+- `["superpowers", "gstack"]` → Superpowers wins for code review, gstack fills the rest
+- `["gstack", "superpowers"]` → gstack wins for code review, TDD still active
