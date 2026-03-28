@@ -7,12 +7,11 @@ import { resolve } from "path";
 import { writeJSON, writeSkill, writeFile } from "./lib/skill.js";
 import { allPresets } from "./presets/index.js";
 
-// Skill imports (will be added as skills are migrated)
-import { usingTwistedWorkflow } from "./skills/using-twisted-workflow/index.js";
-import { twistedWork } from "./skills/twisted-work/index.js";
-import { twistedScope } from "./skills/twisted-scope/index.js";
-import { twistedDecompose } from "./skills/twisted-decompose/index.js";
-import { twistedExecute } from "./skills/twisted-execute/index.js";
+import { usingTwistedWorkflow } from "./skills/using-twisted-workflow.js";
+import { twistedWork } from "./skills/twisted-work.js";
+import { twistedScope } from "./skills/twisted-scope.js";
+import { twistedDecompose } from "./skills/twisted-decompose.js";
+import { twistedExecute } from "./skills/twisted-execute.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
