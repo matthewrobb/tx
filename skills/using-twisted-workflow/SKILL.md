@@ -602,63 +602,104 @@ Agents merge into group, groups merge into objective. Structured history.
 
 ## Nimbalyst Integration (Experimental)
 
-When `nimbalyst.enabled` is `true` (auto-enabled by the nimbalyst preset), twisted-workflow writes companion tracker files that Nimbalyst's Task Mode can discover.
+When `nimbalyst.enabled` is `true` (auto-enabled by the nimbalyst preset), twisted-workflow writes Nimbalyst-compatible files in `nimbalyst-local/` so Nimbalyst's Task Mode can discover them.
 
-**EXPERIMENTAL:** Nimbalyst's tracker format is not fully publicly documented. This integration is best-effort based on observed behavior as of Nimbalyst v0.56. Field names and tag syntax may need adjustment as Nimbalyst evolves.
+Based on the Nimbalyst skills repos (`Nimbalyst/skills`, `Nimbalyst/developer-claude-code-commands`) as of March 2026.
 
-### Status Mapping
+### Plan File
 
-| twisted-workflow status | Nimbalyst status |
+Write a plan file to `nimbalyst-local/plans/{objective}.md` with Nimbalyst plan frontmatter:
+
+```yaml
+---
+planId: plan-{objective}
+title: {objective title}
+status: in-development
+planType: feature
+priority: medium
+owner: claude
+stakeholders: []
+tags: []
+created: "2026-03-27"
+updated: "2026-03-27T14:30:00Z"
+progress: 57
+startDate: "2026-03-27"
+---
+```
+
+**Never** use midnight timestamps (00:00:00.000Z) for the `updated` field.
+
+#### Plan Content
+
+After frontmatter, include:
+1. Title
+2. Goals (from objective description)
+3. Key components or phases (from PLAN.md groups)
+4. Acceptance criteria (from REQUIREMENTS.md)
+5. Implementation progress checklist (from ISSUES.md)
+
+```markdown
+## Implementation Progress
+
+- [x] ISSUE-001: Extract token validation
+- [x] ISSUE-002: Add session store
+- [ ] ISSUE-003: Fix race condition in refresh
+- [ ] ISSUE-004: Update API routes
+```
+
+The `progress` field is computed as: `(checked items / total items) * 100`, rounded to nearest integer.
+
+#### Plan Status Mapping
+
+| twisted-workflow state | Nimbalyst plan status |
 |---|---|
 | `todo` (step: research, scope) | `draft` |
 | `todo` (step: decompose) | `ready-for-development` |
-| `in-progress` | `in-development` |
+| `in-progress` (step: execute) | `in-development` |
 | `in-progress` (step: code_review, qa) | `in-review` |
 | `done` | `completed` |
 | `blocked` | `blocked` |
 
-### Companion Tracker File
+#### Plan Type Mapping
 
-When nimbalyst integration is enabled, write a `TRACKER.md` file in the objective folder alongside `state.md`. This file uses Nimbalyst-compatible frontmatter and inline tags.
+| objective content | Nimbalyst planType |
+|---|---|
+| Bug fixes | `bug-fix` |
+| Code restructuring | `refactor` |
+| Architecture work | `system-design` |
+| Research objectives | `research` |
+| Everything else | `feature` |
 
-```yaml
----
-status: in-development
-priority: medium
-progress: 57
-owner: claude
-dueDate: ""
----
-```
+### Tracker Items
 
-The `progress` field is computed as a percentage: `(issues_done / issues_total) * 100`, rounded to the nearest integer. Before decompose, progress is estimated from steps completed vs total steps.
-
-### Inline Tags
-
-Issues are tagged with `@task` in the tracker file so they surface in Nimbalyst's sidebar:
+Append tracker items to `nimbalyst-local/tracker/tasks.md` (or `bugs.md` for bug-type issues) using Nimbalyst's inline tag format:
 
 ```markdown
-## Issues
-
-@task [ISSUE-001] Extract token validation — **done**
-@task [ISSUE-002] Add session store — **done**
-@bug [ISSUE-003] Fix race condition in refresh — **in-progress**
-@task [ISSUE-004] Update API routes — **todo**
+- [ISSUE-001] Extract token validation #task[id:task_01JQXYZ status:done priority:medium created:2026-03-27]
+- [ISSUE-002] Add session store #task[id:task_01JQXYA status:done priority:medium created:2026-03-27]
+- [ISSUE-003] Fix race condition #bug[id:bug_01JQXYB status:in-progress priority:high created:2026-03-27]
+- [ISSUE-004] Update API routes #task[id:task_01JQXYC status:to-do priority:medium created:2026-03-27]
 ```
 
-Use `@bug` for issues with `type: "bug"`, `@task` for all other types.
+Format: `- [description] #[type][id:[type]_[ulid] status:[status] priority:[priority] created:YYYY-MM-DD]`
+
+Generate a ULID for each item's `id` field. Tracker status values: `to-do`, `in-progress`, `done`, `blocked`.
+
+Use `#bug` for issues with `type: "bug"`, `#task` for all other types.
 
 ### When to Update
 
-Update `TRACKER.md` whenever `state.md` is updated:
-- Step transitions (status mapping changes)
-- Issue completion (progress percentage changes)
-- Group completion (progress percentage changes)
-- Objective completion (status → completed)
+Update Nimbalyst files whenever `state.md` is updated:
+- Step transitions → update plan status
+- Issue completion → check off in plan, update tracker status, recalculate progress
+- Group completion → recalculate progress
+- Objective completion → plan status `completed`, all tracker items `done`
+
+Create the `nimbalyst-local/plans/` and `nimbalyst-local/tracker/` directories if they don't exist.
 
 ### Priority
 
-Use `nimbalyst.default_priority` from config for new objectives. The user can override per-objective by editing the tracker file directly — twisted-workflow reads the existing priority before overwriting.
+Use `nimbalyst.default_priority` from config for new objectives. Read the existing plan file's priority before updating — preserve user overrides.
 
 ## Shared Constraints
 

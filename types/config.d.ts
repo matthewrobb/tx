@@ -167,10 +167,13 @@ export type { WritingConfig } from "./writing";
 
 export type {
   NimbalystConfig,
-  NimbalystFrontmatter,
+  NimbalystPlanFrontmatter,
   NimbalystStatus,
+  NimbalystPlanType,
   NimbalystPriority,
-  NimbalystTag,
+  NimbalystTrackerTag,
+  NimbalystTrackerStatus,
+  NimbalystTrackerType,
 } from "./nimbalyst";
 
 export type {

@@ -218,9 +218,12 @@ sp = superpowers, gs = gstack, nim = nimbalyst, min = minimal
 
 ## Nimbalyst Tracker Integration (Experimental)
 
-When the nimbalyst preset is active (or `nimbalyst.enabled` is `true`), twisted-workflow writes a `TRACKER.md` companion file per objective using Nimbalyst's frontmatter format (`status`, `priority`, `progress`, `owner`, `dueDate`) and inline `@task`/`@bug` tags. This lets Nimbalyst's Task Mode discover and display objective progress alongside its own tracked items.
+When the nimbalyst preset is active (or `nimbalyst.enabled` is `true`), twisted-workflow writes files to `nimbalyst-local/` so Nimbalyst's Task Mode can discover them:
 
-This integration is best-effort based on observed Nimbalyst behavior as of v0.56. See `using-twisted-workflow` for the full status mapping and update rules.
+- **Plan file** in `nimbalyst-local/plans/{objective}.md` — full plan frontmatter (`planId`, `title`, `status`, `planType`, `priority`, `owner`, `progress`, etc.) with an implementation progress checklist
+- **Tracker items** in `nimbalyst-local/tracker/tasks.md` — inline `#task`/`#bug` tags with ULID-based IDs in Nimbalyst's format: `- [desc] #task[id:task_[ulid] status:to-do priority:medium created:YYYY-MM-DD]`
+
+Based on the Nimbalyst skills repos as of March 2026. See `using-twisted-workflow` for the full status mapping and update rules.
 
 ## Provider Delegation
 
