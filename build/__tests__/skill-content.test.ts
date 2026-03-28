@@ -9,9 +9,9 @@
 import { describe, test, expect } from "bun:test";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { defaults } from "../config/defaults.js";
-import { PIPELINE_ORDER, CORE_STEPS, DELEGATABLE_STEPS } from "../state/machine.js";
-import { allPresets } from "../presets/index.js";
+import { defaults } from "../../src/config/defaults.js";
+import { PIPELINE_ORDER, CORE_STEPS, DELEGATABLE_STEPS } from "../../src/state/machine.js";
+import { allPresets } from "../../src/presets/index.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 

@@ -5,7 +5,7 @@
 
 import { resolve } from "path";
 import { writeJSON, writeSkill, writeFile } from "./lib/skill.js";
-import { allPresets } from "./presets/index.js";
+import { allPresets } from "../src/presets/index.js";
 
 import { usingTwistedWorkflow } from "./skills/using-twisted-workflow.js";
 import { twistedWork } from "./skills/twisted-work.js";
