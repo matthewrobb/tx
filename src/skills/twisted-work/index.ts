@@ -54,19 +54,22 @@ All subcommands accept \`--yolo\` per **Yolo Mode**.
 
 1. Create \`.twisted/\` directory structure per **Directory Structure**.
 2. Apply **Gitignore Rules**.
-3. Run **Tool Detection** — scan for gstack, Superpowers, Nimbalyst skills.
+3. Run **Tool Detection** — scan for gstack, Superpowers, Nimbalyst skills. Configure the \`tracking\` array based on detected tools.
 4. Suggest a preset array based on detected tools per **Tool Detection**.
 5. Ask user to confirm or change the suggested presets. Explain that the first preset has priority — put the most important one first.
-6. If \`settings.json\` exists:
+6. Generate \`settings.json\` with a \`$schema\` reference for JSON Schema validation support.
+7. If \`settings.json\` exists:
    - Load and merge with **Built-in Defaults** using **Three-Layer Config Resolution**.
    - Show merged result with each value labelled \`(custom)\`, \`(default)\`, or \`(preset: name)\`.
    - Ask if the user wants to update anything.
    - Write back only customized keys — never a full snapshot.
-7. If \`settings.json\` does not exist:
+8. If \`settings.json\` does not exist:
    - Show the merged result (defaults + selected presets).
    - Ask if the user wants to override any values.
    - Write \`presets\` and any customized keys to \`settings.json\`.
    - Commit using \`strings.commit_messages.init\`.
+
+The \`tracking\` config controls which artifact strategies are active and where output files are written.
 
 ---
 

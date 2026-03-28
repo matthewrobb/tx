@@ -57,6 +57,7 @@ Complete \`TwistedConfig\` — all fields present. Every skill merges \`.twisted
 {
   "version": "2.0",
   "presets": [],
+  "tracking": ["twisted"],
 
   "tools": {
     "detected": {
@@ -350,7 +351,7 @@ Result: deepMerge(defaults, ...presets.reverse().map(load), projectSettings ?? {
 
 | Preset | File | What it overrides |
 |---|---|---|
-| \`standalone\` | \`presets/standalone.json\` | Nothing — pure defaults |
+| \`twisted\` | \`presets/twisted.json\` | Nothing — pure defaults |
 | \`superpowers\` | \`presets/superpowers.json\` | TDD discipline, code review → Superpowers |
 | \`gstack\` | \`presets/gstack.json\` | research, arch_review, code_review, qa, ship → gstack |
 | \`nimbalyst\` | \`presets/nimbalyst.json\` | research, code review → Nimbalyst |
@@ -362,7 +363,7 @@ The first preset has priority. Put the most important one first:
 
 | \`presets\` value | Effect |
 |---|---|
-| \`[]\` | Pure defaults (same as \`["standalone"]\`) |
+| \`[]\` | Pure defaults (same as \`["twisted"]\`) |
 | \`["superpowers"]\` | TDD + Superpowers code review |
 | \`["gstack"]\` | All delegatable phases → gstack |
 | \`["superpowers", "gstack"]\` | Superpowers wins for code review (it's first), gstack fills in the rest |
@@ -704,6 +705,22 @@ Create the \`nimbalyst-local/plans/\` and \`nimbalyst-local/tracker/\` directori
 ### Priority
 
 Use \`nimbalyst.default_priority\` from config for new objectives. Read the existing plan file's priority before updating — preserve user overrides.
+
+## Tracking Strategies
+
+The \`tracking\` config array determines where artifacts are written. Default: tracking: ["twisted"]. The primary strategy (\`tracking[0]\`) controls output format. Use \`getArtifactPaths\` from \`src/strategies/paths.ts\` to resolve file locations per strategy.
+
+| Strategy | Research output | Requirements output | Plan output | Design doc |
+|---|---|---|---|---|
+| \`twisted\` | \`RESEARCH-*.md\` | \`REQUIREMENTS.md\` | \`PLAN.md\` + \`ISSUES.md\` | — |
+| \`nimbalyst\` | \`nimbalyst-local/plans/{objective}.md\` | \`nimbalyst-local/plans/{objective}.md\` | \`nimbalyst-local/plans/{objective}.md\` | — |
+| \`gstack\` | \`DESIGN.md\` | \`DESIGN.md\` | \`PLAN.md\` + \`ISSUES.md\` | \`DESIGN.md\` |
+
+Use \`writeResearch\`, \`writeRequirements\`, and \`writeIssuesAndPlan\` from \`src/strategies/writer.ts\` to write artifacts in the correct format for each strategy.
+
+## Functional Core References
+
+State transitions use \`advanceState\` and \`nextStep\` from \`src/state/machine.ts\`. Config resolution uses \`resolveConfig\` from \`src/config/resolve.ts\`. Artifact paths use \`getArtifactPaths\` from \`src/strategies/paths.ts\`. Pipeline routing uses \`shouldPause\` from \`src/pipeline/routing.ts\`.
 
 ## Shared Constraints
 

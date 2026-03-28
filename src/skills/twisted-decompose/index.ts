@@ -105,9 +105,17 @@ Organize issues into dependency-ordered groups (\`IssueGroup[]\`):
 - Each group has a number (1-indexed), a list of issues, and a list of group dependencies.
 - Compute \`parallel_with\` for each group — groups that share no dependencies and can run concurrently when \`execution.group_parallel\` is true.
 
-### 7. Write ISSUES.md
+### 7. Write Output (Strategy-Aware)
 
-Write \`ISSUES.md\` to the objective folder with \`IssuesFrontmatter\`:
+Output is strategy-aware. Use \`writeIssuesAndPlan\` from \`src/strategies/writer.ts\`. Output locations per tracking strategy:
+
+| Strategy | Issues output | Plan output |
+|---|---|---|
+| \`twisted\` | \`ISSUES.md\` | \`PLAN.md\` |
+| \`nimbalyst\` | Checklist in \`nimbalyst-local/plans/{objective}.md\` + tracker in \`nimbalyst-local/tracker/tasks.md\` |  \`nimbalyst-local/plans/{objective}.md\` |
+| \`gstack\` | \`ISSUES.md\` | \`PLAN.md\` (references \`DESIGN.md\`) |
+
+For the twisted strategy, write \`ISSUES.md\` to the objective folder with \`IssuesFrontmatter\`:
 
 \`\`\`yaml
 ---
