@@ -7,7 +7,7 @@ const doc = new MarkdownDocument()
   .paragraph("Config defaults, preset definitions, and tracking strategy artifact mapping. Sub-skills reference source files in `src/` directly for shared logic.")
   .rule()
   .heading(2, "Built-in Defaults")
-  .code("typescript", extractDeclaration("src/config/defaults.ts", "defaults"))
+  .code("ts", extractDeclaration("src/config/defaults.ts", "defaults"))
   .heading(2, "Presets")
   .table(
     [{ heading: "Preset" }, { heading: "What it overrides" }],

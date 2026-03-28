@@ -15,7 +15,7 @@ Internal sub-skill loaded by `/twisted-work`. Handles **execute**, **code_review
 
 ## Execute Step
 
-```typescript
+```ts
 /**
  * Read issues and plan from the primary tracking strategy.
  */
@@ -41,7 +41,7 @@ export function readIssuesForExecute(
 }
 ```
 
-```typescript
+```ts
 /**
  * Move objective to in-progress if still in todo.
  * Commits the lane move using config.strings.commit_messages.lane_move.
@@ -74,7 +74,7 @@ export function moveToInProgress(
 }
 ```
 
-```typescript
+```ts
 /**
  * Execute groups in dependency order.
  *
@@ -194,7 +194,7 @@ export function executeGroups(
 
 ## Post-Execution Delegation
 
-```typescript
+```ts
 /**
  * Delegate code review.
  * review_frequency determines when this runs:
@@ -212,7 +212,7 @@ export function executeCodeReview(
 }
 ```
 
-```typescript
+```ts
 /**
  * Delegate QA.
  */
@@ -225,7 +225,7 @@ export function executeQA(
 }
 ```
 
-```typescript
+```ts
 /**
  * Execute the ship step.
  *

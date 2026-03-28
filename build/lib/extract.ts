@@ -147,7 +147,7 @@ export function extractRegion(filePath: string, regionName: string): string {
  * Wrap extracted code in a markdown TypeScript code fence.
  */
 export function tsBlock(code: string): string {
-  return "```typescript\n" + code + "\n```";
+  return "```ts\n" + code + "\n```";
 }
 
 /**

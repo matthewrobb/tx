@@ -13,13 +13,13 @@ const doc = new MarkdownDocument()
   .paragraph("Internal sub-skill loaded by `/twisted-work`. Handles **arch_review** and **decompose** steps.")
   .rule()
   .heading(2, "Arch Review Step")
-  .code("typescript", extractDeclaration("src/decompose/arch-review.ts", "executeArchReview"))
+  .code("ts", extractDeclaration("src/decompose/arch-review.ts", "executeArchReview"))
   .rule()
   .heading(2, "Decompose Step")
-  .code("typescript", extractDeclaration("src/decompose/breakdown.ts", "readInputsForDecompose"))
-  .code("typescript", extractDeclaration("src/decompose/breakdown.ts", "estimateComplexity"))
-  .code("typescript", extractDeclaration("src/decompose/breakdown.ts", "decomposeIntoIssues"))
-  .code("typescript", extractDeclaration("src/decompose/breakdown.ts", "writeDecomposeOutput"))
+  .code("ts", extractDeclaration("src/decompose/breakdown.ts", "readInputsForDecompose"))
+  .code("ts", extractDeclaration("src/decompose/breakdown.ts", "estimateComplexity"))
+  .code("ts", extractDeclaration("src/decompose/breakdown.ts", "decomposeIntoIssues"))
+  .code("ts", extractDeclaration("src/decompose/breakdown.ts", "writeDecomposeOutput"))
   .toString();
 
 const readFirst = formatReadFirst(resolveReadFirst(EXTRACTED_FROM, doc));
