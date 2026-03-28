@@ -1,0 +1,22 @@
+## Research Step
+
+<%~ it.extract("src/scope/research.ts", "executeResearch") %>
+
+### Built-in Research (when provider === "built-in")
+
+<%~ it.extract("src/scope/research.ts", "runBuiltInResearch") %>
+
+### Research Agent Data
+
+<%~ it.extract("src/strategies/writer.ts", "ResearchAgent") %>
+
+### Write Locations Per Strategy
+
+<%~ it.table(
+  ["Strategy", "Output location", "Format"],
+  [
+    ["`twisted`", "`{objDir}/RESEARCH-{n}.md`", "ResearchFrontmatter + findings per agent"],
+    ["`nimbalyst`", "`nimbalyst-local/plans/{objective}.md`", "NimbalystPlanFrontmatter, Goals + Problem Description"],
+    ["`gstack`", "`{objDir}/DESIGN.md`", "gstack design doc: Vision, Constraints, Alternatives, Detailed Design"],
+  ]
+) %>
