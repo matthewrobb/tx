@@ -33,6 +33,8 @@ writeSkill(`${ROOT}/skills/twisted-decompose/SKILL.md`, twistedDecompose);
 writeSkill(`${ROOT}/skills/twisted-execute/SKILL.md`, twistedExecute);
 
 // --- Schema ---
-// TODO: generate schemas/settings.schema.json
+console.log("\nSchema:");
+import { generateSchema } from "./schema/settings.js";
+writeJSON(`${ROOT}/schemas/settings.schema.json`, generateSchema());
 
 console.log("\nDone.");
