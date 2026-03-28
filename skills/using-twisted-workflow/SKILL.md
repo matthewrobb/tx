@@ -52,7 +52,7 @@ Complete `TwistedConfig` — all fields present. Every skill merges `.twisted/se
 ```json
 {
   "version": "2.0",
-  "preset": null,
+  "presets": [],
 
   "tools": {
     "detected": {
@@ -326,31 +326,45 @@ Let's drill into {category}. Tell me everything about this area — be specific 
 
 ## Built-in Presets
 
-Presets are sparse overrides on **Built-in Defaults**. Only the fields that differ are specified. Preset JSON files live in `presets/` at the plugin root. Three-layer resolution:
+Presets are sparse overrides on **Built-in Defaults**. Only the fields that differ are specified. Preset JSON files live in `presets/` at the plugin root.
+
+`presets` is an array. The first preset has the highest priority — earlier presets override later ones on conflict. Put the most important one first.
 
 ```
-Layer 1: Built-in defaults        ← complete, valid config
-Layer 2: Preset (optional)        ← sparse delta from defaults (presets/*.json)
-Layer 3: Per-project (optional)   ← sparse delta from resolved preset
+Layer 1: Built-in defaults          ← complete, valid config
+Layer 2: Presets (first wins)        ← cascaded right-to-left, so the first/leftmost preset wins
+Layer 3: Per-project (optional)      ← sparse delta on top of everything
 
-Result: deepMerge(defaults, presets[name] ?? {}, projectSettings ?? {})
+Result: deepMerge(defaults, ...presets.reverse().map(load), projectSettings ?? {})
 ```
 
-| Preset | File | Description |
+| Preset | File | What it overrides |
 |---|---|---|
-| `standalone` | `presets/standalone.json` | No overrides — pure defaults |
-| `superpowers` | `presets/superpowers.json` | TDD discipline + Superpowers code review |
-| `gstack` | `presets/gstack.json` | gstack for research, review, QA, shipping |
-| `gstack+superpowers` | `presets/gstack+superpowers.json` | gstack delegation + Superpowers build discipline |
-| `full-stack` | `presets/full-stack.json` | gstack + Superpowers + Nimbalyst skills |
-| `minimal` | `presets/minimal.json` | Skip all delegatable phases, deferred tests |
+| `standalone` | `presets/standalone.json` | Nothing — pure defaults |
+| `superpowers` | `presets/superpowers.json` | TDD discipline, code review → Superpowers |
+| `gstack` | `presets/gstack.json` | research, arch_review, code_review, qa, ship → gstack |
+| `nimbalyst` | `presets/nimbalyst.json` | research, code review → Nimbalyst |
+| `minimal` | `presets/minimal.json` | All delegatable phases → skip, tests deferred |
 
-Read the preset file to resolve Layer 2. Each file contains a `PresetOverrides` object — a sparse partial of `TwistedConfig` (omitting `preset` and `version`).
+### Composing Presets
+
+The first preset has priority. Put the most important one first:
+
+| `presets` value | Effect |
+|---|---|
+| `[]` | Pure defaults (same as `["standalone"]`) |
+| `["superpowers"]` | TDD + Superpowers code review |
+| `["gstack"]` | All delegatable phases → gstack |
+| `["superpowers", "gstack"]` | Superpowers wins for code review (it's first), gstack fills in the rest |
+| `["gstack", "superpowers"]` | gstack wins for code review (it's first), TDD discipline still applies |
+| `["nimbalyst", "superpowers", "gstack"]` | Nimbalyst wins for research + code review, then Superpowers, then gstack for the rest |
+
+Load each preset file and apply right-to-left so the first preset ends up on top. Each file contains a `PresetOverrides` object — a sparse partial of `TwistedConfig` (omitting `presets` and `version`).
 
 ## Three-Layer Config Resolution
 
 1. Start with **Built-in Defaults** (complete `TwistedConfig` — every field present).
-2. If `preset` is set in `settings.json`, look up the preset in **Built-in Presets** and deep-merge its sparse overrides onto defaults.
+2. If `presets` is set in `settings.json`, load each preset file and apply right-to-left so the first/leftmost preset has highest priority.
 3. Deep-merge all remaining fields from `settings.json` onto the result.
 4. The final result is a complete `TwistedConfig` with no missing fields.
 
@@ -359,6 +373,7 @@ Rules:
 - Future default changes apply automatically without manual config updates.
 - Never error on missing keys — fall back to defaults silently.
 - Deep merge: nested objects merge recursively, scalars and arrays replace.
+- Unknown preset names are silently skipped (future-proofing for custom presets).
 
 ## State Machine
 
@@ -547,12 +562,12 @@ During `/twisted-work init` or `/twisted-work config tools`:
 2. Scan for Superpowers: look for Superpowers skills (e.g., `test-driven-development`, `requesting-code-review`).
 3. Scan for Nimbalyst skills: look for Nimbalyst skill directories.
 4. Record results in `tools.detected` and update `tools.last_scan`.
-5. Suggest the best-fit preset based on detected tools:
-   - gstack + Superpowers + Nimbalyst → `full-stack`
-   - gstack + Superpowers → `gstack+superpowers`
-   - gstack only → `gstack`
-   - Superpowers only → `superpowers`
-   - Nothing detected → `standalone`
+5. Suggest a preset array based on detected tools (most important first):
+   - gstack + Superpowers + Nimbalyst → `["nimbalyst", "superpowers", "gstack"]`
+   - gstack + Superpowers → `["superpowers", "gstack"]`
+   - gstack only → `["gstack"]`
+   - Superpowers only → `["superpowers"]`
+   - Nothing detected → `[]`
 
 ## Worktree Hierarchy
 

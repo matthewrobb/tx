@@ -30,8 +30,8 @@ export interface TwistedConfig {
   /** Schema version. */
   version: "2.0";
 
-  /** Active preset name. Null means no preset (pure defaults + overrides). */
-  preset: PresetName | null;
+  /** Active presets. First wins — earlier presets override later ones on conflict. */
+  presets: PresetName[];
 
   /** Detected external tools. */
   tools: ToolsConfig;
@@ -82,11 +82,11 @@ export interface TwistedConfig {
 /**
  * What the user writes in `.twisted/settings.json`.
  *
- * All fields are optional (sparse overrides). The `preset` field selects
- * a base preset. All other fields override the resolved preset.
+ * All fields are optional (sparse overrides). The `presets` field selects
+ * base presets applied left-to-right. All other fields override the resolved result.
  */
 export type TwistedSettings = DeepPartial<TwistedConfig> & {
-  preset?: PresetName | null;
+  presets?: PresetName[];
 };
 
 // Re-export all types for convenient access from a single import.
