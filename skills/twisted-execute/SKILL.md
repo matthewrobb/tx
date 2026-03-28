@@ -1,6 +1,6 @@
 ---
 name: twisted-execute
-description: Internal sub-skill — parallel execution with worktrees, delegated review/qa/ship, and state tracking
+description: "Internal sub-skill — parallel execution with worktrees, delegated review/qa/ship, and state tracking"
 ---
 
 **Read first:**
