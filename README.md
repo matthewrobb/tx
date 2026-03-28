@@ -101,17 +101,17 @@ Frontmatter in `state.md` is the source of truth. Folders mirror frontmatter by 
 
 Run `/twisted-work init` to detect tools and select a preset. Run `/twisted-work config` to view and modify any setting.
 
-Three-layer sparse override system:
+Three-layer sparse override system with composable presets:
 
 ```
-deepMerge(defaults, presets[name] ?? {}, projectSettings ?? {})
+deepMerge(defaults, ...presets.reverse().map(load), projectSettings ?? {})
 ```
 
-`settings.json` stores only your overrides. Plugin updates apply new defaults automatically.
+First preset wins — put the most important one first. `settings.json` stores only your overrides.
 
 ```json
 {
-  "preset": "gstack+superpowers",
+  "presets": ["superpowers", "gstack"],
   "execution": { "strategy": "task-tool", "worktree_tiers": 2 },
   "files": { "changelog": "docs/CHANGELOG.md" }
 }
@@ -119,21 +119,64 @@ deepMerge(defaults, presets[name] ?? {}, projectSettings ?? {})
 
 ### Presets
 
-| Preset | What it configures |
+| Preset | What it overrides |
 |---|---|
-| `standalone` | Pure defaults, no external tools |
-| `superpowers` | TDD discipline + Superpowers code review |
-| `gstack` | gstack for research, review, QA, shipping |
-| `gstack+superpowers` | gstack delegation + Superpowers build discipline |
-| `full-stack` | gstack + Superpowers + Nimbalyst skills |
-| `minimal` | Skip all delegatable phases, deferred tests |
+| `standalone` | Nothing — pure defaults |
+| `superpowers` | TDD discipline, code review → Superpowers |
+| `gstack` | research, arch_review, code_review, qa, ship → gstack |
+| `nimbalyst` | research, code review → Nimbalyst |
+| `minimal` | All delegatable phases → skip, tests deferred |
+
+Compose them in any order. First preset wins on conflict:
+
+| `presets` value | Effect |
+|---|---|
+| `[]` | Pure defaults |
+| `["superpowers", "gstack"]` | Superpowers wins for code review (it's first), gstack fills in the rest |
+| `["gstack", "superpowers"]` | gstack wins for code review (it's first), TDD discipline still applies |
+| `["nimbalyst", "superpowers", "gstack"]` | Nimbalyst wins for research + code review, then Superpowers, then gstack |
+
+<details>
+<summary><strong>Preset comparison</strong></summary>
+
+What each individual preset overrides from defaults:
+
+| Phase | standalone | superpowers | gstack | nimbalyst | minimal |
+|---|---|---|---|---|---|
+| **research** | built-in | — | gstack | nimbalyst | skip |
+| **arch_review** | — | — | gstack | — | skip |
+| **code_review** | built-in | superpowers | gstack | nimbalyst | skip |
+| **qa** | — | — | gstack | — | skip |
+| **ship** | built-in | — | gstack | — | skip |
+| **discipline** | — | TDD | — | — | — |
+| **test_requirement** | — | — | — | — | deferred |
+
+`—` = does not override (inherits from defaults or earlier preset)
+
+### Resolved examples
+
+What you actually get for common combinations (first preset wins):
+
+| Phase | `[]` | `["sp"]` | `["gs"]` | `["sp","gs"]` | `["gs","sp"]` | `["nim","sp","gs"]` | `["min"]` |
+|---|---|---|---|---|---|---|---|
+| **research** | built-in | built-in | gstack | gstack | gstack | nimbalyst | skip |
+| **arch_review** | skip | skip | gstack | gstack | gstack | gstack | skip |
+| **code_review** | built-in | sp | gstack | sp | gstack | nimbalyst | skip |
+| **qa** | skip | skip | gstack | gstack | gstack | gstack | skip |
+| **ship** | built-in | built-in | gstack | gstack | gstack | gstack | skip |
+| **discipline** | — | TDD | — | TDD | TDD | TDD | — |
+| **tests** | must-pass | must-pass | must-pass | must-pass | must-pass | must-pass | deferred |
+
+sp = superpowers, gs = gstack, nim = nimbalyst, min = minimal
+
+</details>
 
 <details>
 <summary><strong>Full config reference</strong></summary>
 
 | Key | Default | Description |
 |---|---|---|
-| `preset` | `null` | Active preset name |
+| `presets` | `[]` | Preset array, first wins on conflict |
 | `context_skills` | `[]` | Skills injected at the start of every step |
 | `writing.skill` | `"writing-clearly-and-concisely"` | Writing quality skill |
 | `writing.fallback` | `true` | Use built-in writing rules if skill unavailable |

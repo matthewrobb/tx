@@ -16,8 +16,7 @@ export type BuiltInPresetName =
   | "standalone"
   | "superpowers"
   | "gstack"
-  | "gstack+superpowers"
-  | "full-stack"
+  | "nimbalyst"
   | "minimal";
 
 /** Preset name — built-in or custom string. */

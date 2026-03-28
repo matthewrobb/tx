@@ -78,14 +78,15 @@ Any command accepts --yolo to skip confirmations:
 
 ## Config Resolution
 
-Three-layer sparse override system:
+Three-layer sparse override system with composable presets:
 
 ```
-deepMerge(defaults, presets[name] ?? {}, projectSettings ?? {})
+deepMerge(defaults, ...presets.map(load), projectSettings ?? {})
 ```
 
+First preset wins — put the most important one first.
 Built-in presets: standalone, superpowers, gstack,
-gstack+superpowers, full-stack, minimal.
+nimbalyst, minimal.
 
 ## Skill Behavior Reference
 

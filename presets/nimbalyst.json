@@ -1,0 +1,12 @@
+{
+  "pipeline": {
+    "research": {
+      "provider": "nimbalyst:deep-researcher",
+      "fallback": "built-in"
+    },
+    "code_review": {
+      "provider": "nimbalyst:branch-reviewer",
+      "fallback": "built-in"
+    }
+  }
+}
