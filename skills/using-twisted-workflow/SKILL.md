@@ -167,6 +167,12 @@ Complete `TwistedConfig` — all fields present. Every skill merges `.twisted/se
     "fallback": true
   },
 
+  "nimbalyst": {
+    "enabled": false,
+    "default_priority": "medium",
+    "default_owner": "claude"
+  },
+
   "directories": {
     "root": ".twisted",
     "worktrees": ".twisted/worktrees"
@@ -593,6 +599,66 @@ Each agent gets its own worktree. Agents merge into the objective branch.
 .twisted/worktrees/{objective}-group-N-agent-M/        ← branched from group
 ```
 Agents merge into group, groups merge into objective. Structured history.
+
+## Nimbalyst Integration (Experimental)
+
+When `nimbalyst.enabled` is `true` (auto-enabled by the nimbalyst preset), twisted-workflow writes companion tracker files that Nimbalyst's Task Mode can discover.
+
+**EXPERIMENTAL:** Nimbalyst's tracker format is not fully publicly documented. This integration is best-effort based on observed behavior as of Nimbalyst v0.56. Field names and tag syntax may need adjustment as Nimbalyst evolves.
+
+### Status Mapping
+
+| twisted-workflow status | Nimbalyst status |
+|---|---|
+| `todo` (step: research, scope) | `draft` |
+| `todo` (step: decompose) | `ready-for-development` |
+| `in-progress` | `in-development` |
+| `in-progress` (step: code_review, qa) | `in-review` |
+| `done` | `completed` |
+| `blocked` | `blocked` |
+
+### Companion Tracker File
+
+When nimbalyst integration is enabled, write a `TRACKER.md` file in the objective folder alongside `state.md`. This file uses Nimbalyst-compatible frontmatter and inline tags.
+
+```yaml
+---
+status: in-development
+priority: medium
+progress: 57
+owner: claude
+dueDate: ""
+---
+```
+
+The `progress` field is computed as a percentage: `(issues_done / issues_total) * 100`, rounded to the nearest integer. Before decompose, progress is estimated from steps completed vs total steps.
+
+### Inline Tags
+
+Issues are tagged with `@task` in the tracker file so they surface in Nimbalyst's sidebar:
+
+```markdown
+## Issues
+
+@task [ISSUE-001] Extract token validation — **done**
+@task [ISSUE-002] Add session store — **done**
+@bug [ISSUE-003] Fix race condition in refresh — **in-progress**
+@task [ISSUE-004] Update API routes — **todo**
+```
+
+Use `@bug` for issues with `type: "bug"`, `@task` for all other types.
+
+### When to Update
+
+Update `TRACKER.md` whenever `state.md` is updated:
+- Step transitions (status mapping changes)
+- Issue completion (progress percentage changes)
+- Group completion (progress percentage changes)
+- Objective completion (status → completed)
+
+### Priority
+
+Use `nimbalyst.default_priority` from config for new objectives. The user can override per-objective by editing the tracker file directly — twisted-workflow reads the existing priority before overwriting.
 
 ## Shared Constraints
 

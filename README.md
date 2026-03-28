@@ -124,7 +124,7 @@ First preset wins — put the most important one first. `settings.json` stores o
 | `standalone` | Nothing — pure defaults |
 | `superpowers` | TDD discipline, code review → Superpowers |
 | `gstack` | research, arch_review, code_review, qa, ship → gstack |
-| `nimbalyst` | research, code review → Nimbalyst |
+| `nimbalyst` | research, code review → Nimbalyst, tracker integration enabled |
 | `minimal` | All delegatable phases → skip, tests deferred |
 
 Compose them in any order. First preset wins on conflict:
@@ -150,6 +150,7 @@ What each individual preset overrides from defaults:
 | **ship** | built-in | — | gstack | — | skip |
 | **discipline** | — | TDD | — | — | — |
 | **test_requirement** | — | — | — | — | deferred |
+| **tracker** | — | — | — | enabled | — |
 
 `—` = does not override (inherits from defaults or earlier preset)
 
@@ -166,6 +167,7 @@ What you actually get for common combinations (first preset wins):
 | **ship** | built-in | built-in | gstack | gstack | gstack | gstack | skip |
 | **discipline** | — | TDD | — | TDD | TDD | TDD | — |
 | **tests** | must-pass | must-pass | must-pass | must-pass | must-pass | must-pass | deferred |
+| **tracker** | — | — | — | — | — | enabled | — |
 
 sp = superpowers, gs = gstack, nim = nimbalyst, min = minimal
 
@@ -208,8 +210,17 @@ sp = superpowers, gs = gstack, nim = nimbalyst, min = minimal
 | `state.folder_kanban` | `{todo, in_progress, done}` | Folder paths for kanban lanes |
 | `naming.strategy` | `"prefix"` | Naming strategy for auto-generated names |
 | `naming.increment_padding` | `3` | Zero-padding for auto-named objectives |
+| `nimbalyst.enabled` | `false` | Write Nimbalyst-compatible tracker files |
+| `nimbalyst.default_priority` | `"medium"` | Default priority for new objectives |
+| `nimbalyst.default_owner` | `"claude"` | Default owner for tracked items |
 
 </details>
+
+## Nimbalyst Tracker Integration (Experimental)
+
+When the nimbalyst preset is active (or `nimbalyst.enabled` is `true`), twisted-workflow writes a `TRACKER.md` companion file per objective using Nimbalyst's frontmatter format (`status`, `priority`, `progress`, `owner`, `dueDate`) and inline `@task`/`@bug` tags. This lets Nimbalyst's Task Mode discover and display objective progress alongside its own tracked items.
+
+This integration is best-effort based on observed Nimbalyst behavior as of v0.56. See `using-twisted-workflow` for the full status mapping and update rules.
 
 ## Provider Delegation
 

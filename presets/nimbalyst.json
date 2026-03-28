@@ -8,5 +8,8 @@
       "provider": "nimbalyst:branch-reviewer",
       "fallback": "built-in"
     }
+  },
+  "nimbalyst": {
+    "enabled": true
   }
 }
