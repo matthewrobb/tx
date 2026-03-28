@@ -1,6 +1,6 @@
 import { MarkdownDocument, md } from "build-md";
-import type { SkillDefinition } from "../../lib/skill.js";
-import { extractDeclaration } from "../../lib/extract.js";
+import type { SkillDefinition } from "../lib/skill.js";
+import { extractDeclaration } from "../lib/extract.js";
 
 const doc = new MarkdownDocument()
   .heading(1, "twisted-workflow shared reference")

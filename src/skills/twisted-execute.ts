@@ -1,7 +1,7 @@
 import { MarkdownDocument } from "build-md";
-import type { SkillDefinition } from "../../lib/skill.js";
-import { extractDeclaration } from "../../lib/extract.js";
-import { resolveReadFirst, formatReadFirst } from "../../lib/imports.js";
+import type { SkillDefinition } from "../lib/skill.js";
+import { extractDeclaration } from "../lib/extract.js";
+import { resolveReadFirst, formatReadFirst } from "../lib/imports.js";
 
 const EXTRACTED_FROM = [
   "src/execute/run.ts",
