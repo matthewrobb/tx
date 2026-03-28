@@ -4,19 +4,22 @@ import { extractDeclaration } from "../lib/extract.js";
 
 const doc = new MarkdownDocument()
   .heading(1, "twisted-workflow shared reference")
-  .paragraph("Config defaults, preset definitions, and tracking strategy artifact mapping. Sub-skills reference source files in `src/` directly for shared logic.")
+  .paragraph("Config resolution, preset composition, and tracking strategy artifact mapping.")
   .rule()
-  .heading(2, "Built-in Defaults")
-  .code("ts", extractDeclaration("src/config/defaults.ts", "defaults"))
+  .heading(2, "Config Resolution")
+  .paragraph("Read `src/config/resolve.ts` for the full implementation. Read `src/config/defaults.ts` for default values. Read `presets/{name}.json` for each active preset's overrides.")
+  .code("ts", extractDeclaration("src/config/resolve.ts", "resolveConfig"))
+  .code("ts", extractDeclaration("src/config/merge.ts", "deepMerge"))
   .heading(2, "Presets")
+  .paragraph("Each preset is a sparse JSON file in `presets/`. Read the file for the active preset to see what it overrides.")
   .table(
-    [{ heading: "Preset" }, { heading: "What it overrides" }],
+    [{ heading: "Preset" }, { heading: "File" }, { heading: "What it overrides" }],
     [
-      [md.code("twisted"), "tracking → twisted artifact format"],
-      [md.code("superpowers"), "TDD discipline, code review → Superpowers"],
-      [md.code("gstack"), "tracking → gstack, all delegatable phases → gstack commands"],
-      [md.code("nimbalyst"), "tracking → nimbalyst, research + code review → Nimbalyst"],
-      [md.code("minimal"), "all delegatable phases → skip, tests deferred"],
+      [md.code("twisted"), md.code("presets/twisted.json"), "tracking → twisted artifact format"],
+      [md.code("superpowers"), md.code("presets/superpowers.json"), "TDD discipline, code review → Superpowers"],
+      [md.code("gstack"), md.code("presets/gstack.json"), "tracking → gstack, all delegatable phases → gstack commands"],
+      [md.code("nimbalyst"), md.code("presets/nimbalyst.json"), "tracking → nimbalyst, research + code review → Nimbalyst"],
+      [md.code("minimal"), md.code("presets/minimal.json"), "all delegatable phases → skip, tests deferred"],
     ],
   )
   .paragraph("First preset wins on conflict. Compose in any order:")
@@ -41,7 +44,7 @@ const doc = new MarkdownDocument()
 export const usingTwistedWorkflow: SkillDefinition = {
   frontmatter: {
     name: "using-twisted-workflow",
-    description: "Shared reference — config defaults, presets, and tracking strategy artifact map",
+    description: "Shared reference — config resolution, presets, and tracking strategy artifact map",
   },
   content: doc,
 };
