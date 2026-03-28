@@ -15,7 +15,7 @@ Internal sub-skill loaded by `/twisted-work`. Handles **research** and **scope**
 
 ## Research Step
 
-```typescript
+```ts
 /**
  * Execute the research step.
  * Uses dispatchPhase for provider check — see using-twisted-workflow for details.
@@ -45,7 +45,7 @@ export function executeResearch(
 
 ### Built-in Research
 
-```typescript
+```ts
 /**
  * Built-in research — spawn parallel subagents to explore the codebase.
  *
@@ -72,7 +72,7 @@ export function runBuiltInResearch(
 }
 ```
 
-```typescript
+```ts
 // ---------------------------------------------------------------------------
 // Research writing
 // ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ export interface ResearchAgent {
 
 ## Scope Step
 
-```typescript
+```ts
 /**
  * Establish the objective name and create the objective directory.
  * Called when entering the pipeline without an existing objective.
@@ -134,7 +134,7 @@ export function establishObjective(
 }
 ```
 
-```typescript
+```ts
 /**
  * Read research from the primary tracking strategy's location.
  * Falls back gracefully if research was skipped or doesn't exist.
@@ -162,7 +162,7 @@ export function readResearchForScope(
 }
 ```
 
-```typescript
+```ts
 /**
  * Interrogate the human one category at a time.
  *
@@ -197,7 +197,7 @@ export function interrogate(
 }
 ```
 
-```typescript
+```ts
 /**
  * Write requirements and advance state.
  * Uses forEachStrategy — see using-twisted-workflow for the shared pattern.

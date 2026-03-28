@@ -17,7 +17,7 @@ The only user-facing skill. Routes to internal sub-skills based on arguments and
 
 ## Command Routing
 
-```typescript
+```ts
 /**
  * Parse user input into a structured command.
  *
@@ -50,7 +50,7 @@ export function parseCommand(rawArgs: string): ParsedCommand {
 }
 ```
 
-```typescript
+```ts
 /**
  * Route a parsed command to the correct handler.
  *
@@ -105,7 +105,7 @@ export function routeCommand(
 
 ## Init Flow
 
-```typescript
+```ts
 /**
  * Execute /twisted-work init.
  *
@@ -166,7 +166,7 @@ export function executeInit(
 
 ## Next / Resume / Auto-Advance
 
-```typescript
+```ts
 /**
  * Execute /twisted-work next — advance to the next step.
  *
@@ -241,7 +241,7 @@ export function executeNext(
 }
 ```
 
-```typescript
+```ts
 /**
  * Execute /twisted-work resume — resume at the CURRENT step (not next).
  */
@@ -262,7 +262,7 @@ export function executeResume(
 
 ## Config Display
 
-```typescript
+```ts
 /**
  * Execute /twisted-work config — show and edit configuration.
  *
@@ -297,7 +297,7 @@ export function executeConfig(
 }
 ```
 
-```typescript
+```ts
 /**
  * Show full config overview.
  *

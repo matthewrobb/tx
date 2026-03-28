@@ -50,8 +50,8 @@ describe("extractSignature", () => {
 });
 
 describe("tsBlock", () => {
-  test("wraps code in typescript fence", () => {
+  test("wraps code in ts fence", () => {
     const result = tsBlock("const x = 1;");
-    expect(result).toBe("```typescript\nconst x = 1;\n```");
+    expect(result).toBe("```ts\nconst x = 1;\n```");
   });
 });

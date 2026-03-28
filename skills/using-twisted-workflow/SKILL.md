@@ -11,7 +11,7 @@ Config defaults, preset definitions, and tracking strategy artifact mapping. Sub
 
 ## Built-in Defaults
 
-```typescript
+```ts
 export const defaults: TwistedConfig = {
   version: "2.0",
   presets: [],

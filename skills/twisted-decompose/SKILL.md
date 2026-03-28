@@ -15,7 +15,7 @@ Internal sub-skill loaded by `/twisted-work`. Handles **arch_review** and **deco
 
 ## Arch Review Step
 
-```typescript
+```ts
 /**
  * Execute the arch_review step.
  * No built-in implementation — always delegated or skipped.
@@ -34,7 +34,7 @@ export function executeArchReview(
 
 ## Decompose Step
 
-```typescript
+```ts
 /**
  * Read research + requirements from the primary tracking strategy's location.
  */
@@ -69,7 +69,7 @@ export function readInputsForDecompose(
 }
 ```
 
-```typescript
+```ts
 /**
  * Estimate complexity for each issue using the configured scale.
  *
@@ -95,7 +95,7 @@ export function estimateComplexity(
 }
 ```
 
-```typescript
+```ts
 /**
  * Break requirements into issues, assign groups, compute dependency graph.
  *
@@ -122,7 +122,7 @@ export function decomposeIntoIssues(
 }
 ```
 
-```typescript
+```ts
 /**
  * Write decompose output and advance state.
  * Uses forEachStrategy — see using-twisted-workflow for the shared pattern.
