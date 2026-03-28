@@ -52,7 +52,15 @@ Each agent explores its focus area and returns structured findings:
 
 #### c. Write Research Files
 
-Write findings to the objective folder using the `strings.research_section` template for section headings:
+Use `writeResearch` from `src/strategies/writer.ts` to write output in the correct format for the active tracking strategy. Output locations per strategy:
+
+| Strategy | Research output |
+|---|---|
+| `twisted` | `RESEARCH-*.md` in the objective folder |
+| `nimbalyst` | `nimbalyst-local/plans/{objective}.md` |
+| `gstack` | `DESIGN.md` in the objective folder |
+
+For the twisted strategy, use the `strings.research_section` template for section headings:
 
 ```
 ## Agent {n} — {focus}
@@ -122,9 +130,17 @@ Rules:
 - Do not move to the next category until the current one is locked down.
 - This phase is inherently interactive — `--yolo` does NOT skip the interrogation.
 
-### 4. Write REQUIREMENTS.md
+### 4. Write Requirements
 
-Write `REQUIREMENTS.md` to the objective folder with `RequirementsFrontmatter`:
+Requirements output is strategy-aware. Use `writeRequirements` from `src/strategies/writer.ts`:
+
+| Strategy | Requirements output |
+|---|---|
+| `twisted` | `REQUIREMENTS.md` in the objective folder |
+| `nimbalyst` | Appended to `nimbalyst-local/plans/{objective}.md` |
+| `gstack` | Appended to `DESIGN.md` in the objective folder |
+
+For the twisted strategy, write `REQUIREMENTS.md` to the objective folder with `RequirementsFrontmatter`:
 
 ```yaml
 ---
