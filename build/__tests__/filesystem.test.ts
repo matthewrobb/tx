@@ -10,16 +10,16 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 import { existsSync, readFileSync, rmSync } from "fs";
 import { resolve } from "path";
-import { resolveConfig } from "../config/resolve.js";
-import { writeResearch, writeRequirements, writeIssuesAndPlan, type WriteOptions } from "../strategies/writer.js";
-import { objectiveDir } from "../strategies/paths.js";
+import { resolveConfig } from "../../src/config/resolve.js";
+import { writeResearch, writeRequirements, writeIssuesAndPlan, type WriteOptions } from "../../src/strategies/writer.js";
+import { objectiveDir } from "../../src/strategies/paths.js";
 import {
   researchFindings,
   requirementsContent,
   issues,
   issueGroups,
   dependencyGraph,
-} from "../__fixtures__/objectives.js";
+} from "../../src/__fixtures__/objectives.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const OUT = resolve(ROOT, ".test-output");
