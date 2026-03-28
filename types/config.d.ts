@@ -24,6 +24,7 @@ import type { WritingConfig } from "./writing";
 import type { DirectoryConfig, FilePathConfig, NamingConfig } from "./directories";
 import type { PresetName, DeepPartial } from "./preset";
 import type { StringTemplates } from "./strings";
+import type { NimbalystConfig } from "./nimbalyst";
 
 /** Fully resolved configuration — all fields present and required. */
 export interface TwistedConfig {
@@ -59,6 +60,9 @@ export interface TwistedConfig {
 
   /** Writing quality skill. */
   writing: WritingConfig;
+
+  /** Nimbalyst integration (experimental). */
+  nimbalyst: NimbalystConfig;
 
   /** Directory paths. */
   directories: DirectoryConfig;
@@ -160,6 +164,14 @@ export type {
 } from "./flow";
 
 export type { WritingConfig } from "./writing";
+
+export type {
+  NimbalystConfig,
+  NimbalystFrontmatter,
+  NimbalystStatus,
+  NimbalystPriority,
+  NimbalystTag,
+} from "./nimbalyst";
 
 export type {
   DirectoryConfig,
