@@ -1,3 +1,9 @@
+# twisted-decompose
+
+Internal sub-skill loaded by `/twisted-work`. Handles **arch_review** and **decompose** steps.
+
+---
+
 ## Arch Review Step
 
 <%~ it.extract("src/decompose/arch-review.ts", "executeArchReview") %>

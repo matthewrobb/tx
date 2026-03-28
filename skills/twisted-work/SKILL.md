@@ -324,4 +324,3 @@ export function displayConfigOverview(config: TwistedConfig): void {
   display(`  flow        — auto-advance: ${config.flow.auto_advance}`);
 }
 ```
-

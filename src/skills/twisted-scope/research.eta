@@ -1,9 +1,0 @@
-## Research Step
-
-<%~ it.extract("src/scope/research.ts", "executeResearch") %>
-
-### Built-in Research
-
-<%~ it.extract("src/scope/research.ts", "runBuiltInResearch") %>
-
-<%~ it.extract("src/strategies/writer.ts", "ResearchAgent") %>

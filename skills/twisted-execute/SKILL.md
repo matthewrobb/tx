@@ -263,4 +263,3 @@ export function executeShip(
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
-

@@ -1,3 +1,9 @@
+# twisted-execute
+
+Internal sub-skill loaded by `/twisted-work`. Handles **execute**, **code_review**, **qa**, and **ship** steps.
+
+---
+
 ## Execute Step
 
 <%~ it.extract("src/execute/run.ts", "readIssuesForExecute") %>

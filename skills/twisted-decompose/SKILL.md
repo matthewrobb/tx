@@ -143,4 +143,3 @@ export function writeDecomposeOutput(
   return advanceState(state, config.pipeline, "built-in");
 }
 ```
-

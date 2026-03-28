@@ -5,7 +5,7 @@ description: Shared reference — config defaults, presets, and tracking strateg
 
 # twisted-workflow shared reference
 
-Config defaults, preset definitions, and strategy artifact mapping.
+Config defaults, preset definitions, and tracking strategy artifact mapping.
 Sub-skills reference source files in `src/` directly for shared logic.
 
 ---
@@ -209,7 +209,6 @@ First preset wins on conflict. Compose in any order:
 - `["superpowers", "gstack"]` → Superpowers wins for code review, gstack fills the rest
 - `["gstack", "superpowers"]` → gstack wins for code review, TDD still active
 
-
 ---
 
 ## Tracking Strategy Artifact Map
@@ -221,4 +220,3 @@ First preset wins on conflict. Compose in any order:
 | Plan | `{objDir}/PLAN.md` | same plan doc (checklist) | `{objDir}/PLAN.md` (gstack format) |
 | Issues | `{objDir}/ISSUES.md` | embedded in plan doc | `{objDir}/ISSUES.md` |
 | Tracker | — | `nimbalyst-local/tracker/tasks.md` | — |
-
