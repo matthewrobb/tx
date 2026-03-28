@@ -7,11 +7,11 @@ Sub-skills reference source files in `src/` directly for shared logic.
 
 ## Built-in Defaults
 
-<%~ it.extract("src/config/defaults.ts", "defaults") %>
+<%~ extract("src/config/defaults.ts", "defaults") %>
 
 ## Presets
 
-<%~ it.table(
+<%~ table(
   ["Preset", "What it overrides"],
   [
     ["`twisted`", "tracking → twisted artifact format"],
@@ -30,7 +30,7 @@ First preset wins on conflict. Compose in any order:
 
 ## Tracking Strategy Artifact Map
 
-<%~ it.table(
+<%~ table(
   ["Step", "twisted", "nimbalyst", "gstack"],
   [
     ["Research", "`{objDir}/RESEARCH-{n}.md`", "`nimbalyst-local/plans/{objective}.md`", "`{objDir}/DESIGN.md`"],

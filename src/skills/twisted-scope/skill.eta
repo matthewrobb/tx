@@ -6,22 +6,22 @@ Internal sub-skill loaded by `/twisted-work`. Handles **research** and **scope**
 
 ## Research Step
 
-<%~ it.extract("src/scope/research.ts", "executeResearch") %>
+<%~ extract("src/scope/research.ts", "executeResearch") %>
 
 ### Built-in Research
 
-<%~ it.extract("src/scope/research.ts", "runBuiltInResearch") %>
+<%~ extract("src/scope/research.ts", "runBuiltInResearch") %>
 
-<%~ it.extract("src/strategies/writer.ts", "ResearchAgent") %>
+<%~ extract("src/strategies/writer.ts", "ResearchAgent") %>
 
 ---
 
 ## Scope Step
 
-<%~ it.extract("src/scope/objective.ts", "establishObjective") %>
+<%~ extract("src/scope/objective.ts", "establishObjective") %>
 
-<%~ it.extract("src/scope/requirements.ts", "readResearchForScope") %>
+<%~ extract("src/scope/requirements.ts", "readResearchForScope") %>
 
-<%~ it.extract("src/scope/interrogate.ts", "interrogate") %>
+<%~ extract("src/scope/interrogate.ts", "interrogate") %>
 
-<%~ it.extract("src/scope/requirements.ts", "writeAndAdvance") %>
+<%~ extract("src/scope/requirements.ts", "writeAndAdvance") %>

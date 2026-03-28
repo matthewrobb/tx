@@ -6,16 +6,16 @@ Internal sub-skill loaded by `/twisted-work`. Handles **arch_review** and **deco
 
 ## Arch Review Step
 
-<%~ it.extract("src/decompose/arch-review.ts", "executeArchReview") %>
+<%~ extract("src/decompose/arch-review.ts", "executeArchReview") %>
 
 ---
 
 ## Decompose Step
 
-<%~ it.extract("src/decompose/breakdown.ts", "readInputsForDecompose") %>
+<%~ extract("src/decompose/breakdown.ts", "readInputsForDecompose") %>
 
-<%~ it.extract("src/decompose/breakdown.ts", "estimateComplexity") %>
+<%~ extract("src/decompose/breakdown.ts", "estimateComplexity") %>
 
-<%~ it.extract("src/decompose/breakdown.ts", "decomposeIntoIssues") %>
+<%~ extract("src/decompose/breakdown.ts", "decomposeIntoIssues") %>
 
-<%~ it.extract("src/decompose/breakdown.ts", "writeDecomposeOutput") %>
+<%~ extract("src/decompose/breakdown.ts", "writeDecomposeOutput") %>
