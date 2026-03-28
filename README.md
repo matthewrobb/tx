@@ -121,10 +121,10 @@ First preset wins — put the most important one first. `settings.json` stores o
 
 | Preset | What it overrides |
 |---|---|
-| `standalone` | Nothing — pure defaults |
+| `twisted` | twisted-workflow's own artifact format (ISSUES.md + PLAN.md) |
 | `superpowers` | TDD discipline, code review → Superpowers |
-| `gstack` | research, arch_review, code_review, qa, ship → gstack |
-| `nimbalyst` | research, code review → Nimbalyst, tracker integration enabled |
+| `gstack` | research, arch_review, code_review, qa, ship → gstack, gstack artifact format |
+| `nimbalyst` | research, code review → Nimbalyst, nimbalyst artifact format |
 | `minimal` | All delegatable phases → skip, tests deferred |
 
 Compose them in any order. First preset wins on conflict:
@@ -141,16 +141,16 @@ Compose them in any order. First preset wins on conflict:
 
 What each individual preset overrides from defaults:
 
-| Phase | standalone | superpowers | gstack | nimbalyst | minimal |
+| | twisted | superpowers | gstack | nimbalyst | minimal |
 |---|---|---|---|---|---|
-| **research** | built-in | — | gstack | nimbalyst | skip |
+| **tracking** | `["twisted"]` | — | `["gstack"]` | `["nimbalyst"]` | — |
+| **research** | — | — | gstack | nimbalyst | skip |
 | **arch_review** | — | — | gstack | — | skip |
-| **code_review** | built-in | superpowers | gstack | nimbalyst | skip |
+| **code_review** | — | superpowers | gstack | nimbalyst | skip |
 | **qa** | — | — | gstack | — | skip |
-| **ship** | built-in | — | gstack | — | skip |
+| **ship** | — | — | gstack | — | skip |
 | **discipline** | — | TDD | — | — | — |
-| **test_requirement** | — | — | — | — | deferred |
-| **tracker** | — | — | — | enabled | — |
+| **tests** | — | — | — | — | deferred |
 
 `—` = does not override (inherits from defaults or earlier preset)
 
@@ -158,18 +158,15 @@ What each individual preset overrides from defaults:
 
 What you actually get for common combinations (first preset wins):
 
-| Phase | `[]` | `["sp"]` | `["gs"]` | `["sp","gs"]` | `["gs","sp"]` | `["nim","sp","gs"]` | `["min"]` |
-|---|---|---|---|---|---|---|---|
-| **research** | built-in | built-in | gstack | gstack | gstack | nimbalyst | skip |
-| **arch_review** | skip | skip | gstack | gstack | gstack | gstack | skip |
-| **code_review** | built-in | sp | gstack | sp | gstack | nimbalyst | skip |
-| **qa** | skip | skip | gstack | gstack | gstack | gstack | skip |
-| **ship** | built-in | built-in | gstack | gstack | gstack | gstack | skip |
-| **discipline** | — | TDD | — | TDD | TDD | TDD | — |
-| **tests** | must-pass | must-pass | must-pass | must-pass | must-pass | must-pass | deferred |
-| **tracker** | — | — | — | — | — | enabled | — |
+| | `[]` | `["tw"]` | `["sp"]` | `["gs"]` | `["nim"]` | `["sp","gs"]` | `["nim","sp","gs"]` | `["min"]` |
+|---|---|---|---|---|---|---|---|---|
+| **tracking** | twisted | twisted | twisted | gstack | nimbalyst | gstack | nimbalyst | twisted |
+| **research** | built-in | built-in | built-in | gstack | nimbalyst | gstack | nimbalyst | skip |
+| **code_review** | built-in | built-in | sp | gstack | nimbalyst | sp | nimbalyst | skip |
+| **discipline** | — | — | TDD | — | — | TDD | TDD | — |
+| **tests** | must-pass | must-pass | must-pass | must-pass | must-pass | must-pass | must-pass | deferred |
 
-sp = superpowers, gs = gstack, nim = nimbalyst, min = minimal
+tw = twisted, sp = superpowers, gs = gstack, nim = nimbalyst, min = minimal
 
 </details>
 
@@ -289,6 +286,28 @@ Configurable worktree tiers. Default is 2 tiers: the objective gets a branch off
 gstack provides specialist roles (plan/review/ship). Nimbalyst provides session management and visual kanban. twisted-workflow is the orchestration layer between them — it decomposes objectives into parallel issues, coordinates execution across worktrees, and delegates individual phases to whichever tool you prefer.
 
 </details>
+
+## JSON Schema
+
+`/twisted-work init` adds a `$schema` reference to `settings.json` for VS Code autocomplete, validation, and inline descriptions. If editing settings manually, add:
+
+```json
+{
+  "$schema": "path/to/schemas/settings.schema.json"
+}
+```
+
+## Development
+
+The plugin is built from TypeScript source. Generated files (skills, presets, schema) are committed to git.
+
+```bash
+bun install          # install dependencies
+bun run build        # generate skills/, presets/, schemas/
+bun test             # run all tests (218 tests)
+```
+
+The functional core (`src/config/`, `src/state/`, `src/strategies/`, `src/pipeline/`) implements all deterministic logic. Skills reference this code instead of describing it in prose. Tests cover config resolution, state machine, strategy dispatch, and filesystem output for all preset combinations.
 
 ## Contributing
 

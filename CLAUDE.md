@@ -12,28 +12,52 @@ twisted-workflow/
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json
-├── skills/
-│   ├── using-twisted-workflow/SKILL.md    ← shared config, defaults, presets, templates
-│   ├── twisted-work/SKILL.md             ← only user-facing skill (router)
-│   ├── twisted-scope/SKILL.md            ← internal: research + requirements
-│   ├── twisted-decompose/SKILL.md        ← internal: issue breakdown + planning
-│   └── twisted-execute/SKILL.md          ← internal: parallel execution + delegation
-├── types/                                 ← canonical type definitions (17 .d.ts files)
-├── presets/                               ← built-in preset JSON files (sparse overrides)
+├── src/                                   ← TypeScript source (build input)
+│   ├── build.ts                           ← bun run build
+│   ├── config/                            ← config resolution, defaults, deepMerge
+│   ├── state/                             ← state machine, status mapping
+│   ├── strategies/                        ← artifact paths, writer, worktrees
+│   ├── pipeline/                          ← provider routing, pause logic
+│   ├── presets/                           ← typed preset definitions
+│   ├── schema/                            ← JSON Schema generator
+│   ├── skills/                            ← skill source (generates SKILL.md)
+│   ├── __fixtures__/                      ← test fixtures
+│   └── __tests__/                         ← integration tests
+├── skills/                                ← generated SKILL.md files (committed)
+│   ├── using-twisted-workflow/SKILL.md
+│   ├── twisted-work/SKILL.md
+│   ├── twisted-scope/SKILL.md
+│   ├── twisted-decompose/SKILL.md
+│   └── twisted-execute/SKILL.md
+├── types/                                 ← canonical type definitions (18 .d.ts files)
+├── presets/                               ← generated preset JSON (committed)
+├── schemas/                               ← generated JSON Schema (committed)
+│   └── settings.schema.json
 ├── README.md
 └── CHANGELOG.md
 ```
 
 ## Architecture
 
-One user-facing skill (`/twisted-work`) routes to three
-internal sub-skills (scope, decompose, execute) based on
-objective state. Shared config, defaults, presets, and
-string templates live in `skills/using-twisted-workflow/SKILL.md`.
+TypeScript source in `src/` is the source of truth. The build
+script generates SKILL.md files, preset JSON, and JSON Schema.
+Generated files are committed to git.
 
-The type system in `types/` is the canonical schema.
-Every configurable value in a SKILL.md must match the
-corresponding type definition.
+**Functional core** — deterministic logic lives in `src/`:
+- `src/config/` — deepMerge, defaults, resolveConfig
+- `src/state/` — state machine, step sequencing, status mapping
+- `src/strategies/` — artifact paths, strategy-aware writer, worktrees
+- `src/pipeline/` — provider routing, pause logic
+
+**Skills** reference this code instead of re-describing it in prose.
+Prose is reserved for judgment calls, user interaction, and constraints.
+
+## Build
+
+```
+bun run build     # generates skills/, presets/, schemas/
+bun test          # runs all tests (218 tests)
+```
 
 ## Pipeline
 
@@ -81,17 +105,26 @@ Any command accepts --yolo to skip confirmations:
 Three-layer sparse override system with composable presets:
 
 ```
-deepMerge(defaults, ...presets.map(load), projectSettings ?? {})
+deepMerge(defaults, ...presets.reverse().map(load), projectSettings ?? {})
 ```
 
 First preset wins — put the most important one first.
-Built-in presets: standalone, superpowers, gstack,
-nimbalyst, minimal.
+Built-in presets: twisted, superpowers, gstack, nimbalyst, minimal.
+
+## Tracking Strategies
+
+`tracking: ["twisted"]` determines artifact format across
+the full pipeline. First entry = primary. All entries written.
+
+| Strategy | Research | Requirements | Plan/Issues |
+|---|---|---|---|
+| `twisted` | RESEARCH-*.md | REQUIREMENTS.md | ISSUES.md + PLAN.md |
+| `nimbalyst` | nimbalyst-local/plans/ | same plan doc | checklist + tracker |
+| `gstack` | DESIGN.md | DESIGN.md (append) | gstack PLAN.md + ISSUES.md |
 
 ## Skill Behavior Reference
 
 Detailed step-by-step behavior for each phase lives in
-the individual SKILL.md files. The authoritative source
-for config, defaults, presets, templates, and rules is
-`skills/using-twisted-workflow/SKILL.md`. The authoritative
-source for type definitions is `types/`.
+the individual SKILL.md files. The authoritative source for
+logic is `src/`. The authoritative source for type definitions
+is `types/`.
