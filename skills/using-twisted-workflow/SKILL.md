@@ -198,13 +198,14 @@ export const defaults: TwistedConfig = {
 ```
 ## Presets
 
-| Preset | What it overrides |
-| --- | --- |
-| `twisted` | tracking → twisted artifact format |
-| `superpowers` | TDD discipline, code review → Superpowers |
-| `gstack` | tracking → gstack, all delegatable phases → gstack commands |
-| `nimbalyst` | tracking → nimbalyst, research + code review → Nimbalyst |
-| `minimal` | all delegatable phases → skip, tests deferred |
+| Preset        | What it overrides                                           |
+| ------------- | ----------------------------------------------------------- |
+| `twisted`     | tracking → twisted artifact format                          |
+| `superpowers` | TDD discipline, code review → Superpowers                   |
+| `gstack`      | tracking → gstack, all delegatable phases → gstack commands |
+| `nimbalyst`   | tracking → nimbalyst, research + code review → Nimbalyst    |
+| `minimal`     | all delegatable phases → skip, tests deferred               |
+
 First preset wins on conflict. Compose in any order:
 - `["superpowers", "gstack"]` → Superpowers wins for code review, gstack fills the rest
 - `["gstack", "superpowers"]` → gstack wins for code review, TDD still active
@@ -213,10 +214,11 @@ First preset wins on conflict. Compose in any order:
 
 ## Tracking Strategy Artifact Map
 
-| Step | twisted | nimbalyst | gstack |
-| --- | --- | --- | --- |
-| Research | `{objDir}/RESEARCH-{n}.md` | `nimbalyst-local/plans/{objective}.md` | `{objDir}/DESIGN.md` |
-| Requirements | `{objDir}/REQUIREMENTS.md` | same plan doc (append) | `{objDir}/DESIGN.md` (append) |
-| Plan | `{objDir}/PLAN.md` | same plan doc (checklist) | `{objDir}/PLAN.md` (gstack format) |
-| Issues | `{objDir}/ISSUES.md` | embedded in plan doc | `{objDir}/ISSUES.md` |
-| Tracker | — | `nimbalyst-local/tracker/tasks.md` | — |
+| Step         | twisted                    | nimbalyst                              | gstack                             |
+| ------------ | -------------------------- | -------------------------------------- | ---------------------------------- |
+| Research     | `{objDir}/RESEARCH-{n}.md` | `nimbalyst-local/plans/{objective}.md` | `{objDir}/DESIGN.md`               |
+| Requirements | `{objDir}/REQUIREMENTS.md` | same plan doc (append)                 | `{objDir}/DESIGN.md` (append)      |
+| Plan         | `{objDir}/PLAN.md`         | same plan doc (checklist)              | `{objDir}/PLAN.md` (gstack format) |
+| Issues       | `{objDir}/ISSUES.md`       | embedded in plan doc                   | `{objDir}/ISSUES.md`               |
+| Tracker      | —                          | `nimbalyst-local/tracker/tasks.md`     | —                                  |
+

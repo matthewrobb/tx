@@ -11,16 +11,18 @@ Sub-skills reference source files in `src/` directly for shared logic.
 
 ## Presets
 
-<%~ table(
-  ["Preset", "What it overrides"],
-  [
-    ["`twisted`", "tracking → twisted artifact format"],
-    ["`superpowers`", "TDD discipline, code review → Superpowers"],
-    ["`gstack`", "tracking → gstack, all delegatable phases → gstack commands"],
-    ["`nimbalyst`", "tracking → nimbalyst, research + code review → Nimbalyst"],
-    ["`minimal`", "all delegatable phases → skip, tests deferred"],
-  ]
-) %>
+<%~ new MarkdownDocument()
+  .table(
+    [{ heading: "Preset" }, { heading: "What it overrides" }],
+    [
+      [md.code("twisted"), "tracking → twisted artifact format"],
+      [md.code("superpowers"), "TDD discipline, code review → Superpowers"],
+      [md.code("gstack"), "tracking → gstack, all delegatable phases → gstack commands"],
+      [md.code("nimbalyst"), "tracking → nimbalyst, research + code review → Nimbalyst"],
+      [md.code("minimal"), "all delegatable phases → skip, tests deferred"],
+    ]
+  )
+  .toString() %>
 
 First preset wins on conflict. Compose in any order:
 - `["superpowers", "gstack"]` → Superpowers wins for code review, gstack fills the rest
@@ -30,13 +32,15 @@ First preset wins on conflict. Compose in any order:
 
 ## Tracking Strategy Artifact Map
 
-<%~ table(
-  ["Step", "twisted", "nimbalyst", "gstack"],
-  [
-    ["Research", "`{objDir}/RESEARCH-{n}.md`", "`nimbalyst-local/plans/{objective}.md`", "`{objDir}/DESIGN.md`"],
-    ["Requirements", "`{objDir}/REQUIREMENTS.md`", "same plan doc (append)", "`{objDir}/DESIGN.md` (append)"],
-    ["Plan", "`{objDir}/PLAN.md`", "same plan doc (checklist)", "`{objDir}/PLAN.md` (gstack format)"],
-    ["Issues", "`{objDir}/ISSUES.md`", "embedded in plan doc", "`{objDir}/ISSUES.md`"],
-    ["Tracker", "—", "`nimbalyst-local/tracker/tasks.md`", "—"],
-  ]
-) %>
+<%~ new MarkdownDocument()
+  .table(
+    [{ heading: "Step" }, { heading: "twisted" }, { heading: "nimbalyst" }, { heading: "gstack" }],
+    [
+      ["Research", md.code("{objDir}/RESEARCH-{n}.md"), md.code("nimbalyst-local/plans/{objective}.md"), md.code("{objDir}/DESIGN.md")],
+      ["Requirements", md.code("{objDir}/REQUIREMENTS.md"), "same plan doc (append)", md.code("{objDir}/DESIGN.md") + " (append)"],
+      ["Plan", md.code("{objDir}/PLAN.md"), "same plan doc (checklist)", md.code("{objDir}/PLAN.md") + " (gstack format)"],
+      ["Issues", md.code("{objDir}/ISSUES.md"), "embedded in plan doc", md.code("{objDir}/ISSUES.md")],
+      ["Tracker", "—", md.code("nimbalyst-local/tracker/tasks.md"), "—"],
+    ]
+  )
+  .toString() %>

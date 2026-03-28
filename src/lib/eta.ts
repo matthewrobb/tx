@@ -5,15 +5,16 @@
  * - extract(filePath, name) — extract a declaration, wrapped in ts code fence
  * - signature(filePath, name) — extract just the signature
  * - region(filePath, name) — extract a labeled region
- * - table(headers, rows) — build-md table
+ * - md — build-md tagged template for inline formatting
+ * - MarkdownDocument — build-md document builder for tables, lists, etc.
  * - defaults — full TwistedConfig defaults
  */
 
 import { Eta } from "eta";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+import { md, MarkdownDocument } from "build-md";
 import { embedDeclaration, embedSignature, embedRegion } from "./extract.js";
-import { table } from "./markdown.js";
 import { defaults } from "../config/defaults.js";
 import { resolveReadFirst, formatReadFirst } from "./imports.js";
 
@@ -21,13 +22,19 @@ function createEta(viewsDir: string): Eta {
   return new Eta({
     views: resolve(viewsDir),
     autoEscape: false,
-    // Destructure it.* into local variables so templates use extract() not it.extract()
-    functionHeader: "const { extract, signature, region, table, defaults } = it;",
+    functionHeader: "const { extract, signature, region, md, MarkdownDocument, defaults } = it;",
   });
 }
 
 function templateData(): Record<string, unknown> {
-  return { extract: embedDeclaration, signature: embedSignature, region: embedRegion, table, defaults };
+  return {
+    extract: embedDeclaration,
+    signature: embedSignature,
+    region: embedRegion,
+    md,
+    MarkdownDocument,
+    defaults,
+  };
 }
 
 /**
