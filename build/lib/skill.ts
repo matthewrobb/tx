@@ -21,7 +21,11 @@ function serializeFrontmatter(fm: SkillFrontmatter): string {
   const lines = ["---"];
   for (const [key, value] of Object.entries(fm)) {
     if (value === undefined) continue;
-    lines.push(`${key}: ${typeof value === "string" ? value : String(value)}`);
+    if (typeof value === "string" && /[|[\]{}:>#&*!,?'"]/.test(value)) {
+      lines.push(`${key}: "${value.replace(/"/g, '\\"')}"`);
+    } else {
+      lines.push(`${key}: ${typeof value === "string" ? value : String(value)}`);
+    }
   }
   lines.push("---");
   return lines.join("\n");

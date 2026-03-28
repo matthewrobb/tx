@@ -1,6 +1,6 @@
 ---
 name: using-twisted-workflow
-description: Shared reference — config defaults, presets, and tracking strategy artifact map
+description: "Shared reference — config defaults, presets, and tracking strategy artifact map"
 ---
 
 # twisted-workflow shared reference

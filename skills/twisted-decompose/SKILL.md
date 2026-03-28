@@ -1,6 +1,6 @@
 ---
 name: twisted-decompose
-description: Internal sub-skill — complexity estimation, issue breakdown, dependency analysis, and execution planning
+description: "Internal sub-skill — complexity estimation, issue breakdown, dependency analysis, and execution planning"
 ---
 
 **Read first:**
