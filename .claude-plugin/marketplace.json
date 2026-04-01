@@ -8,7 +8,7 @@
     {
       "name": "twisted-workflow",
       "description": "Configurable orchestration layer for agentic development — parallel execution, provider delegation, session-independent state, and preset-based configuration",
-      "version": "2.2.0",
+      "version": "3.0.0",
       "source": "./",
       "author": {
         "name": "Matthew Robb"
