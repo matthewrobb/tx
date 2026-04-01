@@ -1,0 +1,10 @@
+{
+  "$schema": "../schemas/settings.schema.json",
+  "presets": ["superpowers"],
+  "pipeline": {
+    "research": {
+      "provider": "superpowers:brainstorming",
+      "fallback": "built-in"
+    }
+  }
+}
