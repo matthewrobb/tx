@@ -9,7 +9,7 @@
  * Persistence (snapshot save/restore) is handled in persist.ts.
  */
 
-import { setup, assign, fromPromise } from "xstate";
+import { setup, assign } from "xstate";
 import type { EpicContext, EpicEvent } from "../../types/xstate.js";
 import type { EngineResult } from "../../types/engine.js";
 
@@ -17,6 +17,7 @@ export const epicMachine = setup({
   types: {
     context: {} as EpicContext,
     events: {} as EpicEvent,
+    input: {} as EpicContext,
   },
   actions: {
     setResult: assign({
@@ -38,7 +39,7 @@ export const epicMachine = setup({
 }).createMachine({
   id: "epic",
   initial: "active",
-  context: ({ input }: { input: EpicContext }) => input,
+  context: ({ input }) => input,
   states: {
     active: {
       on: {

@@ -1,36 +1,49 @@
 /**
- * Daemon client — connects to the daemon or spawns it if not running.
+ * Daemon client — connects to the daemon, spawning it if not already running.
  *
  * Connect-or-spawn pattern:
  * 1. Check server.json to see if daemon is alive.
- * 2. If not alive, spawn the daemon process in the background.
+ * 2. If not alive, spawn the daemon process detached in the background.
  * 3. Wait briefly for the socket to appear.
  * 4. Send request and return response.
  */
 
 import { SockDaemonClient } from "sock-daemon";
-import { spawnSync } from "child_process";
+import type { MessageBase } from "sock-daemon";
+import { spawn } from "child_process";
 import { existsSync } from "fs";
-import { join, dirname, fileURLToPath } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { isDaemonAlive, cleanupStale, readServerJson } from "./lifecycle.js";
 import { daemonSocketPath } from "./server.js";
 import type { EngineResult } from "../../types/engine.js";
 
-interface DaemonRequest {
-  id: string;
+interface DaemonRequest extends MessageBase {
   command: "next" | "status";
   epic?: string;
   root?: string;
 }
 
-interface DaemonResponse {
-  id: string;
+interface DaemonResponse extends MessageBase {
   result?: EngineResult;
   error?: string;
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DAEMON_ENTRY = join(__dirname, "daemon-entry.js");
+
+/**
+ * Twisted-workflow daemon client.
+ */
+class TxDaemonClient extends SockDaemonClient<DaemonRequest, DaemonResponse> {
+  static override get serviceName(): string {
+    return "twisted-workflow";
+  }
+
+  static override get daemonScript(): string {
+    return DAEMON_ENTRY;
+  }
+}
 
 /**
  * Ensure the daemon is running, spawning it if necessary.
@@ -40,12 +53,12 @@ async function ensureDaemon(twistedRoot: string): Promise<void> {
 
   if (isDaemonAlive(twistedRoot)) return;
 
-  // Spawn daemon detached in background
   if (existsSync(DAEMON_ENTRY)) {
-    spawnSync(process.execPath, [DAEMON_ENTRY, twistedRoot], {
+    const child = spawn(process.execPath, [DAEMON_ENTRY, twistedRoot], {
       detached: true,
       stdio: "ignore",
     });
+    child.unref();
   }
 
   // Wait up to 2s for the socket to appear
@@ -58,7 +71,6 @@ async function ensureDaemon(twistedRoot: string): Promise<void> {
 
 /**
  * Send a command to the daemon (connect-or-spawn).
- *
  * Falls back to null if the daemon cannot be reached.
  */
 export async function sendToDaemon(
@@ -71,10 +83,7 @@ export async function sendToDaemon(
     const info = readServerJson(twistedRoot);
     if (!info) return null;
 
-    const client = new SockDaemonClient<DaemonRequest, DaemonResponse>({
-      path: info.socket,
-    });
-
+    const client = new TxDaemonClient({});
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     return await client.request({ id, ...request });
   } catch {

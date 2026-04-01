@@ -1,14 +1,14 @@
 {
   "name": "twisted-workflow",
-  "description": "Configurable orchestration layer for agentic development with Claude Code",
+  "description": "Artifact-driven agentic orchestration for Claude Code",
   "owner": {
     "name": "Matthew Robb"
   },
   "plugins": [
     {
       "name": "twisted-workflow",
-      "description": "Configurable orchestration layer for agentic development — parallel execution, provider delegation, session-independent state, and preset-based configuration",
-      "version": "3.0.0",
+      "description": "Artifact-driven agentic orchestration for Claude Code — 6-lane epic lifecycle, XState engine, story tier, daemon, and preset-based configuration",
+      "version": "4.0.0",
       "source": "./",
       "author": {
         "name": "Matthew Robb"

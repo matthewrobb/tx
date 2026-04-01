@@ -50,7 +50,8 @@ export function createOrRehydrateActor(
   const snapshot = loadSnapshot(epicDir);
 
   if (snapshot) {
-    return createActor(machine, { snapshot });
+    // XState v5 requires input even when restoring from snapshot; the snapshot overrides context.
+    return createActor(machine, { snapshot, input: {} as import("../../types/xstate.js").EpicContext });
   }
 
   return createActor(machine, { input });

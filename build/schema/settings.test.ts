@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { generateSchema } from "./settings.js";

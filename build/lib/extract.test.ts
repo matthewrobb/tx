@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { extractDeclaration, extractSignature, extractRegion, tsBlock } from "./extract.js";
 
 describe("extractDeclaration", () => {
@@ -10,9 +10,9 @@ describe("extractDeclaration", () => {
   });
 
   test("extracts an interface declaration", () => {
-    const code = extractDeclaration("src/strategies/worktree.ts", "WorktreePaths");
-    expect(code).toContain("export interface WorktreePaths");
-    expect(code).toContain("objective: string");
+    const code = extractDeclaration("src/engine/evaluate.ts", "laneComplete");
+    expect(code).toContain("laneComplete");
+    expect(code).toContain("evaluations");
   });
 
   test("extracts a const declaration", () => {
@@ -40,10 +40,10 @@ describe("extractSignature", () => {
     expect(sig).not.toContain("deepMerge(");
   });
 
-  test("extracts getWorktreePaths signature", () => {
-    const sig = extractSignature("src/strategies/worktree.ts", "getWorktreePaths");
-    expect(sig).toContain("worktreeDir: string");
-    expect(sig).toContain("WorktreePaths");
+  test("extracts artifactSatisfied signature", () => {
+    const sig = extractSignature("src/engine/artifacts.ts", "artifactSatisfied");
+    expect(sig).toContain("epicDir: string");
+    expect(sig).toContain("ArtifactRef");
     expect(sig).toContain("{ /* ... */ }");
   });
 });

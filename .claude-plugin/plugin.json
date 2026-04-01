@@ -1,13 +1,13 @@
 {
   "name": "twisted-workflow",
-  "description": "Configurable orchestration layer for agentic development — parallel execution, provider delegation, session-independent state, and preset-based configuration",
-  "version": "3.0.0",
+  "description": "Artifact-driven agentic orchestration for Claude Code — 6-lane epic lifecycle, XState engine, story tier, daemon, and preset-based configuration",
+  "version": "4.0.0",
   "author": {
     "name": "Matthew Robb"
   },
   "homepage": "https://github.com/matthewrobb/twisted-workflow",
   "repository": "https://github.com/matthewrobb/twisted-workflow",
   "license": "MIT",
-  "keywords": ["workflow", "kanban", "planning", "parallel", "worktrees", "agentic"],
+  "keywords": ["workflow", "kanban", "planning", "parallel", "agentic", "xstate", "stories"],
   "skills": "./skills/"
 }

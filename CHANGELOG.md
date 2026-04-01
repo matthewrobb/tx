@@ -1,3 +1,48 @@
+## [4.0.0] - 2026-04-01
+
+### Breaking Changes
+- Runtime switched from **Bun to Node.js + npm**. Run `npm install` instead of `bun install`. Tests now use `vitest` instead of `bun test`.
+- Epic state stored in `state.json` now uses `CoreState` shape (`epic`, `type`, `lane`, `step`, `status`). v3 `ObjectiveState` is kept for backwards compatibility during migration.
+- Config version `"4.0"` introduced. v3 `TwistedConfig` (`version: "3.0"`) is still supported.
+- Skill renamed from `twisted-work` → `tx`. Update any `/twisted-work` invocations to `/tx`.
+
+### Added — Architecture
+- **6-lane filesystem** (`0-backlog`, `1-ready`, `2-active`, `3-review`, `4-done`, `5-archive`). Epics move between lanes as they progress.
+- **Artifact-driven engine** (`src/engine/`): steps declare `produces`/`requires`/`exit_when`; `tx next` evaluates conditions automatically. No more hardcoded step transitions.
+- **XState v5 state machine** for epic lifecycle (`active` / `blocked` / `complete` / `error`) with snapshot persistence to `machine-snapshot.json`.
+- **On-demand daemon** (`src/daemon/`) via `sock-daemon`. Socket stored in OS temp dir, keyed by project path hash.
+- **`.claude/agents/` symlinks** — `tx init` creates a symlink per epic pointing to its current lane dir, giving agents direct access to epic context.
+
+### Added — Commands
+- `tx open <epic> --type <feature|bug|spike|chore|release>` — epic types drive lane sequences
+- `tx ready <epic>` — move from `0-backlog` → `1-ready`
+- `tx archive <epic> [--reason]` — move to `5-archive`
+- `tx estimate <epic> --size <XS|S|M|L|XL> --rationale <text> [--timebox <P2D>] [--confidence 1-5]`
+- `tx promote <epic> --type <type>` — convert a spike to another type, recompute lane sequence
+- `tx stories <epic> [add <summary> | done <S-001> | show <S-001>]` — story CRUD
+- `tx backlog [promote <BC-001>]` — list or promote retro backlog candidates
+- `-e / --epic` flag as alias for `-o / --objective`
+
+### Added — Pipeline Steps
+- `decompose` step in `2-active` (after `plan`, before `build`) — produces `stories.json`
+- `estimate` step in `1-ready` — produces `estimate.json`; `timebox` field for spikes
+
+### Added — Close / Retro
+- `tx close` now aggregates retro and deferral notes into `retro.md` + `backlog-candidates.json` in the epic's done lane directory
+
+### Changed
+- `npm run build` (was `bun run build`) — uses `tsx` to run the build script
+- `npm test` (was `bun test`) — runs `vitest`
+- `build/__tests__/` glob expanded to `build/**/*.test.ts` — now covers `build/lib/` and `build/schema/` tests too
+- Skill argument-hint updated to include new v4 commands
+- README fully rewritten for v4
+
+### Removed
+- Dead v3 source directories: `src/scope/`, `src/decompose/`, `src/execute/`, `src/pipeline/`, `src/strategies/`, `src/work/`
+- Dead test files: `pipeline-routing.test.ts`, `strategies-worktree.test.ts`
+- `bun.lock` — replaced by `package-lock.json`
+- `@types/bun` dev dependency
+
 ## [3.0.1] - 2026-03-31
 
 ### Fixed
