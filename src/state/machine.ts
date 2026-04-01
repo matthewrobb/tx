@@ -12,28 +12,22 @@ import type { PipelineConfig } from "../../types/pipeline.js";
 export const PIPELINE_ORDER: readonly ObjectiveStep[] = [
   "research",
   "scope",
-  "arch_review",
-  "decompose",
-  "execute",
-  "code_review",
-  "qa",
-  "ship",
+  "plan",
+  "build",
+  "close",
 ] as const;
 
 /** Core steps that twisted-workflow always owns. */
 export const CORE_STEPS: readonly ObjectiveStep[] = [
   "scope",
-  "decompose",
-  "execute",
+  "plan",
+  "build",
+  "close",
 ] as const;
 
 /** Delegatable steps that can be routed to external providers. */
 export const DELEGATABLE_STEPS: readonly ObjectiveStep[] = [
   "research",
-  "arch_review",
-  "code_review",
-  "qa",
-  "ship",
 ] as const;
 
 /**
@@ -44,9 +38,8 @@ export function isStepSkipped(
   step: ObjectiveStep,
   pipeline: PipelineConfig,
 ): boolean {
-  if (CORE_STEPS.includes(step)) return false;
-  const phase = step as keyof PipelineConfig;
-  return pipeline[phase]?.provider === "skip";
+  if (step !== "research") return false;
+  return pipeline.research?.provider === "skip";
 }
 
 /**
@@ -103,14 +96,11 @@ export function statusForStep(step: ObjectiveStep): ObjectiveStatus {
   switch (step) {
     case "research":
     case "scope":
-    case "arch_review":
-    case "decompose":
+    case "plan":
       return "todo";
-    case "execute":
-    case "code_review":
-    case "qa":
+    case "build":
       return "in-progress";
-    case "ship":
+    case "close":
       return "in-progress";
     default:
       return "todo";
@@ -145,11 +135,11 @@ export function createInitialState(
     steps_remaining: effective.slice(1),
     group_current: null,
     groups_total: null,
-    issues_done: 0,
-    issues_total: null,
+    tasks_done: 0,
+    tasks_total: null,
     created: new Date().toISOString().split("T")[0]!,
     updated: new Date().toISOString(),
-    tools_used: {},
+    notes: null,
   };
 }
 
@@ -172,9 +162,6 @@ export function advanceState(
       steps_completed: [...state.steps_completed, state.step],
       steps_remaining: [],
       updated: new Date().toISOString(),
-      tools_used: provider
-        ? { ...state.tools_used, [state.step]: provider }
-        : state.tools_used,
     };
   }
 
@@ -187,8 +174,5 @@ export function advanceState(
     steps_completed: [...state.steps_completed, state.step],
     steps_remaining: stepsRemaining(next, pipeline),
     updated: new Date().toISOString(),
-    tools_used: provider
-      ? { ...state.tools_used, [state.step]: provider }
-      : state.tools_used,
   };
 }
