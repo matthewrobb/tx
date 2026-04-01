@@ -5,7 +5,12 @@
   "bin": {
     "tx": "./dist/cli/index.js"
   },
-  "files": ["dist/", "schemas/", "skills/", "presets/"],
+  "files": [
+    "dist/",
+    "schemas/",
+    "skills/",
+    "presets/"
+  ],
   "scripts": {
     "build": "tsx build/build.ts",
     "build:cli": "tsc -p tsconfig.cli.json",
@@ -18,5 +23,8 @@
     "tsx": "^4",
     "typescript": "^5",
     "vitest": "^2"
+  },
+  "dependencies": {
+    "xstate": "^5.30.0"
   }
 }

@@ -89,6 +89,73 @@ export type TwistedSettings = DeepPartial<TwistedConfig> & {
   presets?: PresetName[];
 };
 
+// --- v4 config types ---
+
+import type { EpicType, TypeConfig } from "./epic";
+
+/**
+ * Reference to an artifact file that a step produces or requires.
+ * Satisfaction = file exists (+ optional predicate passes).
+ */
+export interface ArtifactRef {
+  /** Path relative to the epic's lane directory. */
+  path: string;
+  /** Optional predicate name to validate content (e.g. "non-empty"). */
+  predicate?: string;
+}
+
+/**
+ * A named predicate with optional arguments.
+ * Predicates are evaluated by the engine to determine step readiness.
+ */
+export interface PredicateRef {
+  /** Predicate name (e.g. "tasks.all_done", "artifact.exists"). */
+  name: string;
+  args?: Record<string, unknown>;
+}
+
+/** Configuration for a single step within a lane. */
+export interface StepConfig {
+  name: string;
+  /** Artifacts this step produces (written on completion). */
+  produces?: ArtifactRef[];
+  /** Artifacts required before this step can begin. */
+  requires?: ArtifactRef[];
+  /** Predicates that must pass for this step to be considered complete. */
+  exit_when?: PredicateRef[];
+  /** Prompt template for agent steps. */
+  prompt?: string;
+}
+
+/** Configuration for one of the 6 filesystem lanes. */
+export interface LaneConfig {
+  /** Display name (e.g. "backlog", "ready", "active"). */
+  name: string;
+  /** Directory name with numeric prefix (e.g. "0-backlog", "2-active"). */
+  dir: string;
+  /** Steps within this lane. */
+  steps: StepConfig[];
+  /** Predicates that must pass before an epic can enter this lane. */
+  entry_requires?: PredicateRef[];
+}
+
+/** Fully resolved v4 configuration. */
+export interface TwistedConfigV4 {
+  version: "4.0";
+  presets: string[];
+  /** Lane definitions in traversal order. */
+  lanes: LaneConfig[];
+  /** Per-type lane sequences. */
+  types: TypeConfig[];
+  /** Skills injected at the start of every pipeline step. */
+  context_skills: string[];
+}
+
+/** What the user writes in `.twisted/settings.json` for v4. */
+export type TwistedSettingsV4 = Partial<TwistedConfigV4> & {
+  presets?: string[];
+};
+
 // Re-export all types for convenient access from a single import.
 export type {
   ToolsConfig,

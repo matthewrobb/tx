@@ -1,6 +1,6 @@
 // types/notes.d.ts
 
-export type NoteType = "note" | "decision" | "deferral" | "discovery" | "blocker";
+export type NoteType = "note" | "decision" | "deferral" | "discovery" | "blocker" | "retro";
 
 export interface Note {
   id: number;

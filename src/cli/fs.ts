@@ -1,7 +1,7 @@
 // src/cli/fs.ts
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync, renameSync } from "fs";
 import { join, dirname } from "path";
-import type { ObjectiveState } from "../../types/state.js";
+import type { ObjectiveState, CoreState } from "../../types/state.js";
 import type { Task } from "../../types/tasks.js";
 import type { Note } from "../../types/notes.js";
 import type { ActiveSession, SessionSummary } from "../../types/session.js";
@@ -127,7 +127,7 @@ export function listObjectiveFiles(objDir: string): { dir: string; files: string
   return { dir, files };
 }
 
-// --- Scanning ---
+// --- Scanning (v3) ---
 
 export function findObjectives(root: string): Array<{ lane: string; objective: string; dir: string }> {
   const twisted = twistedDir(root);
@@ -145,4 +145,95 @@ export function findObjectives(root: string): Array<{ lane: string; objective: s
   }
 
   return results;
+}
+
+// --- v4 Lane Model ---
+
+/** All 6 v4 lane directories in order. */
+export const V4_LANES = [
+  "0-backlog",
+  "1-ready",
+  "2-active",
+  "3-review",
+  "4-done",
+  "5-archive",
+] as const;
+
+/**
+ * Get the absolute path to an epic's directory within a lane.
+ *
+ * @param root - Project root (parent of .twisted/).
+ * @param laneDir - Lane directory name (e.g. "2-active").
+ * @param epicName - Epic name.
+ */
+export function epicDir(root: string, laneDir: string, epicName: string): string {
+  return join(twistedDir(root), laneDir, epicName);
+}
+
+/**
+ * Move an epic directory from one lane to another.
+ * Safe on all platforms — uses renameSync (same filesystem assumed).
+ *
+ * @param root - Project root.
+ * @param epicName - Epic name.
+ * @param fromLane - Source lane directory name.
+ * @param toLane - Target lane directory name.
+ */
+export function moveDir(root: string, epicName: string, fromLane: string, toLane: string): void {
+  const source = epicDir(root, fromLane, epicName);
+  const target = epicDir(root, toLane, epicName);
+  mkdirSync(dirname(target), { recursive: true });
+  renameSync(source, target);
+}
+
+/**
+ * Scan all 6 v4 lane directories and return every epic found.
+ *
+ * An epic is any subdirectory containing a state.json file.
+ *
+ * @param root - Project root.
+ */
+export function findEpics(root: string): Array<{ lane: string; epic: string; dir: string }> {
+  const twisted = twistedDir(root);
+  const results: Array<{ lane: string; epic: string; dir: string }> = [];
+
+  for (const lane of V4_LANES) {
+    const laneDir = join(twisted, lane);
+    if (!existsSync(laneDir)) continue;
+    for (const entry of readdirSync(laneDir)) {
+      const dir = join(laneDir, entry);
+      if (existsSync(join(dir, "state.json"))) {
+        results.push({ lane, epic: entry, dir });
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Find which lane an epic currently lives in.
+ *
+ * @param root - Project root.
+ * @param epicName - Epic name.
+ * @returns Lane directory name and absolute epic path, or null if not found.
+ */
+export function locateEpic(root: string, epicName: string): { lane: string; dir: string } | null {
+  for (const lane of V4_LANES) {
+    const dir = epicDir(root, lane, epicName);
+    if (existsSync(join(dir, "state.json"))) {
+      return { lane, dir };
+    }
+  }
+  return null;
+}
+
+// --- v4 CoreState ---
+
+export function readCoreState(epicDirectory: string): CoreState {
+  return JSON.parse(readFileSync(join(epicDirectory, "state.json"), "utf-8"));
+}
+
+export function writeCoreState(epicDirectory: string, state: CoreState): void {
+  writeFileSync(join(epicDirectory, "state.json"), JSON.stringify(state, null, 2) + "\n");
 }

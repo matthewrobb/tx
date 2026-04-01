@@ -9,6 +9,8 @@ export type TwistedSubcommand =
   | "scope"
   | "plan"
   | "build"
+  | "ready"
+  | "archive"
   | "pickup"
   | "handoff"
   | "session"
@@ -23,7 +25,22 @@ export type TwistedSubcommand =
 export interface GlobalFlags {
   yolo: boolean;
   agent: boolean;
+  /** v3: target objective by name. */
   objective?: string;
+  /** v4: target epic by name (-e / --epic). */
+  epic?: string;
+}
+
+/** v4: Open with an epic type. */
+export interface OpenParamsV4 {
+  epic: string;
+  type?: import("./epic").EpicType;
+}
+
+/** v4: Archive an epic with a reason. */
+export interface ArchiveParams {
+  epic?: string;
+  reason?: string;
 }
 
 export interface OpenParams {

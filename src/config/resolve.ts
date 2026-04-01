@@ -8,10 +8,10 @@
  * Result: deepMerge(defaults, ...presets.reverse().map(load), projectSettings)
  */
 
-import type { TwistedConfig } from "../../types/config.js";
+import type { TwistedConfig, TwistedConfigV4, TwistedSettingsV4 } from "../../types/config.js";
 import type { TwistedSettings } from "../../types/config.js";
 import type { PresetOverrides } from "../../types/preset.js";
-import { defaults } from "./defaults.js";
+import { defaults, defaultsV4 } from "./defaults.js";
 import { deepMerge } from "./merge.js";
 import { allPresets } from "../presets/index.js";
 
@@ -46,4 +46,30 @@ export function resolveConfig(
     ...reversedPresets,
     projectSettings as Partial<TwistedConfig>,
   ) as unknown as TwistedConfig;
+}
+
+/**
+ * Resolve a complete v4 TwistedConfigV4 from sparse user settings.
+ *
+ * Uses the same 3-layer merge strategy as resolveConfig but with v4 defaults.
+ */
+export function resolveConfigV4(
+  settings: TwistedSettingsV4 = {},
+  presetRegistry: Record<string, Partial<TwistedConfigV4>> = {},
+): TwistedConfigV4 {
+  const presetNames = settings.presets ?? [];
+
+  const presetOverrides = presetNames
+    .map((name: string) => presetRegistry[name])
+    .filter((p): p is Partial<TwistedConfigV4> => p !== undefined);
+
+  const reversedPresets = [...presetOverrides].reverse();
+
+  const { presets: _, ...projectSettings } = settings;
+
+  return deepMerge(
+    defaultsV4 as unknown as Record<string, unknown>,
+    ...reversedPresets,
+    projectSettings,
+  ) as unknown as TwistedConfigV4;
 }
