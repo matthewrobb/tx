@@ -7,7 +7,7 @@ import {
   findRoot, twistedDir, ensureDir,
   readActiveSession, writeActiveSession, deleteActiveSession,
   listSessions, findEpics, locateEpic, readCoreState, writeCoreState,
-  writeArtifact, readArtifact, listObjectiveFiles,
+  writeArtifact, readArtifact, listEpicFiles,
   readNotes, writeNotes, readTasks, writeTasks,
   readStories, writeStories,
   moveDir, writeSettings,
@@ -520,7 +520,7 @@ async function main(): Promise<void> {
           break;
         }
       }
-      const { files } = listObjectiveFiles(active.dir);
+      const { files } = listEpicFiles(active.dir);
       const display = files.map((f) => `  ${f}`).join("\n");
       respond({ status: "ok", command: "artifacts", display: display || "No artifacts." });
       break;
@@ -943,7 +943,6 @@ Flags:
   -a, --agent       JSON output
   -y, --yolo        Skip confirmations
   -e, --epic        Target epic
-  -o, --objective   Target epic (alias)
   -h, --help        Show help
   -v, --version     Show version`;
 }

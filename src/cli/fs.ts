@@ -120,7 +120,7 @@ export function readArtifact(path: string): string {
 
 // --- File listing ---
 
-export function listObjectiveFiles(objDir: string): { dir: string; files: string[] } {
+export function listEpicFiles(objDir: string): { dir: string; files: string[] } {
   const dir = objDir.replace(/\\/g, "/");
   const entries = readdirSync(objDir, { recursive: true }) as string[];
   const files = entries.map((f) => join(objDir, f).replace(/\\/g, "/"));
