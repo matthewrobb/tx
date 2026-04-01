@@ -222,7 +222,7 @@ describe("twisted-scope content", () => {
 
   test("references default interrogation categories", () => {
     const content = skill();
-    for (const cat of defaults.decompose.categories) {
+    for (const cat of defaults.plan.categories) {
       expect(content).toContain(cat);
     }
   });

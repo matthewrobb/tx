@@ -47,18 +47,3 @@ export function resolveConfig(
     projectSettings as Partial<TwistedConfig>,
   );
 }
-
-/**
- * Determine which tracking strategies are active.
- * Returns the resolved tracking array from the config.
- */
-export function getActiveStrategies(config: TwistedConfig): string[] {
-  return config.tracking;
-}
-
-/**
- * Get the primary tracking strategy (first in the array).
- */
-export function getPrimaryStrategy(config: TwistedConfig): string {
-  return config.tracking[0] ?? "twisted";
-}

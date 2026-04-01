@@ -98,38 +98,38 @@ export interface HandoffMessageTemplates {
   research_to_scope: string;
 
   /**
-   * After scope completes, before decompose.
+   * After scope completes, before plan.
    * Placeholder: {category_count}
-   * Default: "Requirements captured across {category_count} categories. Starting decomposition."
+   * Default: "Requirements captured across {category_count} categories. Starting plan."
    */
-  scope_to_decompose: string;
+  scope_to_plan: string;
 
   /**
-   * After decompose completes, before execute.
+   * After plan completes, before build.
    * Placeholders: {issue_count}, {group_count}, {agent_count}
-   * Default: "{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to execute."
+   * Default: "{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to build."
    */
-  decompose_to_execute: string;
+  plan_to_build: string;
 
   /**
-   * After execute completes, before review.
+   * After build completes, before review.
    * Placeholders: {issues_done}, {issues_total}
-   * Default: "Execution complete ({issues_done}/{issues_total} issues). Starting review."
+   * Default: "Build complete ({issues_done}/{issues_total} issues). Starting review."
    */
-  execute_to_review: string;
+  build_to_review: string;
 
   /**
-   * After review completes, before ship.
-   * Default: "Review passed. Ready to ship."
+   * After review completes, before close.
+   * Default: "Review passed. Ready to close."
    */
-  review_to_ship: string;
+  review_to_close: string;
 
   /**
-   * After ship completes (objective done).
+   * After close completes (objective done).
    * Placeholder: {objective}
    * Default: "Objective {objective} complete."
    */
-  ship_done: string;
+  close_done: string;
 }
 
 // ---------------------------------------------------------------------------

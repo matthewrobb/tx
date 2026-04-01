@@ -40,8 +40,8 @@ describe("parseProvider", () => {
 describe("getPhaseSettings", () => {
   test("core steps have settings", () => {
     expect(getPhaseSettings("scope", defaults.phases)).not.toBeNull();
-    expect(getPhaseSettings("decompose", defaults.phases)).not.toBeNull();
-    expect(getPhaseSettings("execute", defaults.phases)).not.toBeNull();
+    expect(getPhaseSettings("plan", defaults.phases)).not.toBeNull();
+    expect(getPhaseSettings("build", defaults.phases)).not.toBeNull();
   });
 
   test("delegatable steps return null", () => {
@@ -51,13 +51,13 @@ describe("getPhaseSettings", () => {
 });
 
 describe("hasConfigChange", () => {
-  test("scope → decompose has mode change", () => {
-    // scope is execute mode, decompose is plan mode
-    expect(hasConfigChange("scope", "decompose", defaults.phases)).toBe(true);
+  test("scope → plan has mode change", () => {
+    // scope is execute mode, plan is plan mode
+    expect(hasConfigChange("scope", "plan", defaults.phases)).toBe(true);
   });
 
-  test("decompose → execute has model + effort + context change", () => {
-    expect(hasConfigChange("decompose", "execute", defaults.phases)).toBe(true);
+  test("plan → build has model + effort + context change", () => {
+    expect(hasConfigChange("plan", "build", defaults.phases)).toBe(true);
   });
 
   test("no change between steps without settings", () => {
@@ -68,20 +68,20 @@ describe("hasConfigChange", () => {
 describe("shouldPause", () => {
   test("yolo skips all pauses", () => {
     expect(
-      shouldPause("scope", "decompose", defaults.flow, defaults.phases, true),
+      shouldPause("scope", "plan", defaults.flow, defaults.phases, true),
     ).toBeNull();
   });
 
   test("auto_advance false always pauses", () => {
     const flow = { ...defaults.flow, auto_advance: false };
     expect(
-      shouldPause("scope", "decompose", flow, defaults.phases, false),
+      shouldPause("scope", "plan", flow, defaults.phases, false),
     ).toBe("user_requested");
   });
 
   test("config change triggers pause", () => {
     expect(
-      shouldPause("scope", "decompose", defaults.flow, defaults.phases, false),
+      shouldPause("scope", "plan", defaults.flow, defaults.phases, false),
     ).toBe("config_change");
   });
 

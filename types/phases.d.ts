@@ -32,6 +32,6 @@ export interface PhaseSettings {
 /** Per-step phase settings keyed by core step name. */
 export interface PhasesConfig {
   scope: PhaseSettings;
-  decompose: PhaseSettings;
-  execute: PhaseSettings;
+  plan: PhaseSettings;
+  build: PhaseSettings;
 }

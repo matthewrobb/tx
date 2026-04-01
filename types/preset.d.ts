@@ -15,8 +15,6 @@ import type { TwistedConfig } from "./config";
 export type BuiltInPresetName =
   | "twisted"
   | "superpowers"
-  | "gstack"
-  | "nimbalyst"
   | "minimal";
 
 /** Preset name — built-in or custom string. */
