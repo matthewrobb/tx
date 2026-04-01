@@ -140,10 +140,11 @@ async function main(): Promise<void> {
         respond({ status: "error", command: "write", error: "No active objective" });
         break;
       }
-      const path = resolveArtifactPath(active.dir, type as any, number);
+      const artifactPath = resolveArtifactPath(active.dir, type as any, number);
+      const resolvedPath = artifactPath === "CHANGELOG.md" ? join(root, artifactPath) : artifactPath;
       const content = await readStdin();
-      writeArtifact(join(root, path), content);
-      respond({ status: "ok", command: "write", display: `Wrote ${type} to ${path}` });
+      writeArtifact(resolvedPath, content);
+      respond({ status: "ok", command: "write", display: `Wrote ${type} to ${artifactPath}` });
       break;
     }
 
@@ -156,8 +157,8 @@ async function main(): Promise<void> {
         respond({ status: "error", command: "read", error: "No active objective" });
         break;
       }
-      const path = resolveArtifactPath(active.dir, type as any, number);
-      const fullPath = join(root, path);
+      const artifactPath = resolveArtifactPath(active.dir, type as any, number);
+      const fullPath = artifactPath === "CHANGELOG.md" ? join(root, artifactPath) : artifactPath;
       try {
         const content = readArtifact(fullPath);
         if (command.flags.agent) {
@@ -299,6 +300,7 @@ async function main(): Promise<void> {
         break;
       }
       const summary = closeSession(session);
+      deleteActiveSession(active.dir);
       respond({
         status: "handoff",
         command: "handoff",
@@ -450,7 +452,9 @@ async function main(): Promise<void> {
         break;
       }
       const files = readdirSync(active.dir, { recursive: true }) as string[];
-      const artifacts = listArtifacts(active.dir, files.map((f) => join(active.dir, f as string)));
+      const normalizedDir = active.dir.replace(/\\/g, "/");
+      const normalizedFiles = files.map((f) => join(active.dir, f as string).replace(/\\/g, "/"));
+      const artifacts = listArtifacts(normalizedDir, normalizedFiles);
       const display = artifacts.map((a) => `${a.exists ? "+" : "-"} ${a.type}: ${a.path}`).join("\n");
       respond({ status: "ok", command: "artifacts", display });
       break;
