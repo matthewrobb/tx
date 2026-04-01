@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # test output (filesystem integration tests)
 .test-output
+
+# twisted-workflow worktrees
+.twisted/worktrees
