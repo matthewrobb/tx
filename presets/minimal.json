@@ -2,23 +2,18 @@
   "pipeline": {
     "research": {
       "provider": "skip",
-      "fallback": "skip"
+      "fallback": "skip",
+      "options": {}
     },
     "arch_review": {
       "provider": "skip",
-      "fallback": "skip"
-    },
-    "code_review": {
-      "provider": "skip",
-      "fallback": "skip"
+      "fallback": "skip",
+      "options": {}
     },
     "qa": {
       "provider": "skip",
-      "fallback": "skip"
-    },
-    "ship": {
-      "provider": "skip",
-      "fallback": "skip"
+      "fallback": "skip",
+      "options": {}
     }
   },
   "execution": {
