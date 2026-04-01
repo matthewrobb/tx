@@ -1,0 +1,10 @@
+[
+  {
+    "id": 1,
+    "type": "decision",
+    "step": "research",
+    "summary": "Skip v3→v4 migration: no tx migrate command, no migration script, no backwards-compat handling",
+    "reason": "No existing v3 data needs migrating",
+    "created": "2026-04-01T20:42:29.568Z"
+  }
+]
