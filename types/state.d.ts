@@ -5,7 +5,6 @@
  * mirrors frontmatter by default and can be disabled.
  */
 
-import type { ProviderString, PipelinePhase } from "./pipeline";
 
 /**
  * Objective status — maps to kanban columns.
@@ -25,12 +24,9 @@ export type ObjectiveStatus =
 export type ObjectiveStep =
   | "research"
   | "scope"
-  | "arch_review"
-  | "decompose"
-  | "execute"
-  | "code_review"
-  | "qa"
-  | "ship";
+  | "plan"
+  | "build"
+  | "close";
 
 /**
  * Valid step transitions. A step can advance to the next step in order,
@@ -48,9 +44,6 @@ export interface StepTransition {
  * Delegatable steps configured as "skip" are omitted at runtime.
  */
 export type StepSequence = readonly ObjectiveStep[];
-
-/** Providers that were actually used for each step (recorded after execution). */
-export type ToolsUsed = Partial<Record<ObjectiveStep, ProviderString>>;
 
 /**
  * Objective state — stored in state.md frontmatter.
@@ -79,11 +72,11 @@ export interface ObjectiveState {
   /** Total number of execution groups. Null if not yet decomposed. */
   groups_total: number | null;
 
-  /** Number of issues marked done. */
-  issues_done: number;
+  /** Number of tasks marked done. */
+  tasks_done: number;
 
-  /** Total number of issues. Null if not yet decomposed. */
-  issues_total: number | null;
+  /** Total number of tasks. Null if not yet planned. */
+  tasks_total: number | null;
 
   /** ISO-8601 date when the objective was created. */
   created: string;
@@ -91,8 +84,8 @@ export interface ObjectiveState {
   /** ISO-8601 timestamp of the last state update. */
   updated: string;
 
-  /** Which providers were used for each completed step. */
-  tools_used: ToolsUsed;
+  /** Path to notes file, or null if no notes yet. */
+  notes: null | string;
 }
 
 /** Folder-based kanban lane paths. */
