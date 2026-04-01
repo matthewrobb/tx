@@ -57,28 +57,23 @@ export function evaluateSteps(
       };
     }
 
-    // This is the active or blocked step
+    // This is the active or blocked step.
+    // "blocked" = entry requirements (requires) not met.
+    // "active"  = entry requirements met, step is in progress (exit_when not yet satisfied).
     foundActive = true;
     const requires = step.requires ?? [];
-    const missing: string[] = [];
+    const missingReqs = allArtifactsSatisfied(epicDir, requires)
+      ? []
+      : missingArtifacts(epicDir, requires).map((a) => a.path);
 
-    if (!allArtifactsSatisfied(epicDir, requires)) {
-      missing.push(...missingArtifacts(epicDir, requires).map((a) => a.path));
-    }
-
-    if (exitPredicates.length > 0) {
-      const failing = failingPredicates(exitPredicates, ctx);
-      missing.push(...failing);
-    }
-
-    const status: StepStatus = missing.length > 0 ? "blocked" : "active";
+    const status: StepStatus = missingReqs.length > 0 ? "blocked" : "active";
 
     return {
       step: step.name,
       lane: lane.name,
       status,
       satisfied: status === "active",
-      missing: missing.length > 0 ? missing : undefined,
+      missing: missingReqs.length > 0 ? missingReqs : undefined,
     };
   });
 }

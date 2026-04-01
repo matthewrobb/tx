@@ -117,10 +117,10 @@ type AgentAction =
 
 export const twistedWork: SkillDefinition = {
   frontmatter: {
-    name: "twisted-work",
+    name: "tx",
     description: "Orchestrator for the twisted-workflow pipeline — state-driven router with init, status, config, next, resume, and step subcommands",
     "user-invocable": true,
-    "argument-hint": "[init | open | close | status [objective] | next [objective] | resume {objective} | research | scope | plan | build | pickup | handoff | session | write | read | tasks | note | notes | artifacts | config [section]] [--yolo] [-a]",
+    "argument-hint": "[init | open | close | status [epic] | next [epic] | resume {epic} | ready {epic} | archive {epic} | research | scope | plan | build | pickup | handoff | session | write | read | tasks | note | notes | artifacts | config [section]] [--yolo] [-a]",
   },
   content: TX_COMMANDS,
 };

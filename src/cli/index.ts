@@ -11,6 +11,8 @@ import {
   readActiveSession, writeActiveSession, deleteActiveSession,
   listSessions, findObjectives, writeArtifact, readArtifact,
   listObjectiveFiles,
+  // v4
+  moveDir, locateEpic, readCoreState, writeCoreState, findEpics,
 } from "./fs.js";
 import { addNote, filterNotes } from "../notes/notes.js";
 import { addTask, updateTask, assignTask, getTask } from "../tasks/tasks.js";
@@ -467,6 +469,76 @@ async function main(): Promise<void> {
       const artifacts = listArtifacts(dir, files);
       const display = artifacts.map((a) => `${a.exists ? "+" : "-"} ${a.type}: ${a.path}`).join("\n");
       respond({ status: "ok", command: "artifacts", display });
+      break;
+    }
+
+    case "ready": {
+      const epicName = (command.params as Record<string, unknown>).epic as string | undefined
+        ?? command.flags.epic ?? command.flags.objective;
+      if (!epicName) {
+        respond({ status: "error", command: "ready", error: "Epic name required: tx ready <epic>" });
+        break;
+      }
+      const location = locateEpic(root, epicName);
+      if (!location) {
+        respond({ status: "error", command: "ready", error: `Epic not found: ${epicName}` });
+        break;
+      }
+      if (location.lane !== "0-backlog") {
+        respond({
+          status: "error",
+          command: "ready",
+          error: `Epic "${epicName}" is in lane "${location.lane}", not "0-backlog"`,
+        });
+        break;
+      }
+      moveDir(root, epicName, "0-backlog", "1-ready");
+      const newDir = location.dir.replace("0-backlog", "1-ready");
+      const state = readCoreState(newDir);
+      state.lane = "1-ready";
+      state.step = "estimate";
+      state.updated = new Date().toISOString();
+      writeCoreState(newDir, state);
+      respond({
+        status: "ok",
+        command: "ready",
+        display: `Epic "${epicName}" moved to 1-ready`,
+        epic: state,
+      });
+      break;
+    }
+
+    case "archive": {
+      const epicName = (command.params as Record<string, unknown>).epic as string | undefined
+        ?? command.flags.epic ?? command.flags.objective;
+      const reason = (command.params as Record<string, unknown>).reason as string | undefined;
+      if (!epicName) {
+        respond({ status: "error", command: "archive", error: "Epic name required: tx archive <epic>" });
+        break;
+      }
+      const location = locateEpic(root, epicName);
+      if (!location) {
+        respond({ status: "error", command: "archive", error: `Epic not found: ${epicName}` });
+        break;
+      }
+      if (location.lane === "5-archive") {
+        respond({ status: "error", command: "archive", error: `Epic "${epicName}" is already archived` });
+        break;
+      }
+      moveDir(root, epicName, location.lane, "5-archive");
+      const newDir = location.dir.replace(location.lane, "5-archive");
+      const state = readCoreState(newDir);
+      state.lane = "5-archive";
+      state.status = "done";
+      state.updated = new Date().toISOString();
+      writeCoreState(newDir, state);
+      const displayReason = reason ? ` Reason: ${reason}` : "";
+      respond({
+        status: "ok",
+        command: "archive",
+        display: `Epic "${epicName}" archived.${displayReason}`,
+        epic: state,
+      });
       break;
     }
 

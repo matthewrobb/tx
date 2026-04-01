@@ -22,6 +22,11 @@ export function parseArgs(argv: string[]): ParsedCommand {
       i += 2;
       continue;
     }
+    if ((arg === "-e" || arg === "--epic") && argv[i + 1]) {
+      flags.epic = argv[i + 1];
+      i += 2;
+      continue;
+    }
     // Note type flags
     if (arg === "--note" || arg === "--decide" || arg === "--defer" || arg === "--discover" || arg === "--blocker") {
       positional.push(arg);
@@ -60,8 +65,23 @@ export function parseArgs(argv: string[]): ParsedCommand {
 
 function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags & { version?: boolean; help?: boolean }): Record<string, unknown> {
   switch (sub) {
-    case "open":
-      return { objective: rest[0] };
+    case "open": {
+      const typeIdx = rest.indexOf("--type");
+      const type = typeIdx >= 0 ? rest[typeIdx + 1] : undefined;
+      const epicName = rest.find((r) => !r.startsWith("-"));
+      const params: Record<string, unknown> = { objective: epicName };
+      if (type) params.type = type;
+      return params;
+    }
+
+    case "ready":
+      return { epic: rest[0] ?? flags.epic };
+
+    case "archive": {
+      const reasonIdx = rest.indexOf("--reason");
+      const reason = reasonIdx >= 0 ? rest[reasonIdx + 1] : undefined;
+      return { epic: rest.find((r) => !r.startsWith("-")) ?? flags.epic, reason };
+    }
 
     case "close":
     case "next":

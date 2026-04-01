@@ -25,6 +25,7 @@
     "vitest": "^2"
   },
   "dependencies": {
+    "sock-daemon": "^1.4.2",
     "xstate": "^5.30.0"
   }
 }

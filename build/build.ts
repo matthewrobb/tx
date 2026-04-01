@@ -21,7 +21,7 @@ for (const [name, preset] of Object.entries(allPresets)) {
 
 // --- Skills ---
 console.log("\nSkills:");
-writeSkill(`${ROOT}/skills/twisted-work/SKILL.md`, twistedWork);
+writeSkill(`${ROOT}/skills/tx/SKILL.md`, twistedWork);
 
 // --- Schema ---
 console.log("\nSchema:");
