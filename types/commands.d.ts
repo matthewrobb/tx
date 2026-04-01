@@ -1,88 +1,83 @@
-/**
- * Command interface — subcommands, params, and flags for /twisted-work.
- *
- * /twisted-work is the single user-facing skill. All interaction
- * is through subcommands and flags.
- */
-
-/** Top-level subcommands for /twisted-work. */
 export type TwistedSubcommand =
   | "init"
+  | "open"
+  | "close"
   | "status"
   | "next"
   | "resume"
+  | "research"
   | "scope"
-  | "decompose"
-  | "execute"
-  | "review"
-  | "ship"
+  | "plan"
+  | "build"
+  | "pickup"
+  | "handoff"
+  | "session"
+  | "write"
+  | "read"
+  | "artifacts"
+  | "tasks"
+  | "note"
+  | "notes"
   | "config";
 
-/** Config drill-down paths for /twisted-work config. */
-export type ConfigSection =
-  | "tools"
-  | "pipeline"
-  | "execution"
-  | "phases"
-  | "decompose"
-  | "templates"
-  | "writing"
-  | "state"
-  | "flow";
-
-/** Deeper drill-down within pipeline config. */
-export type PipelineSection =
-  | "research"
-  | "arch_review"
-  | "code_review"
-  | "qa"
-  | "ship";
-
-/** Global flags that apply to any subcommand. */
 export interface GlobalFlags {
-  /** Skip all confirmations and auto-advance. */
   yolo: boolean;
-}
-
-/** Params for the "status" subcommand. */
-export interface StatusParams {
-  /** Optional objective name to show detailed status for. */
+  agent: boolean;
   objective?: string;
 }
 
-/** Params for the "next" subcommand. */
-export interface NextParams {
-  /** Optional objective name. If omitted, uses the active objective. */
-  objective?: string;
-}
-
-/** Params for the "resume" subcommand. */
-export interface ResumeParams {
-  /** Objective name to resume. Required. */
+export interface OpenParams {
   objective: string;
 }
 
-/** Params for the "config" subcommand. */
-export interface ConfigParams {
-  /** Config section to drill into. If omitted, shows full overview. */
-  section?: ConfigSection;
-
-  /** Deeper drill-down within a section (e.g., "research" within "pipeline"). */
-  subsection?: string;
+export interface CloseParams {
+  objective?: string;
 }
 
-/**
- * Parsed command from user input.
- *
- * Examples:
- *   /twisted-work                    → { subcommand: undefined }
- *   /twisted-work status my-feature  → { subcommand: "status", params: { objective: "my-feature" } }
- *   /twisted-work next --yolo        → { subcommand: "next", flags: { yolo: true } }
- *   /twisted-work config pipeline    → { subcommand: "config", params: { section: "pipeline" } }
- */
+export interface WriteParams {
+  type: ArtifactType;
+  objective?: string;
+  number?: number;
+}
+
+export interface ReadParams {
+  type: ArtifactType;
+  objective?: string;
+}
+
+export type ArtifactType = "research" | "scope" | "plan" | "changelog";
+
+export interface NoteParams {
+  summary: string;
+  type?: import("../types/notes").NoteType;
+  reason?: string;
+  impact?: string;
+}
+
+export interface TasksParams {
+  action?: "add" | "update" | "assign" | "show";
+  id?: number;
+  summary?: string;
+  done?: boolean;
+  group?: number;
+}
+
+export interface SessionParams {
+  action: "status" | "save" | "list";
+  name?: string;
+}
+
+export interface PickupParams {
+  name?: string;
+}
+
+export interface HandoffParams {
+  name?: string;
+}
+
 export interface ParsedCommand {
-  subcommand?: TwistedSubcommand;
-  params: StatusParams | NextParams | ResumeParams | ConfigParams | {};
-  flags: GlobalFlags;
+  subcommand: TwistedSubcommand | undefined;
+  params: Record<string, unknown>;
+  flags: GlobalFlags & { version?: boolean; help?: boolean };
   raw_args: string;
 }
