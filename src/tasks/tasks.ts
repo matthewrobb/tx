@@ -43,7 +43,9 @@ export function addTask(tasks: Task[], input: AddTaskInput): Task {
 export function updateTask(tasks: Task[], id: number, updates: UpdateTaskInput): Task {
   const task = tasks.find((t) => t.id === id);
   if (!task) throw new Error(`Task ${id} not found`);
-  Object.assign(task, updates);
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined) (task as unknown as Record<string, unknown>)[key] = value;
+  }
   return task;
 }
 

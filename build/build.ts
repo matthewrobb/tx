@@ -7,7 +7,6 @@ import { resolve } from "path";
 import { writeJSON, writeSkill } from "./lib/skill.js";
 import { allPresets } from "../src/presets/index.js";
 
-import { usingTwistedWorkflow } from "./skills/using-twisted-workflow.js";
 import { twistedWork } from "./skills/twisted-work.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -22,7 +21,6 @@ for (const [name, preset] of Object.entries(allPresets)) {
 
 // --- Skills ---
 console.log("\nSkills:");
-writeSkill(`${ROOT}/skills/using-twisted-workflow/SKILL.md`, usingTwistedWorkflow);
 writeSkill(`${ROOT}/skills/twisted-work/SKILL.md`, twistedWork);
 
 // --- Schema ---

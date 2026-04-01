@@ -10,16 +10,20 @@ import {
   readTasks, writeTasks, readNotes, writeNotes,
   readActiveSession, writeActiveSession, deleteActiveSession,
   listSessions, findObjectives, writeArtifact, readArtifact,
+  listObjectiveFiles,
 } from "./fs.js";
 import { addNote, filterNotes } from "../notes/notes.js";
-import { addTask, updateTask, assignTask, getTask, getTasksByGroup } from "../tasks/tasks.js";
+import { addTask, updateTask, assignTask, getTask } from "../tasks/tasks.js";
 import { createSession, addSessionEvent, closeSession, getLatestSession } from "../session/lifecycle.js";
 import { resolveArtifactPath, listArtifacts } from "../artifacts/artifacts.js";
 import type { AgentResponse } from "../../types/output.js";
-import type { ObjectiveState } from "../../types/state.js";
+import type { ObjectiveState, ObjectiveStep } from "../../types/state.js";
 import type { TwistedSettings } from "../../types/config.js";
+import type { NoteType } from "../../types/notes.js";
+import type { ArtifactType } from "../../types/commands.js";
 import { join } from "path";
-import { readdirSync } from "fs";
+
+const ARTIFACT_TYPES: ArtifactType[] = ["research", "scope", "plan", "changelog"];
 
 const argv = process.argv.slice(2);
 const command = parseArgs(argv);
@@ -140,7 +144,11 @@ async function main(): Promise<void> {
         respond({ status: "error", command: "write", error: "No active objective" });
         break;
       }
-      const artifactPath = resolveArtifactPath(active.dir, type as any, number);
+      if (!ARTIFACT_TYPES.includes(type as ArtifactType)) {
+        respond({ status: "error", command: "write", error: `Unknown artifact type: "${type}". Valid: ${ARTIFACT_TYPES.join(", ")}` });
+        break;
+      }
+      const artifactPath = resolveArtifactPath(active.dir, type as ArtifactType, number);
       const resolvedPath = artifactPath === "CHANGELOG.md" ? join(root, artifactPath) : artifactPath;
       const content = await readStdin();
       writeArtifact(resolvedPath, content);
@@ -157,7 +165,11 @@ async function main(): Promise<void> {
         respond({ status: "error", command: "read", error: "No active objective" });
         break;
       }
-      const artifactPath = resolveArtifactPath(active.dir, type as any, number);
+      if (!ARTIFACT_TYPES.includes(type as ArtifactType)) {
+        respond({ status: "error", command: "read", error: `Unknown artifact type: "${type}". Valid: ${ARTIFACT_TYPES.join(", ")}` });
+        break;
+      }
+      const artifactPath = resolveArtifactPath(active.dir, type as ArtifactType, number);
       const fullPath = artifactPath === "CHANGELOG.md" ? join(root, artifactPath) : artifactPath;
       try {
         const content = readArtifact(fullPath);
@@ -167,7 +179,7 @@ async function main(): Promise<void> {
           process.stdout.write(content);
         }
       } catch {
-        respond({ status: "error", command: "read", error: `Artifact not found: ${path}` });
+        respond({ status: "error", command: "read", error: `Artifact not found: ${fullPath}` });
       }
       break;
     }
@@ -185,7 +197,7 @@ async function main(): Promise<void> {
       }
       const notes = readNotes(active.dir);
       const note = addNote(notes, {
-        type: (type ?? "note") as any,
+        type: (type as NoteType | undefined) ?? "note",
         step: active.state.step,
         summary,
         reason,
@@ -212,7 +224,7 @@ async function main(): Promise<void> {
       const notes = readNotes(active.dir);
       const noteType = params.type as string | undefined;
       const noteStep = params.step as string | undefined;
-      const filtered = filterNotes(notes, { type: noteType as any, step: noteStep as any });
+      const filtered = filterNotes(notes, { type: noteType as NoteType | undefined, step: noteStep as ObjectiveStep | undefined });
       const display = filtered.map((n) => `#${n.id} [${n.type}] (${n.step}) ${n.summary}`).join("\n");
       respond({ status: "ok", command: "notes", display: display || "No notes." });
       break;
@@ -300,7 +312,6 @@ async function main(): Promise<void> {
         break;
       }
       const summary = closeSession(session);
-      deleteActiveSession(active.dir);
       respond({
         status: "handoff",
         command: "handoff",
@@ -335,6 +346,8 @@ async function main(): Promise<void> {
           respond({ status: "error", command: "session", error: "No active session to save" });
           break;
         }
+        const nameOverride = params.name as string | undefined;
+        if (nameOverride) sess.name = nameOverride;
         const summary = closeSession(sess);
         const content = await readStdin();
         const sessionsDir = join(active.dir, "sessions");
@@ -356,8 +369,8 @@ async function main(): Promise<void> {
         respond({ status: "error", command: "close", error: "No active objective" });
         break;
       }
-      const qaCfg = (config.pipeline as any).qa ?? { provider: "built-in" };
-      const shipCfg = (config.pipeline as any).ship ?? { provider: "built-in" };
+      const qaCfg = config.pipeline.qa;
+      const shipCfg = config.pipeline.ship;
       respond({
         status: "handoff",
         command: "close",
@@ -417,8 +430,7 @@ async function main(): Promise<void> {
         });
         break;
       }
-      const providerKey = stepName === "research" ? "research" : null;
-      const providerCfg = providerKey ? (config.pipeline as any)[providerKey] : null;
+      const providerCfg = stepName === "research" ? config.pipeline.research : null;
       const provider = providerCfg?.provider ?? "built-in";
       if (provider && provider !== "built-in" && provider !== "skip") {
         respond({
@@ -451,10 +463,8 @@ async function main(): Promise<void> {
         respond({ status: "error", command: "artifacts", error: "No active objective" });
         break;
       }
-      const files = readdirSync(active.dir, { recursive: true }) as string[];
-      const normalizedDir = active.dir.replace(/\\/g, "/");
-      const normalizedFiles = files.map((f) => join(active.dir, f as string).replace(/\\/g, "/"));
-      const artifacts = listArtifacts(normalizedDir, normalizedFiles);
+      const { dir, files } = listObjectiveFiles(active.dir);
+      const artifacts = listArtifacts(dir, files);
       const display = artifacts.map((a) => `${a.exists ? "+" : "-"} ${a.type}: ${a.path}`).join("\n");
       respond({ status: "ok", command: "artifacts", display });
       break;
@@ -482,14 +492,18 @@ async function main(): Promise<void> {
 }
 
 function formatStatusDetail(state: ObjectiveState): string {
-  return [
-    `Objective: ${state.objective}`,
-    `Status:    ${state.status}`,
-    `Step:      ${state.step}`,
-    `Progress:  ${state.steps_completed.length}/${state.steps_completed.length + state.steps_remaining.length + 1} steps, ${state.tasks_done}/${state.tasks_total ?? "?"} tasks`,
-    `Created:   ${state.created}`,
-    `Updated:   ${state.updated}`,
-  ].join("\n");
+  const stepsDone = state.steps_completed.length;
+  const stepsTotal = state.steps_completed.length + state.steps_remaining.length + 1;
+  return config.strings.status_detail
+    .replace("{objective}", state.objective)
+    .replace("{status}", state.status)
+    .replace("{step}", state.step)
+    .replace("{steps_done}", String(stepsDone))
+    .replace("{steps_total}", String(stepsTotal))
+    .replace("{tasks_done}", String(state.tasks_done))
+    .replace("{tasks_total}", String(state.tasks_total ?? "?"))
+    .replace("{created}", state.created)
+    .replace("{updated}", state.updated);
 }
 
 function getHelpText(): string {
@@ -526,7 +540,7 @@ Tasks:
   tx tasks show <id>         Show detail
 
 Notes:
-  tx note <summary>          Add note
+  tx note <summary>          Add note (--note|--decide|--defer|--discover|--blocker)
   tx notes [obj]             Query notes
 
 Config:

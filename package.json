@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "type": "module",
   "bin": {
-    "tx": "./dist/cli.js"
+    "tx": "./dist/cli/index.js"
   },
   "files": ["dist/", "schemas/", "skills/", "presets/"],
   "scripts": {

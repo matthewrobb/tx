@@ -12,7 +12,6 @@ const ROOT = resolve(import.meta.dirname, "../..");
 
 describe("generated skill files", () => {
   const skills = [
-    "using-twisted-workflow",
     "twisted-work",
   ];
 
