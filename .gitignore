@@ -38,6 +38,3 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # twisted-workflow worktrees
 .twisted/worktrees
-
-# local dogfood worktree (V3 skills for use during V4 development)
-.claude/plugins
