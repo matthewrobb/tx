@@ -83,6 +83,34 @@ function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags &
       return { epic: rest.find((r) => !r.startsWith("-")) ?? flags.epic, reason };
     }
 
+    case "estimate": {
+      const epic = rest.find((r) => !r.startsWith("-")) ?? flags.epic ?? flags.objective;
+      const sizeIdx = rest.indexOf("--size");
+      const size = sizeIdx >= 0 ? rest[sizeIdx + 1] : undefined;
+      const rationaleIdx = rest.indexOf("--rationale");
+      const rationale = rationaleIdx >= 0 ? rest[rationaleIdx + 1] : undefined;
+      const timeboxIdx = rest.indexOf("--timebox");
+      const timebox = timeboxIdx >= 0 ? rest[timeboxIdx + 1] : undefined;
+      const confidenceIdx = rest.indexOf("--confidence");
+      const confidence = confidenceIdx >= 0 ? parseInt(rest[confidenceIdx + 1]!, 10) : undefined;
+      return { epic, size, rationale, timebox, confidence };
+    }
+
+    case "backlog": {
+      const action = rest[0];
+      if (action === "promote") {
+        return { action: "promote", id: rest[1] };
+      }
+      return { action };
+    }
+
+    case "promote": {
+      const epic = rest.find((r) => !r.startsWith("-")) ?? flags.epic ?? flags.objective;
+      const typeIdx = rest.indexOf("--type");
+      const type = typeIdx >= 0 ? rest[typeIdx + 1] : undefined;
+      return { epic, type };
+    }
+
     case "close":
     case "next":
     case "resume":

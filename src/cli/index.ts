@@ -18,11 +18,15 @@ import { addNote, filterNotes } from "../notes/notes.js";
 import { addTask, updateTask, assignTask, getTask } from "../tasks/tasks.js";
 import { createSession, addSessionEvent, closeSession, getLatestSession } from "../session/lifecycle.js";
 import { resolveArtifactPath, listArtifacts } from "../artifacts/artifacts.js";
+import { writeRetro, readCandidates, promoteCandidateById } from "../engine/retro.js";
+import { promoteEpic } from "../engine/promote.js";
+import { resolveConfigV4 } from "../config/resolve.js";
 import type { AgentResponse } from "../../types/output.js";
 import type { ObjectiveState, ObjectiveStep } from "../../types/state.js";
-import type { TwistedSettings } from "../../types/config.js";
+import type { TwistedSettings, TwistedConfigV4 } from "../../types/config.js";
 import type { NoteType } from "../../types/notes.js";
 import type { ArtifactType } from "../../types/commands.js";
+import type { EpicType } from "../../types/epic.js";
 import { join } from "path";
 
 const ARTIFACT_TYPES: ArtifactType[] = ["research", "scope", "plan", "changelog"];
@@ -32,6 +36,8 @@ const command = parseArgs(argv);
 const root = findRoot(process.cwd());
 const rawSettings = readSettings(root);
 const config = resolveConfig(rawSettings as TwistedSettings);
+// v4 config (lazy — only used by v4 commands)
+const configV4: TwistedConfigV4 = resolveConfigV4(rawSettings as TwistedSettings);
 
 function respond(response: AgentResponse): void {
   output(response, command.flags.agent);
@@ -373,6 +379,18 @@ async function main(): Promise<void> {
       }
       const qaCfg = config.pipeline.qa;
       const shipCfg = config.pipeline.ship;
+
+      // Aggregate retro notes if notes exist (v4-aware)
+      let retroSummary = "";
+      try {
+        const { retroMd, candidates } = writeRetro(active.dir, active.state.objective);
+        if (candidates.length > 0) {
+          retroSummary = `\n  Backlog candidates: ${candidates.length} (run: tx backlog)`;
+        }
+      } catch {
+        // Non-fatal — retro is best-effort
+      }
+
       respond({
         status: "handoff",
         command: "close",
@@ -381,7 +399,7 @@ async function main(): Promise<void> {
           type: "prompt_user",
           prompt: `Objective "${active.state.objective}" is ready to close.\n\nSub-steps:\n1. QA (provider: ${qaCfg.provider})\n2. Write changelog entry → pipe to: tx write changelog -a\n3. Ship (provider: ${shipCfg.provider})\n\nComplete these steps, then run: tx next -a to finalize.`,
         },
-        display: `Close: ${active.state.objective}\n  QA: ${qaCfg.provider}\n  Ship: ${shipCfg.provider}`,
+        display: `Close: ${active.state.objective}\n  QA: ${qaCfg.provider}\n  Ship: ${shipCfg.provider}${retroSummary}`,
       });
       break;
     }
@@ -469,6 +487,94 @@ async function main(): Promise<void> {
       const artifacts = listArtifacts(dir, files);
       const display = artifacts.map((a) => `${a.exists ? "+" : "-"} ${a.type}: ${a.path}`).join("\n");
       respond({ status: "ok", command: "artifacts", display });
+      break;
+    }
+
+    case "estimate": {
+      const p = command.params as Record<string, unknown>;
+      const epicName = p.epic as string | undefined ?? command.flags.epic ?? command.flags.objective;
+      if (!epicName) {
+        respond({ status: "error", command: "estimate", error: "Epic name required: tx estimate <epic> --size <XS|S|M|L|XL> --rationale <text>" });
+        break;
+      }
+      const location = locateEpic(root, epicName);
+      if (!location) {
+        respond({ status: "error", command: "estimate", error: `Epic not found: ${epicName}` });
+        break;
+      }
+      const size = (p.size as string | undefined) ?? "M";
+      const rationale = (p.rationale as string | undefined) ?? "";
+      const confidence = (p.confidence as number | undefined) ?? 3;
+      const timebox = p.timebox as string | undefined;
+      const now = new Date().toISOString();
+      const estimate = { epic: epicName, size, confidence, rationale, ...(timebox ? { timebox } : {}), created: now, updated: now };
+      ensureDir(location.dir);
+      writeArtifact(join(location.dir, "estimate.json"), JSON.stringify(estimate, null, 2) + "\n");
+      respond({
+        status: "ok",
+        command: "estimate",
+        display: `Estimate written for "${epicName}": ${size} (confidence: ${confidence}/5)`,
+      });
+      break;
+    }
+
+    case "promote": {
+      const p = command.params as Record<string, unknown>;
+      const epicName = p.epic as string | undefined ?? command.flags.epic ?? command.flags.objective;
+      const targetType = p.type as EpicType | undefined;
+      if (!epicName || !targetType) {
+        respond({ status: "error", command: "promote", error: "Usage: tx promote <epic> --type <feature|bug|chore|release>" });
+        break;
+      }
+      try {
+        const result = promoteEpic(root, epicName, targetType, configV4);
+        respond({
+          status: "ok",
+          command: "promote",
+          display: `Promoted "${epicName}" from spike to ${result.to_type} (${result.from_lane} → ${result.to_lane})`,
+          epic: result.state,
+        });
+      } catch (err) {
+        respond({ status: "error", command: "promote", error: String(err) });
+      }
+      break;
+    }
+
+    case "backlog": {
+      const p = command.params as Record<string, unknown>;
+      const action = p.action as string | undefined;
+      if (action === "promote") {
+        const candidateId = p.id as string | undefined;
+        if (!candidateId) {
+          respond({ status: "error", command: "backlog", error: "Usage: tx backlog promote <candidate-id>" });
+          break;
+        }
+        // Find the candidate across all done/archive epics
+        const epics = findEpics(root);
+        let found = false;
+        for (const { dir } of epics) {
+          const candidates = readCandidates(dir);
+          if (candidates.some((c) => c.id === candidateId)) {
+            promoteCandidateById(dir, candidateId);
+            found = true;
+            respond({ status: "ok", command: "backlog", display: `Backlog candidate ${candidateId} marked as promoted.` });
+            break;
+          }
+        }
+        if (!found) {
+          respond({ status: "error", command: "backlog", error: `Candidate not found: ${candidateId}` });
+        }
+        break;
+      }
+      // List all candidates
+      const epics = findEpics(root);
+      const allCandidates = epics.flatMap(({ dir }) => readCandidates(dir));
+      if (allCandidates.length === 0) {
+        respond({ status: "ok", command: "backlog", display: "No backlog candidates." });
+      } else {
+        const lines = allCandidates.map((c) => `[${c.id}] ${c.promoted ? "✓" : "○"} ${c.summary}`);
+        respond({ status: "ok", command: "backlog", display: lines.join("\n") });
+      }
       break;
     }
 

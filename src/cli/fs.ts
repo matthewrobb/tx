@@ -219,8 +219,16 @@ export function findEpics(root: string): Array<{ lane: string; epic: string; dir
  * @returns Lane directory name and absolute epic path, or null if not found.
  */
 export function locateEpic(root: string, epicName: string): { lane: string; dir: string } | null {
+  // Search v4 lanes first
   for (const lane of V4_LANES) {
     const dir = epicDir(root, lane, epicName);
+    if (existsSync(join(dir, "state.json"))) {
+      return { lane, dir };
+    }
+  }
+  // Fall back to v3 lanes (todo, in-progress, done)
+  for (const lane of ["todo", "in-progress", "done"]) {
+    const dir = join(twistedDir(root), lane, epicName);
     if (existsSync(join(dir, "state.json"))) {
       return { lane, dir };
     }
