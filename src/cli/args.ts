@@ -111,6 +111,18 @@ function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags &
       return { epic, type };
     }
 
+    case "stories": {
+      const epic = rest.find((r) => !r.startsWith("-")) ?? flags.epic ?? flags.objective;
+      const action = rest.includes("add") ? "add"
+        : rest.includes("done") ? "done"
+        : rest.includes("show") ? "show"
+        : undefined;
+      const id = action && rest.find((r) => r.startsWith("S-"));
+      const summaryIdx = action === "add" ? rest.indexOf("add") + 1 : -1;
+      const summary = summaryIdx >= 0 ? rest[summaryIdx] : undefined;
+      return { epic, action, id, summary };
+    }
+
     case "close":
     case "next":
     case "resume":

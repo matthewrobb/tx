@@ -245,3 +245,17 @@ export function readCoreState(epicDirectory: string): CoreState {
 export function writeCoreState(epicDirectory: string, state: CoreState): void {
   writeFileSync(join(epicDirectory, "state.json"), JSON.stringify(state, null, 2) + "\n");
 }
+
+// --- Stories ---
+
+import type { StoriesFile } from "../../types/stories.js";
+
+export function readStories(epicDirectory: string): StoriesFile | null {
+  const path = join(epicDirectory, "stories.json");
+  if (!existsSync(path)) return null;
+  return JSON.parse(readFileSync(path, "utf-8")) as StoriesFile;
+}
+
+export function writeStories(epicDirectory: string, stories: StoriesFile): void {
+  writeFileSync(join(epicDirectory, "stories.json"), JSON.stringify(stories, null, 2) + "\n");
+}

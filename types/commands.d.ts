@@ -14,6 +14,7 @@ export type TwistedSubcommand =
   | "estimate"
   | "promote"
   | "backlog"
+  | "stories"
   | "pickup"
   | "handoff"
   | "session"

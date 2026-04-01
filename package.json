@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "sock-daemon": "^1.4.2",
+    "symlink-dir": "^10.0.1",
     "xstate": "^5.30.0"
   }
 }

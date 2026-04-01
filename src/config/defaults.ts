@@ -232,8 +232,14 @@ export const defaultsV4: TwistedConfigV4 = {
           exit_when: [{ name: "artifact.exists", args: { path: "plan.md" } }],
         },
         {
-          name: "build",
+          name: "decompose",
           requires: [{ path: "plan.md" }],
+          produces: [{ path: "stories.json" }],
+          exit_when: [{ name: "artifact.exists", args: { path: "stories.json" } }],
+        },
+        {
+          name: "build",
+          requires: [{ path: "stories.json" }],
           exit_when: [{ name: "tasks.all_done" }],
         },
       ],

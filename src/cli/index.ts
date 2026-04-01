@@ -13,6 +13,7 @@ import {
   listObjectiveFiles,
   // v4
   moveDir, locateEpic, readCoreState, writeCoreState, findEpics,
+  readStories, writeStories,
 } from "./fs.js";
 import { addNote, filterNotes } from "../notes/notes.js";
 import { addTask, updateTask, assignTask, getTask } from "../tasks/tasks.js";
@@ -20,6 +21,8 @@ import { createSession, addSessionEvent, closeSession, getLatestSession } from "
 import { resolveArtifactPath, listArtifacts } from "../artifacts/artifacts.js";
 import { writeRetro, readCandidates, promoteCandidateById } from "../engine/retro.js";
 import { promoteEpic } from "../engine/promote.js";
+import { createStory, markStoryDone, findStory, buildStoriesFile, formatStory } from "../stories/stories.js";
+import { syncAgentSymlinks, agentsDir } from "../agents/generate.js";
 import { resolveConfigV4 } from "../config/resolve.js";
 import type { AgentResponse } from "../../types/output.js";
 import type { ObjectiveState, ObjectiveStep } from "../../types/state.js";
@@ -71,10 +74,24 @@ async function main(): Promise<void> {
   switch (command.subcommand) {
     case "init": {
       const twisted = twistedDir(root);
+      // v3 lanes
       ensureDir(join(twisted, "todo"));
       ensureDir(join(twisted, "in-progress"));
       ensureDir(join(twisted, "done"));
       ensureDir(join(twisted, "worktrees"));
+      // v4 lanes
+      for (const lane of ["0-backlog", "1-ready", "2-active", "3-review", "4-done", "5-archive"]) {
+        ensureDir(join(twisted, lane));
+      }
+      // Agent symlinks directory
+      ensureDir(agentsDir(root));
+      // Sync agent symlinks for any existing epics
+      try {
+        const epics = findEpics(root);
+        syncAgentSymlinks(root, epics);
+      } catch {
+        // Non-fatal — agent symlinks are best-effort
+      }
       if (!rawSettings.presets) {
         writeSettings(root, { $schema: "./schemas/settings.schema.json", presets: [] });
       }
@@ -487,6 +504,70 @@ async function main(): Promise<void> {
       const artifacts = listArtifacts(dir, files);
       const display = artifacts.map((a) => `${a.exists ? "+" : "-"} ${a.type}: ${a.path}`).join("\n");
       respond({ status: "ok", command: "artifacts", display });
+      break;
+    }
+
+    case "stories": {
+      const p = command.params as Record<string, unknown>;
+      const epicName = p.epic as string | undefined ?? command.flags.epic ?? command.flags.objective;
+      if (!epicName) {
+        respond({ status: "error", command: "stories", error: "Epic name required: tx stories <epic>" });
+        break;
+      }
+      const location = locateEpic(root, epicName);
+      if (!location) {
+        respond({ status: "error", command: "stories", error: `Epic not found: ${epicName}` });
+        break;
+      }
+      const action = p.action as string | undefined;
+      const storiesFile = readStories(location.dir);
+
+      if (action === "add") {
+        const summary = p.summary as string | undefined;
+        if (!summary) {
+          respond({ status: "error", command: "stories", error: "Summary required: tx stories <epic> add <summary>" });
+          break;
+        }
+        const existing = storiesFile?.stories ?? [];
+        const story = createStory(existing, summary);
+        const updated = buildStoriesFile(epicName, [...existing, story]);
+        updated.created = storiesFile?.created ?? updated.created;
+        writeStories(location.dir, updated);
+        respond({ status: "ok", command: "stories", display: `Added: ${formatStory(story)}` });
+
+      } else if (action === "done") {
+        const id = p.id as string | undefined;
+        if (!id || !storiesFile) {
+          respond({ status: "error", command: "stories", error: "Story ID required and stories must exist" });
+          break;
+        }
+        const updated = { ...storiesFile, stories: markStoryDone(storiesFile.stories, id), updated: new Date().toISOString() };
+        writeStories(location.dir, updated);
+        respond({ status: "ok", command: "stories", display: `Marked done: ${id}` });
+
+      } else if (action === "show") {
+        const id = p.id as string | undefined;
+        if (!id || !storiesFile) {
+          respond({ status: "error", command: "stories", error: "Story ID required" });
+          break;
+        }
+        const story = findStory(storiesFile.stories, id);
+        if (!story) {
+          respond({ status: "error", command: "stories", error: `Story not found: ${id}` });
+          break;
+        }
+        const lines = [formatStory(story), "", "Acceptance:", ...story.acceptance.map((a) => `  - ${a}`)];
+        respond({ status: "ok", command: "stories", display: lines.join("\n") });
+
+      } else {
+        // List stories
+        if (!storiesFile || storiesFile.stories.length === 0) {
+          respond({ status: "ok", command: "stories", display: `No stories for "${epicName}". Run: tx stories ${epicName} add <summary>` });
+        } else {
+          const lines = storiesFile.stories.map(formatStory);
+          respond({ status: "ok", command: "stories", display: lines.join("\n") });
+        }
+      }
       break;
     }
 
