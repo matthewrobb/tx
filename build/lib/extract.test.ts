@@ -20,7 +20,7 @@ describe("extractDeclaration", () => {
     const code = extractDeclaration("src/state/machine.ts", "PIPELINE_ORDER");
     expect(code).toContain("PIPELINE_ORDER");
     expect(code).toContain("research");
-    expect(code).toContain("ship");
+    expect(code).toContain("close");
   });
 
   test("throws on missing declaration", () => {

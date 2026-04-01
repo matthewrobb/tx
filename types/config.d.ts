@@ -1,5 +1,5 @@
 /**
- * Root configuration type for twisted-workflow v2.
+ * Root configuration type for twisted-workflow v3.
  *
  * TwistedConfig is the fully resolved config (all fields required).
  * TwistedSettings is what the user writes in settings.json (all fields optional).
@@ -24,23 +24,14 @@ import type { WritingConfig } from "./writing";
 import type { DirectoryConfig, FilePathConfig, NamingConfig } from "./directories";
 import type { PresetName, DeepPartial } from "./preset";
 import type { StringTemplates } from "./strings";
-import type { NimbalystConfig } from "./nimbalyst";
-import type { TrackingStrategy } from "./tracking";
 
 /** Fully resolved configuration — all fields present and required. */
 export interface TwistedConfig {
   /** Schema version. */
-  version: "2.0";
+  version: "3.0";
 
   /** Active presets. First wins — earlier presets override later ones on conflict. */
   presets: PresetName[];
-
-  /**
-   * Tracking strategies. Determines artifact formats across the full pipeline.
-   * First entry = primary (what downstream steps read from). All entries written.
-   * Default: ["twisted"].
-   */
-  tracking: TrackingStrategy[];
 
   /** Detected external tools. */
   tools: ToolsConfig;
@@ -54,8 +45,8 @@ export interface TwistedConfig {
   /** Model/effort/context per core step. */
   phases: PhasesConfig;
 
-  /** Decompose step settings (estimation, thresholds, categories). */
-  decompose: DecomposeConfig;
+  /** Plan step settings (estimation, thresholds, categories). */
+  plan: DecomposeConfig;
 
   /** Issue and changelog templates. */
   templates: TemplatesConfig;
@@ -68,9 +59,6 @@ export interface TwistedConfig {
 
   /** Writing quality skill. */
   writing: WritingConfig;
-
-  /** Nimbalyst integration (experimental). */
-  nimbalyst: NimbalystConfig;
 
   /** Directory paths. */
   directories: DirectoryConfig;
@@ -162,7 +150,6 @@ export type {
   ObjectiveStep,
   StepTransition,
   StepSequence,
-  ToolsUsed,
   FolderKanbanConfig,
 } from "./state";
 
@@ -172,19 +159,6 @@ export type {
 } from "./flow";
 
 export type { WritingConfig } from "./writing";
-
-export type {
-  NimbalystConfig,
-  NimbalystPlanFrontmatter,
-  NimbalystStatus,
-  NimbalystPlanType,
-  NimbalystPriority,
-  NimbalystTrackerTag,
-  NimbalystTrackerStatus,
-  NimbalystTrackerType,
-} from "./nimbalyst";
-
-export type { TrackingStrategy } from "./tracking";
 
 export type {
   DirectoryConfig,
@@ -199,24 +173,6 @@ export type {
   BuiltInPresets,
   DeepPartial,
 } from "./preset";
-
-export type {
-  ObjectiveFrontmatter,
-  RequirementsFrontmatter,
-  IssuesFrontmatter,
-  PlanFrontmatter,
-  ResearchFrontmatter,
-} from "./frontmatter";
-
-export type {
-  ResearchFile,
-  RequirementsFile,
-  IssuesFile,
-  PlanFile,
-  ExecutionLog,
-  AgentLogEntry,
-  ObjectiveArtifacts,
-} from "./artifacts";
 
 export type {
   TwistedSubcommand,
@@ -242,11 +198,3 @@ export type {
   ExecutionAgentPromptTemplate,
   InterrogationPromptTemplate,
 } from "./strings";
-
-export type {
-  Issue,
-  IssueGroup,
-  AgentAssignment,
-  ComplexityEstimate,
-  DependencyGraph,
-} from "./issues";

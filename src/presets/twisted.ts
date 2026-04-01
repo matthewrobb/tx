@@ -1,5 +1,3 @@
 import type { PresetOverrides } from "../../types/preset.js";
 
-export const twisted: PresetOverrides = {
-  tracking: ["twisted"],
-};
+export const twisted: PresetOverrides = {};

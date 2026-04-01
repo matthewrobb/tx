@@ -63,8 +63,8 @@ export function getPhaseProvider(
 /** Map core steps to their phase settings key. */
 const STEP_TO_PHASE: Partial<Record<ObjectiveStep, keyof PhasesConfig>> = {
   scope: "scope",
-  decompose: "decompose",
-  execute: "execute",
+  plan: "plan",
+  build: "build",
 };
 
 /**

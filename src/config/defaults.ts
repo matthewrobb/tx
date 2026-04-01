@@ -6,9 +6,8 @@
 import type { TwistedConfig } from "../../types/config.js";
 
 export const defaults: TwistedConfig = {
-  version: "2.0",
+  version: "3.0",
   presets: [],
-  tracking: ["twisted"],
 
   tools: {
     detected: {
@@ -39,11 +38,11 @@ export const defaults: TwistedConfig = {
 
   phases: {
     scope: { model: "opus", effort: "max", context: "default", mode: "execute" },
-    decompose: { model: "opus", effort: "max", context: "default", mode: "plan" },
-    execute: { model: "sonnet", effort: "medium", context: "1m", mode: "execute" },
+    plan: { model: "opus", effort: "max", context: "default", mode: "plan" },
+    build: { model: "sonnet", effort: "medium", context: "1m", mode: "execute" },
   },
 
-  decompose: {
+  plan: {
     estimation: "fibonacci",
     batch_threshold: 2,
     split_threshold: 8,
@@ -97,11 +96,6 @@ export const defaults: TwistedConfig = {
     fallback: true,
   },
 
-  nimbalyst: {
-    default_priority: "medium",
-    default_owner: "claude",
-  },
-
   directories: {
     root: ".twisted",
     worktrees: ".twisted/worktrees",
@@ -146,11 +140,11 @@ export const defaults: TwistedConfig = {
     research_section: "## Agent {n} — {focus}",
     handoff_messages: {
       research_to_scope: "Research complete ({research_count} agents). Starting scope.",
-      scope_to_decompose: "Requirements captured across {category_count} categories. Starting decomposition.",
-      decompose_to_execute: "{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to execute.",
-      execute_to_review: "Execution complete ({issues_done}/{issues_total} issues). Starting review.",
-      review_to_ship: "Review passed. Ready to ship.",
-      ship_done: "Objective {objective} complete.",
+      scope_to_plan: "Requirements captured across {category_count} categories. Starting plan.",
+      plan_to_build: "{issue_count} issues in {group_count} groups ({agent_count} agents). Ready to build.",
+      build_to_review: "Build complete ({issues_done}/{issues_total} issues). Starting review.",
+      review_to_close: "Review passed. Ready to close.",
+      close_done: "Objective {objective} complete.",
     },
     research_agent_prompt: [
       'Research the codebase for objective "{objective}".',
