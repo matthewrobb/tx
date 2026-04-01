@@ -39,15 +39,3 @@ export function dispatchPhase(
   return { action: "built-in", newState: state };
 }
 
-/**
- * Write artifacts for ALL active tracking strategies.
- * Shared loop used by scope, decompose, and execute steps.
- */
-export function forEachStrategy(
-  config: TwistedConfig,
-  writer: (strategy: string) => void,
-): void {
-  for (const strategy of config.tracking) {
-    writer(strategy);
-  }
-}

@@ -7,8 +7,6 @@ const EXTRACTED_FROM = [
   "src/scope/research.ts",
   "src/scope/interrogate.ts",
   "src/scope/requirements.ts",
-  "src/scope/objective.ts",
-  "src/strategies/writer.ts",
 ];
 
 const doc = new MarkdownDocument()
@@ -19,10 +17,8 @@ const doc = new MarkdownDocument()
   .code("ts", extractDeclaration("src/scope/research.ts", "executeResearch"))
   .heading(3, "Built-in Research")
   .code("ts", extractDeclaration("src/scope/research.ts", "runBuiltInResearch"))
-  .code("ts", extractDeclaration("src/strategies/writer.ts", "ResearchAgent"))
   .rule()
   .heading(2, "Scope Step")
-  .code("ts", extractDeclaration("src/scope/objective.ts", "establishObjective"))
   .code("ts", extractDeclaration("src/scope/requirements.ts", "readResearchForScope"))
   .code("ts", extractDeclaration("src/scope/interrogate.ts", "interrogate"))
   .code("ts", extractDeclaration("src/scope/requirements.ts", "writeAndAdvance"))

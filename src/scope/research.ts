@@ -4,9 +4,8 @@
 
 import type { TwistedConfig } from "../../types/config.js";
 import type { ObjectiveState } from "../../types/state.js";
-import { dispatchPhase, forEachStrategy } from "../pipeline/dispatch.js";
+import { dispatchPhase } from "../pipeline/dispatch.js";
 import { advanceState } from "../state/machine.js";
-import { writeResearch, type ResearchAgent } from "../strategies/writer.js";
 
 /**
  * Execute the research step.
@@ -22,13 +21,7 @@ export function executeResearch(
   if (action !== "built-in") return newState;
 
   // Built-in research
-  const agents = runBuiltInResearch(config, objective);
-
-  forEachStrategy(config, (strategy) => {
-    writeResearch(strategy, objective, objDir, agents, {
-      nimbalystConfig: config.nimbalyst,
-    });
-  });
+  runBuiltInResearch(config, objective, objDir);
 
   // Handoff: display config.strings.handoff_messages.research_to_scope
   return advanceState(state, config.pipeline, "built-in");
@@ -44,17 +37,18 @@ export function executeResearch(
 export function runBuiltInResearch(
   config: TwistedConfig,
   objective: string,
-): ResearchAgent[] {
+  objDir: string,
+): void {
   const focusAreas = determineFocusAreas(objective);
 
-  return parallel(
+  parallel(
     focusAreas.map((focus, i) => {
       const prompt = config.strings.research_agent_prompt
         .replace("{objective}", objective)
         .replace("{focus}", focus)
         .replace("{codebase_context}", summarizeContext());
 
-      return spawnSubagent(prompt, i + 1, focus);
+      return spawnSubagent(prompt, i + 1, focus, objDir);
     }),
   );
 }

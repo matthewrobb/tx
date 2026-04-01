@@ -9,12 +9,9 @@ const SHARED_MODULES: Record<string, string[]> = {
   "src/config/defaults.ts": ["defaults"],
   "src/config/merge.ts": ["deepMerge"],
   "src/state/machine.ts": ["advanceState", "nextStep", "createInitialState", "getEffectiveSteps", "PIPELINE_ORDER"],
-  "src/state/status.ts": ["toNimbalystStatus", "inferPlanType", "toTrackerStatus", "calculateProgress"],
-  "src/strategies/paths.ts": ["getArtifactPaths", "objectiveDir", "getAllArtifactPaths"],
-  "src/strategies/writer.ts": ["writeResearch", "writeRequirements", "writeIssuesAndPlan", "ResearchAgent", "WriteOptions"],
   "src/strategies/worktree.ts": ["getWorktreePaths", "getWorktreeCommands"],
   "src/pipeline/routing.ts": ["parseProvider", "shouldPause", "hasConfigChange", "getPhaseSettings"],
-  "src/pipeline/dispatch.ts": ["dispatchPhase", "forEachStrategy"],
+  "src/pipeline/dispatch.ts": ["dispatchPhase"],
 };
 
 /** Map of type definition files → type names they export. */
@@ -23,13 +20,9 @@ const TYPE_FILES: Record<string, string[]> = {
   "types/state.d.ts": ["ObjectiveState", "ObjectiveStatus", "ObjectiveStep"],
   "types/pipeline.d.ts": ["PipelineConfig", "PhaseProviderConfig", "ProviderString", "DelegatablePhase"],
   "types/execution.d.ts": ["ExecutionConfig", "ExecutionStrategy", "MergeStrategy", "ReviewFrequency", "TestRequirement", "WorktreeTiers"],
-  "types/issues.d.ts": ["Issue", "IssueGroup", "DependencyGraph", "ComplexityEstimate", "AgentAssignment"],
   "types/decompose.d.ts": ["DecomposeConfig", "EstimationScale", "ComplexityThresholds"],
   "types/flow.d.ts": ["FlowConfig", "PauseReason"],
   "types/phases.d.ts": ["PhasesConfig", "PhaseSettings", "ModelName", "EffortLevel"],
-  "types/tracking.d.ts": ["TrackingStrategy"],
-  "types/nimbalyst.d.ts": ["NimbalystConfig", "NimbalystPlanFrontmatter", "NimbalystStatus", "NimbalystPlanType"],
-  "types/frontmatter.d.ts": ["ResearchFrontmatter", "RequirementsFrontmatter", "IssuesFrontmatter", "PlanFrontmatter"],
   "types/commands.d.ts": ["ParsedCommand", "TwistedSubcommand", "ConfigSection", "ConfigParams"],
   "types/templates.d.ts": ["IssueTemplate", "IssueField"],
   "types/strings.d.ts": ["StringTemplates", "CommitMessageTemplates", "HandoffMessageTemplates"],
