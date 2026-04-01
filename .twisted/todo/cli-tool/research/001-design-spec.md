@@ -100,6 +100,8 @@ Delegatable operations are routed to configured providers. Top-level:
 - `"skip"` — skip entirely
 - `"ask"` — ask user which provider
 - `"superpowers:<skill>"` — delegate to a superpowers skill
+- `"gstack:<command>"` — delegate to a gstack command
+- `"nimbalyst:<skill>"` — delegate to a nimbalyst skill
 
 ## Command Surface
 
@@ -183,8 +185,8 @@ Source of truth for pipeline position.
   "steps_remaining": ["scope", "plan", "build", "close"],
   "group_current": null,
   "groups_total": null,
-  "tasks_done": 0,
-  "tasks_total": null,
+  "issues_done": 0,
+  "issues_total": null,
   "created": "2026-03-31",
   "updated": "2026-03-31T00:00:00.000Z",
   "tools_used": {},
