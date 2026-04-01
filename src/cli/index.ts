@@ -1,0 +1,542 @@
+#!/usr/bin/env node
+// src/cli/index.ts
+import { parseArgs } from "./args.js";
+import { output } from "./output.js";
+import { resolveConfig } from "../config/resolve.js";
+import { createInitialState, nextStep, advanceState } from "../state/machine.js";
+import {
+  findRoot, twistedDir, objectiveDir, ensureDir,
+  readState, writeState, readSettings, writeSettings,
+  readTasks, writeTasks, readNotes, writeNotes,
+  readActiveSession, writeActiveSession, deleteActiveSession,
+  listSessions, findObjectives, writeArtifact, readArtifact,
+} from "./fs.js";
+import { addNote, filterNotes } from "../notes/notes.js";
+import { addTask, updateTask, assignTask, getTask, getTasksByGroup } from "../tasks/tasks.js";
+import { createSession, addSessionEvent, closeSession, getLatestSession } from "../session/lifecycle.js";
+import { resolveArtifactPath, listArtifacts } from "../artifacts/artifacts.js";
+import type { AgentResponse } from "../../types/output.js";
+import type { ObjectiveState } from "../../types/state.js";
+import type { TwistedSettings } from "../../types/config.js";
+import { join } from "path";
+import { readdirSync } from "fs";
+
+const argv = process.argv.slice(2);
+const command = parseArgs(argv);
+const root = findRoot(process.cwd());
+const rawSettings = readSettings(root);
+const config = resolveConfig(rawSettings as TwistedSettings);
+
+function respond(response: AgentResponse): void {
+  output(response, command.flags.agent);
+}
+
+function findActiveObjective(): { dir: string; state: ObjectiveState } | null {
+  const objectives = findObjectives(root);
+  if (command.flags.objective) {
+    const match = objectives.find((o) => o.objective === command.flags.objective);
+    if (!match) return null;
+    return { dir: match.dir, state: readState(match.dir) };
+  }
+  // Most recently updated in-progress, then todo
+  const active = objectives
+    .filter((o) => o.lane !== "done")
+    .map((o) => ({ ...o, state: readState(o.dir) }))
+    .sort((a, b) => b.state.updated.localeCompare(a.state.updated));
+  if (active.length === 0) return null;
+  return { dir: active[0]!.dir, state: active[0]!.state };
+}
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString("utf-8");
+}
+
+async function main(): Promise<void> {
+  switch (command.subcommand) {
+    case "init": {
+      const twisted = twistedDir(root);
+      ensureDir(join(twisted, "todo"));
+      ensureDir(join(twisted, "in-progress"));
+      ensureDir(join(twisted, "done"));
+      ensureDir(join(twisted, "worktrees"));
+      if (!rawSettings.presets) {
+        writeSettings(root, { $schema: "./schemas/settings.schema.json", presets: [] });
+      }
+      respond({ status: "ok", command: "init", display: "Initialized .twisted/", config });
+      break;
+    }
+
+    case "open": {
+      const objective = (command.params as Record<string, unknown>).objective as string | undefined;
+      if (!objective) {
+        respond({ status: "error", command: "open", error: "Objective name required: tx open <name>" });
+        break;
+      }
+      const objDir = objectiveDir(root, "todo", objective);
+      ensureDir(objDir);
+      ensureDir(join(objDir, "research"));
+      ensureDir(join(objDir, "sessions"));
+      const state = createInitialState(objective, config.pipeline);
+      writeState(objDir, state);
+      writeNotes(objDir, []);
+      writeTasks(objDir, []);
+      respond({ status: "ok", command: "open", state, display: `Opened objective: ${objective}\nStep: research` });
+      break;
+    }
+
+    case "status": {
+      const objectives = findObjectives(root);
+      if (objectives.length === 0) {
+        respond({ status: "ok", command: "status", display: "No objectives." });
+        break;
+      }
+      const targetName = (command.params as Record<string, unknown>).objective as string | undefined;
+      if (targetName) {
+        const match = objectives.find((o) => o.objective === targetName);
+        if (!match) {
+          respond({ status: "error", command: "status", error: `Objective '${targetName}' not found` });
+          break;
+        }
+        const state = readState(match.dir);
+        respond({ status: "ok", command: "status", state, display: formatStatusDetail(state) });
+      } else {
+        const lines = objectives.map((o) => {
+          const s = readState(o.dir);
+          return `${s.objective}  ${s.status}  ${s.step}  ${s.tasks_done}/${s.tasks_total ?? "?"}  ${s.updated}`;
+        });
+        respond({ status: "ok", command: "status", display: lines.join("\n") });
+      }
+      break;
+    }
+
+    case "next": {
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "next", error: "No active objective. Run: tx open <name>" });
+        break;
+      }
+      const next = nextStep(active.state.step, config.pipeline);
+      if (!next) {
+        respond({ status: "ok", command: "next", state: active.state, action: { type: "done" }, display: "All steps complete." });
+        break;
+      }
+      // Advance state
+      const newState = advanceState(active.state, config.pipeline);
+      writeState(active.dir, newState);
+      respond({ status: "ok", command: "next", state: newState, display: `Advanced to: ${next}` });
+      break;
+    }
+
+    case "write": {
+      const params = command.params as Record<string, unknown>;
+      const type = params.type as string;
+      const number = params.number as number | undefined;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "write", error: "No active objective" });
+        break;
+      }
+      const path = resolveArtifactPath(active.dir, type as any, number);
+      const content = await readStdin();
+      writeArtifact(join(root, path), content);
+      respond({ status: "ok", command: "write", display: `Wrote ${type} to ${path}` });
+      break;
+    }
+
+    case "read": {
+      const params = command.params as Record<string, unknown>;
+      const type = params.type as string;
+      const number = params.number as number | undefined;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "read", error: "No active objective" });
+        break;
+      }
+      const path = resolveArtifactPath(active.dir, type as any, number);
+      const fullPath = join(root, path);
+      try {
+        const content = readArtifact(fullPath);
+        if (command.flags.agent) {
+          respond({ status: "ok", command: "read", display: content });
+        } else {
+          process.stdout.write(content);
+        }
+      } catch {
+        respond({ status: "error", command: "read", error: `Artifact not found: ${path}` });
+      }
+      break;
+    }
+
+    case "note": {
+      const params = command.params as Record<string, unknown>;
+      const summary = params.summary as string;
+      const type = params.type as string | undefined;
+      const reason = params.reason as string | undefined;
+      const impact = params.impact as string | undefined;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "note", error: "No active objective" });
+        break;
+      }
+      const notes = readNotes(active.dir);
+      const note = addNote(notes, {
+        type: (type ?? "note") as any,
+        step: active.state.step,
+        summary,
+        reason,
+        impact,
+      });
+      writeNotes(active.dir, notes);
+      // Update active session if exists
+      const session = readActiveSession(active.dir);
+      if (session) {
+        addSessionEvent(session, { type: "note_added", noteId: note.id });
+        writeActiveSession(active.dir, session);
+      }
+      respond({ status: "ok", command: "note", display: `Note #${note.id}: ${summary}` });
+      break;
+    }
+
+    case "notes": {
+      const params = command.params as Record<string, unknown>;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "notes", error: "No active objective" });
+        break;
+      }
+      const notes = readNotes(active.dir);
+      const noteType = params.type as string | undefined;
+      const noteStep = params.step as string | undefined;
+      const filtered = filterNotes(notes, { type: noteType as any, step: noteStep as any });
+      const display = filtered.map((n) => `#${n.id} [${n.type}] (${n.step}) ${n.summary}`).join("\n");
+      respond({ status: "ok", command: "notes", display: display || "No notes." });
+      break;
+    }
+
+    case "tasks": {
+      const params = command.params as Record<string, unknown>;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "tasks", error: "No active objective" });
+        break;
+      }
+      const tasks = readTasks(active.dir);
+      const action = params.action as string | undefined;
+      const id = params.id as number | undefined;
+      const summary = params.summary as string | undefined;
+      const done = params.done as boolean | undefined;
+      const group = params.group as number | undefined;
+
+      if (!action) {
+        const display = tasks.map((t) => `#${t.id} [${t.done ? "x" : " "}] (g${t.group ?? "?"}) ${t.summary}`).join("\n");
+        respond({ status: "ok", command: "tasks", display: display || "No tasks." });
+        break;
+      }
+      if (action === "add") {
+        const task = addTask(tasks, { summary: summary! });
+        writeTasks(active.dir, tasks);
+        respond({ status: "ok", command: "tasks", display: `Task #${task.id}: ${summary}` });
+      } else if (action === "update") {
+        const task = updateTask(tasks, id!, { done });
+        writeTasks(active.dir, tasks);
+        respond({ status: "ok", command: "tasks", display: `Updated task #${task.id}` });
+      } else if (action === "assign") {
+        const task = assignTask(tasks, id!, group!);
+        writeTasks(active.dir, tasks);
+        respond({ status: "ok", command: "tasks", display: `Assigned task #${task.id} to group ${group}` });
+      } else if (action === "show") {
+        const task = getTask(tasks, id!);
+        respond({ status: "ok", command: "tasks", display: JSON.stringify(task, null, 2) });
+      }
+      break;
+    }
+
+    case "pickup": {
+      const params = command.params as Record<string, unknown>;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "pickup", error: "No active objective" });
+        break;
+      }
+      const existing = readActiveSession(active.dir);
+      if (existing) {
+        respond({
+          status: "ok",
+          command: "pickup",
+          session: { active: existing, previous: null },
+          display: `Resuming session #${existing.number} (started ${existing.started})`,
+        });
+        break;
+      }
+      const sessions = listSessions(active.dir);
+      const latest = getLatestSession(sessions);
+      const nextNumber = (latest?.number ?? 0) + 1;
+      const name = params.name as string | null ?? null;
+      const sess = createSession(active.state.step, name, nextNumber);
+      writeActiveSession(active.dir, sess);
+      respond({
+        status: "ok",
+        command: "pickup",
+        session: { active: sess, previous: latest },
+        display: `Session #${nextNumber} started${name ? ` (${name})` : ""}`,
+      });
+      break;
+    }
+
+    case "handoff": {
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "handoff", error: "No active objective" });
+        break;
+      }
+      const session = readActiveSession(active.dir);
+      if (!session) {
+        respond({ status: "error", command: "handoff", error: "No active session" });
+        break;
+      }
+      const summary = closeSession(session);
+      respond({
+        status: "handoff",
+        command: "handoff",
+        session: { active: session, previous: null },
+        action: {
+          type: "prompt_user",
+          prompt: `Write a session summary for session #${summary.number}. Include: what was accomplished, decisions made, artifacts created, and what comes next. Pipe the result to: tx session save ${summary.name} -a`,
+        },
+        display: `Ending session #${summary.number}. Write summary and run: tx session save ${summary.name}`,
+      });
+      break;
+    }
+
+    case "session": {
+      const params = command.params as Record<string, unknown>;
+      const action = params.action as string | undefined;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "session", error: "No active objective" });
+        break;
+      }
+      if (action === "status") {
+        const sess = readActiveSession(active.dir);
+        if (sess) {
+          respond({ status: "ok", command: "session", session: { active: sess, previous: null }, display: JSON.stringify(sess, null, 2) });
+        } else {
+          respond({ status: "ok", command: "session", display: "No active session." });
+        }
+      } else if (action === "save") {
+        const sess = readActiveSession(active.dir);
+        if (!sess) {
+          respond({ status: "error", command: "session", error: "No active session to save" });
+          break;
+        }
+        const summary = closeSession(sess);
+        const content = await readStdin();
+        const sessionsDir = join(active.dir, "sessions");
+        ensureDir(sessionsDir);
+        writeArtifact(join(sessionsDir, summary.file), content);
+        deleteActiveSession(active.dir);
+        respond({ status: "ok", command: "session", display: `Session saved: sessions/${summary.file}` });
+      } else if (action === "list") {
+        const sessions = listSessions(active.dir);
+        const display = sessions.map((s) => `#${s.number} ${s.name} (${s.file})`).join("\n");
+        respond({ status: "ok", command: "session", display: display || "No sessions." });
+      }
+      break;
+    }
+
+    case "close": {
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "close", error: "No active objective" });
+        break;
+      }
+      const qaCfg = (config.pipeline as any).qa ?? { provider: "built-in" };
+      const shipCfg = (config.pipeline as any).ship ?? { provider: "built-in" };
+      respond({
+        status: "handoff",
+        command: "close",
+        state: active.state,
+        action: {
+          type: "prompt_user",
+          prompt: `Objective "${active.state.objective}" is ready to close.\n\nSub-steps:\n1. QA (provider: ${qaCfg.provider})\n2. Write changelog entry → pipe to: tx write changelog -a\n3. Ship (provider: ${shipCfg.provider})\n\nComplete these steps, then run: tx next -a to finalize.`,
+        },
+        display: `Close: ${active.state.objective}\n  QA: ${qaCfg.provider}\n  Ship: ${shipCfg.provider}`,
+      });
+      break;
+    }
+
+    case "resume": {
+      const params = command.params as Record<string, unknown>;
+      const objectiveName = params.objective as string | undefined;
+      if (!objectiveName) {
+        respond({ status: "error", command: "resume", error: "Objective name required: tx resume <name>" });
+        break;
+      }
+      const objectives = findObjectives(root);
+      const match = objectives.find((o) => o.objective === objectiveName);
+      if (!match) {
+        respond({ status: "error", command: "resume", error: `Objective '${objectiveName}' not found` });
+        break;
+      }
+      const state = readState(match.dir);
+      const session = readActiveSession(match.dir);
+      const sessions = listSessions(match.dir);
+      const latest = getLatestSession(sessions);
+      respond({
+        status: "ok",
+        command: "resume",
+        state,
+        session: { active: session, previous: latest },
+        display: `Resuming: ${objectiveName}\n  Step: ${state.step}\n  Status: ${state.status}`,
+      });
+      break;
+    }
+
+    case "research":
+    case "scope":
+    case "plan":
+    case "build": {
+      const stepName = command.subcommand;
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: stepName, error: "No active objective" });
+        break;
+      }
+      if (active.state.step !== stepName) {
+        respond({
+          status: "error",
+          command: stepName,
+          error: `Objective is at step "${active.state.step}", not "${stepName}"`,
+          state: active.state,
+        });
+        break;
+      }
+      const providerKey = stepName === "research" ? "research" : null;
+      const providerCfg = providerKey ? (config.pipeline as any)[providerKey] : null;
+      const provider = providerCfg?.provider ?? "built-in";
+      if (provider && provider !== "built-in" && provider !== "skip") {
+        respond({
+          status: "handoff",
+          command: stepName,
+          state: active.state,
+          action: { type: "invoke_skill", skill: provider },
+          display: `Step: ${stepName}\n  Provider: ${provider}`,
+        });
+      } else {
+        respond({
+          status: "handoff",
+          command: stepName,
+          state: active.state,
+          action: { type: "prompt_user", prompt: `Execute the ${stepName} step for objective "${active.state.objective}".` },
+          display: `Step: ${stepName} (built-in)`,
+        });
+      }
+      break;
+    }
+
+    case "config": {
+      respond({ status: "ok", command: "config", config, display: JSON.stringify(config, null, 2) });
+      break;
+    }
+
+    case "artifacts": {
+      const active = findActiveObjective();
+      if (!active) {
+        respond({ status: "error", command: "artifacts", error: "No active objective" });
+        break;
+      }
+      const files = readdirSync(active.dir, { recursive: true }) as string[];
+      const artifacts = listArtifacts(active.dir, files.map((f) => join(active.dir, f as string)));
+      const display = artifacts.map((a) => `${a.exists ? "+" : "-"} ${a.type}: ${a.path}`).join("\n");
+      respond({ status: "ok", command: "artifacts", display });
+      break;
+    }
+
+    default: {
+      if (command.flags.version) {
+        respond({ status: "ok", command: "version", display: `twisted-workflow v${config.version}` });
+      } else if (command.flags.help) {
+        respond({ status: "ok", command: "help", display: getHelpText() });
+      } else {
+        const objectives = findObjectives(root);
+        if (objectives.length === 0) {
+          respond({ status: "ok", command: "interactive", display: "No objectives. Run: tx open <name>" });
+        } else {
+          const lines = objectives.map((o) => {
+            const s = readState(o.dir);
+            return `${s.objective}  ${s.status}  ${s.step}`;
+          });
+          respond({ status: "ok", command: "interactive", display: lines.join("\n") });
+        }
+      }
+    }
+  }
+}
+
+function formatStatusDetail(state: ObjectiveState): string {
+  return [
+    `Objective: ${state.objective}`,
+    `Status:    ${state.status}`,
+    `Step:      ${state.step}`,
+    `Progress:  ${state.steps_completed.length}/${state.steps_completed.length + state.steps_remaining.length + 1} steps, ${state.tasks_done}/${state.tasks_total ?? "?"} tasks`,
+    `Created:   ${state.created}`,
+    `Updated:   ${state.updated}`,
+  ].join("\n");
+}
+
+function getHelpText(): string {
+  return `tx <command> [args] [flags]
+
+Lifecycle:
+  tx init                    Setup .twisted/
+  tx open <objective>        Create objective
+  tx close [objective]       Final step
+  tx next [objective]        Advance step
+  tx resume <objective>      Resume objective
+  tx status [objective]      Show status
+
+Steps:
+  tx research [objective]    Run research
+  tx scope [objective]       Run scope
+  tx plan [objective]        Run plan
+  tx build [objective]       Run build
+
+Session:
+  tx pickup [name]           Start session
+  tx handoff [name]          End session
+  tx session status|save|list
+
+Artifacts:
+  tx write <type> [obj]      Write (stdin)
+  tx read <type> [obj]       Read (stdout)
+  tx artifacts [obj]         List artifacts
+
+Tasks:
+  tx tasks [obj]             List tasks
+  tx tasks add <summary>     Add task
+  tx tasks update <id>       Update task
+  tx tasks show <id>         Show detail
+
+Notes:
+  tx note <summary>          Add note
+  tx notes [obj]             Query notes
+
+Config:
+  tx config [section] [sub]  Show config
+
+Flags:
+  -a, --agent       JSON output
+  -y, --yolo        Skip confirmations
+  -o, --objective   Target objective
+  -h, --help        Show help
+  -v, --version     Show version`;
+}
+
+main().catch((err) => {
+  process.stderr.write(`Error: ${err.message}\n`);
+  process.exit(1);
+});

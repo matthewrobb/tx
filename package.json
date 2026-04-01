@@ -1,12 +1,19 @@
 {
   "name": "twisted-workflow",
+  "version": "3.0.0",
   "type": "module",
-  "private": true,
+  "bin": {
+    "tx": "./dist/cli.js"
+  },
+  "files": ["dist/", "schemas/", "skills/", "presets/"],
   "scripts": {
-    "build": "bun run build/build.ts"
+    "build": "bun run build/build.ts",
+    "build:cli": "tsc -p tsconfig.cli.json",
+    "dev": "bun run src/cli/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node": "^22",
     "build-md": "^0.4.5"
   },
   "peerDependencies": {
