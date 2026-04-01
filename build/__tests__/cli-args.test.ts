@@ -1,5 +1,5 @@
 // build/__tests__/cli-args.test.ts
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { parseArgs } from "../../src/cli/args.ts";
 
 describe("parseArgs", () => {

@@ -1,5 +1,5 @@
 // build/__tests__/cli-output.test.ts
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { formatAgent, formatHuman } from "../../src/cli/output.ts";
 import type { AgentResponse } from "../../types/output";
 

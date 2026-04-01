@@ -1,5 +1,5 @@
 // build/__tests__/tasks.test.ts
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "vitest";
 import { addTask, updateTask, assignTask, getTasks, getTasksByGroup } from "../../src/tasks/tasks.ts";
 import type { Task } from "../../types/tasks";
 

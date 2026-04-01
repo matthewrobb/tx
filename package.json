@@ -7,16 +7,16 @@
   },
   "files": ["dist/", "schemas/", "skills/", "presets/"],
   "scripts": {
-    "build": "bun run build/build.ts",
+    "build": "tsx build/build.ts",
     "build:cli": "tsc -p tsconfig.cli.json",
-    "dev": "bun run src/cli/index.ts"
+    "dev": "node ./dist/cli/index.js",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@types/node": "^22",
-    "build-md": "^0.4.5"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "build-md": "^0.4.5",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^2"
   }
 }

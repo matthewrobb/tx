@@ -1,5 +1,5 @@
 // build/__tests__/session.test.ts
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { createSession, addSessionEvent, closeSession, getLatestSession } from "../../src/session/lifecycle.ts";
 import type { ActiveSession } from "../../types/session";
 

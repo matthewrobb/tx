@@ -1,5 +1,5 @@
 // build/__tests__/skill-content.test.ts
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { twistedWork } from "../skills/twisted-work.ts";
 import { buildSkillContent } from "../lib/skill.ts";
 

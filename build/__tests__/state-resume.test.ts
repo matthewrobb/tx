@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { advanceState, createInitialState, nextStep } from "../../src/state/machine.js";
 import { defaults } from "../../src/config/defaults.js";
 import {

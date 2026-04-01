@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect } from "vitest";
 import { parseProvider, hasConfigChange, shouldPause, getPhaseSettings } from "../../src/pipeline/routing.js";
 import { defaults } from "../../src/config/defaults.js";
 

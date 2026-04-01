@@ -1,5 +1,5 @@
 // build/__tests__/notes.test.ts
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "vitest";
 import { addNote, getNotes, filterNotes } from "../../src/notes/notes.ts";
 import type { Note } from "../../types/notes";
 

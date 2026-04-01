@@ -1,13 +1,13 @@
 {
   "objective": "v4-refactor",
-  "status": "todo",
-  "step": "scope",
+  "status": "in-progress",
+  "step": "build",
   "steps_completed": [
-    "research"
+    "research",
+    "scope",
+    "plan"
   ],
   "steps_remaining": [
-    "plan",
-    "build",
     "close"
   ],
   "group_current": null,
@@ -15,6 +15,6 @@
   "tasks_done": 0,
   "tasks_total": null,
   "created": "2026-04-01",
-  "updated": "2026-04-01T21:06:33.704Z",
+  "updated": "2026-04-01T21:52:23.633Z",
   "notes": null
 }

@@ -1,5 +1,5 @@
 // build/__tests__/artifacts.test.ts
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { resolveArtifactPath, listArtifacts } from "../../src/artifacts/artifacts.ts";
 
 describe("artifact paths", () => {

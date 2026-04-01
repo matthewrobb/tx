@@ -1,5 +1,5 @@
 // build/__tests__/types-check.test.ts
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 
 describe("type contracts", () => {
   it("AgentResponse status is exhaustive", async () => {

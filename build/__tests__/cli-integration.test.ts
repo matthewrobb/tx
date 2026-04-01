@@ -1,11 +1,14 @@
 // build/__tests__/cli-integration.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync } from "fs";
+import { spawnSync } from "child_process";
 import { join } from "path";
 
-const TEST_DIR = join(import.meta.dir, "../.test-output/cli-integration");
-const PROJECT_ROOT = join(import.meta.dir, "../..");
+const TEST_DIR = join(import.meta.dirname, "../.test-output/cli-integration");
+const PROJECT_ROOT = join(import.meta.dirname, "../..");
 const CLI_PATH = join(PROJECT_ROOT, "src/cli/index.ts");
+const NODE = process.execPath;
+const TSX_LOADER = ["--import", "tsx"];
 
 describe("CLI integration", () => {
   beforeEach(() => {
@@ -17,8 +20,8 @@ describe("CLI integration", () => {
   });
 
   it("tx init creates .twisted directory", async () => {
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "init", "-y", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const output = result.stdout.toString();
@@ -31,13 +34,13 @@ describe("CLI integration", () => {
 
   it("tx open creates objective", async () => {
     // Init first
-    Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "init", "-y", "-a"],
+    spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
 
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "open", "my-feature", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const output = result.stdout.toString();
@@ -53,14 +56,14 @@ describe("CLI integration", () => {
   });
 
   it("tx note adds a note", async () => {
-    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "note", "Test decision", "--decide", "--reason", "because", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "note", "Test decision", "--decide", "--reason", "because", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const response = JSON.parse(result.stdout.toString());
@@ -69,14 +72,14 @@ describe("CLI integration", () => {
   });
 
   it("tx tasks add creates a task", async () => {
-    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "tasks", "add", "First task", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "tasks", "add", "First task", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const response = JSON.parse(result.stdout.toString());
@@ -85,14 +88,14 @@ describe("CLI integration", () => {
   });
 
   it("tx next advances pipeline step", async () => {
-    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "next", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "next", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const response = JSON.parse(result.stdout.toString());
@@ -101,11 +104,11 @@ describe("CLI integration", () => {
   });
 
   it("tx error on missing objective", async () => {
-    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "next", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "next", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const response = JSON.parse(result.stdout.toString());
@@ -113,15 +116,15 @@ describe("CLI integration", () => {
   });
 
   it("tx pickup starts a session", async () => {
-    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], {
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"], {
       cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
     });
 
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "pickup", "my-session", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "pickup", "my-session", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const response = JSON.parse(result.stdout.toString());
@@ -136,12 +139,12 @@ describe("CLI integration", () => {
 
   it("tx handoff then session save persists session and cleans up active", async () => {
     const env = { ...process.env, TWISTED_ROOT: TEST_DIR };
-    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], { cwd: TEST_DIR, env });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], { cwd: TEST_DIR, env });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "pickup", "my-session", "-a"], { cwd: TEST_DIR, env });
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"], { cwd: TEST_DIR, env });
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"], { cwd: TEST_DIR, env });
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "pickup", "my-session", "-a"], { cwd: TEST_DIR, env });
 
-    const handoffResult = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "handoff", "-a"],
+    const handoffResult = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "handoff", "-a"],
       { cwd: TEST_DIR, env },
     );
     const handoffResponse = JSON.parse(handoffResult.stdout.toString());
@@ -152,9 +155,9 @@ describe("CLI integration", () => {
     const activePath = join(TEST_DIR, ".twisted/todo/my-feature/sessions/active.json");
     expect(existsSync(activePath)).toBe(true);
 
-    const saveResult = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "session", "save", "-a"],
-      { cwd: TEST_DIR, env, stdin: Buffer.from("## Session summary\n\nDid things.") },
+    const saveResult = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "session", "save", "-a"],
+      { cwd: TEST_DIR, env, input: Buffer.from("## Session summary\n\nDid things.") },
     );
     const saveResponse = JSON.parse(saveResult.stdout.toString());
     expect(saveResponse.status).toBe("ok");
@@ -172,15 +175,15 @@ describe("CLI integration", () => {
 
   it("tx session list shows saved sessions", async () => {
     const env = { ...process.env, TWISTED_ROOT: TEST_DIR };
-    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], { cwd: TEST_DIR, env });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], { cwd: TEST_DIR, env });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "pickup", "first-session", "-a"], { cwd: TEST_DIR, env });
-    Bun.spawnSync(["bun", "run", CLI_PATH, "session", "save", "-a"], {
-      cwd: TEST_DIR, env, stdin: Buffer.from("Summary content"),
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"], { cwd: TEST_DIR, env });
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"], { cwd: TEST_DIR, env });
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "pickup", "first-session", "-a"], { cwd: TEST_DIR, env });
+    spawnSync(NODE, [...TSX_LOADER, CLI_PATH, "session", "save", "-a"], {
+      cwd: TEST_DIR, env, input: Buffer.from("Summary content"),
     });
 
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "session", "list", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "session", "list", "-a"],
       { cwd: TEST_DIR, env },
     );
     const response = JSON.parse(result.stdout.toString());
@@ -189,17 +192,17 @@ describe("CLI integration", () => {
   });
 
   it("tx status shows objective", async () => {
-    Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "init", "-y", "-a"],
+    spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "init", "-y", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
-    Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "open", "my-feature", "-a"],
+    spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "open", "my-feature", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
 
-    const result = Bun.spawnSync(
-      ["bun", "run", CLI_PATH, "status", "-a"],
+    const result = spawnSync(
+      NODE, [...TSX_LOADER, CLI_PATH, "status", "-a"],
       { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
     );
     const response = JSON.parse(result.stdout.toString());

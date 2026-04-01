@@ -1,4 +1,4 @@
-import { describe, test, it, expect } from "bun:test";
+import { describe, test, it, expect } from "vitest";
 import { resolveConfig } from "../../src/config/resolve.js";
 import { deepMerge } from "../../src/config/merge.js";
 

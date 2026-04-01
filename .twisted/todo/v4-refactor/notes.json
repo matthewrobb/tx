@@ -30,5 +30,13 @@
     "summary": "Skill rename: twisted-work → tx. Agent -a output must use Claude Code idioms (/tx next, tool names like AskUserQuestion) not raw CLI commands.",
     "reason": "Agent was recommending bare CLI commands instead of skill invocations to Claude Code",
     "created": "2026-04-01T21:24:59.713Z"
+  },
+  {
+    "id": 5,
+    "type": "decision",
+    "step": "plan",
+    "summary": "Plan complete: 71 tasks across 4 phases (P0:10, P1:39, P2:12, P3:10). Critical path runs through engine core: types -> config -> artifacts -> step eval -> XState machine -> CLI rewrite.",
+    "reason": "Detailed task breakdown with dependency ordering enables parallel agent execution per phase",
+    "created": "2026-04-01T21:50:12.461Z"
   }
 ]
