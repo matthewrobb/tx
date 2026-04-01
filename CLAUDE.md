@@ -12,22 +12,21 @@ twisted-workflow/
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json
-├── src/                          ← runtime (Claude reads these via "read first")
+├── src/                          ← runtime source
+│   ├── cli/                      ← CLI entry point (index.ts) and filesystem layer (fs.ts)
 │   ├── config/                   ← deepMerge, defaults, resolveConfig
-│   ├── state/                    ← state machine, step sequencing, status mapping
-│   ├── strategies/               ← artifact paths, strategy-aware writer, worktrees
-│   ├── pipeline/                 ← provider routing, dispatch, pause logic
-│   ├── scope/                    ← research, interrogation, requirements
-│   ├── decompose/                ← complexity estimation, issue breakdown
-│   ├── execute/                  ← parallel execution, delegation
-│   ├── work/                     ← command routing, init, advance, config display
+│   ├── state/                    ← state machine, step sequencing
+│   ├── notes/                    ← typed notes (decision, deferral, discovery, blocker)
+│   ├── tasks/                    ← task CRUD and group assignment
+│   ├── session/                  ← session lifecycle (pickup/handoff)
+│   ├── artifacts/                ← artifact path resolution and listing
 │   └── presets/                  ← typed preset definitions
 ├── build/                        ← tooling (generates skills, never read by Claude)
 │   ├── build.ts                  ← bun run build
 │   ├── lib/                      ← AST extraction, skill assembly
-│   ├── skills/                   ← MarkdownDocument builders (5 files)
+│   ├── skills/                   ← MarkdownDocument builders (2 files)
 │   ├── schema/                   ← JSON Schema generator
-│   ├── __tests__/                ← all tests (223)
+│   ├── __tests__/                ← all tests (157)
 │   └── __fixtures__/             ← test data
 ├── skills/                       ← generated SKILL.md (committed)
 ├── presets/                      ← generated preset JSON (committed)
@@ -53,48 +52,60 @@ skill-specific functions.
 
 ```
 bun run build     # generates skills/, presets/, schemas/
-bun test          # 223 tests across 13 files
+bun test          # 157 tests across 17 files
 ```
 
 ## Pipeline
 
 ```
-/twisted-work init     ← one time setup (tool detection, preset selection)
-/twisted-work
-  → research           ← delegatable (built-in or external provider)
-  → scope              ← core (requirements interrogation)
-  → arch_review        ← delegatable
-  → decompose          ← core (issue breakdown + planning)
-  → execute            ← core (parallel worktree execution)
-  → code_review        ← delegatable
-  → qa                 ← delegatable
-  → ship               ← delegatable
+tx init        ← one-time setup
+tx open        ← create objective, enters research step
+  → research   ← delegatable (built-in or external provider)
+  → scope      ← requirements interrogation
+  → plan       ← issue breakdown and execution planning
+  → build      ← implementation
+  → close      ← QA, changelog, ship
 ```
 
-Auto-advances by default. Pauses when phase settings change
-or context is low. `--yolo` skips all pauses.
+`tx next` auto-advances the active objective one step at a time.
 
-## /twisted-work params
+## tx CLI commands
 
 ```
-/twisted-work                           — interactive mode
-/twisted-work init                      — setup, tool detection, preset selection
-/twisted-work status                    — show all objectives
-/twisted-work status {objective}        — detailed status for one objective
-/twisted-work next                      — auto-advance active objective
-/twisted-work next {objective}          — advance named objective
-/twisted-work resume {objective}        — resume named objective
-/twisted-work scope                     — explicitly trigger scope step
-/twisted-work decompose                 — explicitly trigger decompose step
-/twisted-work execute                   — explicitly trigger execute step
-/twisted-work review                    — explicitly trigger review delegation
-/twisted-work ship                      — explicitly trigger ship delegation
-/twisted-work config                    — show full config overview
-/twisted-work config {section}          — drill into config section
-/twisted-work config {section} {sub}    — drill into subsection
+tx init                      — setup .twisted/
+tx open <objective>          — create objective
+tx close [objective]         — final close step
+tx next [objective]          — advance active objective one step
+tx resume <objective>        — resume named objective
+tx status [objective]        — show all or one objective
 
-Any command accepts --yolo to skip confirmations:
-/twisted-work next --yolo
+tx research [objective]      — run research step
+tx scope [objective]         — run scope step
+tx plan [objective]          — run plan step
+tx build [objective]         — run build step
+
+tx pickup [name]             — start a session
+tx handoff [name]            — end a session
+tx session status|save|list  — manage sessions
+
+tx write <type> [obj]        — write artifact (from stdin)
+tx read <type> [obj]         — read artifact (to stdout)
+tx artifacts [obj]           — list artifacts
+
+tx tasks [obj]               — list tasks
+tx tasks add <summary>       — add a task
+tx tasks update <id>         — update a task
+tx tasks show <id>           — show task detail
+
+tx note <summary>            — add a note
+tx notes [obj]               — query notes
+
+tx config [section] [sub]    — show config
+
+Flags:
+  -a, --agent       JSON output (for agent use)
+  -y, --yolo        skip confirmations
+  -o, --objective   target a specific objective
 ```
 
 ## Config Resolution
@@ -106,15 +117,19 @@ deepMerge(defaults, ...presets.reverse().map(load), projectSettings ?? {})
 ```
 
 First preset wins — put the most important one first.
-Built-in presets: twisted, superpowers, gstack, nimbalyst, minimal.
+Built-in presets: twisted, superpowers, minimal.
 
-## Tracking Strategies
+## Artifacts
 
-`tracking: ["twisted"]` determines artifact format across
-the full pipeline. First entry = primary. All entries written.
+State and artifacts are stored as JSON files under `.twisted/{lane}/{objective}/`:
 
-| Strategy | Research | Requirements | Plan/Issues |
-|---|---|---|---|
-| `twisted` | RESEARCH-*.md | REQUIREMENTS.md | ISSUES.md + PLAN.md |
-| `nimbalyst` | nimbalyst-local/plans/ | same plan doc | checklist + tracker |
-| `gstack` | DESIGN.md | DESIGN.md (append) | gstack PLAN.md + ISSUES.md |
+| File | Purpose |
+|---|---|
+| `state.json` | Objective state (step, status, progress) |
+| `tasks.json` | Task list |
+| `notes.json` | Typed notes (decision, deferral, discovery, blocker) |
+| `sessions/active.json` | Active session |
+| `sessions/{n}-{name}.md` | Saved session summaries |
+| `research/` | Research artifacts |
+
+Agents write and read artifacts via `tx write <type>` and `tx read <type>`.
