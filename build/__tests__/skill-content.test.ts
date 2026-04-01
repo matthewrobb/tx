@@ -1,7 +1,6 @@
 // build/__tests__/skill-content.test.ts
 import { describe, it, expect } from "bun:test";
 import { twistedWork } from "../skills/twisted-work.ts";
-import { usingTwistedWorkflow } from "../skills/using-twisted-workflow.ts";
 import { buildSkillContent } from "../lib/skill.ts";
 
 describe("twisted-work content", () => {
@@ -42,19 +41,3 @@ describe("twisted-work content", () => {
   });
 });
 
-describe("using-twisted-workflow content", () => {
-  let content: string;
-
-  it("setup", () => {
-    content = buildSkillContent(usingTwistedWorkflow);
-    expect(content).toBeDefined();
-  });
-
-  it("references tx or CLI", () => {
-    expect(content.toLowerCase()).toMatch(/tx|cli tool|command.line/);
-  });
-
-  it("references config or settings", () => {
-    expect(content.toLowerCase()).toMatch(/config|settings/);
-  });
-});

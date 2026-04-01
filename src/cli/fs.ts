@@ -118,6 +118,15 @@ export function readArtifact(path: string): string {
   return readFileSync(path, "utf-8");
 }
 
+// --- File listing ---
+
+export function listObjectiveFiles(objDir: string): { dir: string; files: string[] } {
+  const dir = objDir.replace(/\\/g, "/");
+  const entries = readdirSync(objDir, { recursive: true }) as string[];
+  const files = entries.map((f) => join(objDir, f).replace(/\\/g, "/"));
+  return { dir, files };
+}
+
 // --- Scanning ---
 
 export function findObjectives(root: string): Array<{ lane: string; objective: string; dir: string }> {

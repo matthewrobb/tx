@@ -23,7 +23,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
       continue;
     }
     // Note type flags
-    if (arg === "--decide" || arg === "--defer" || arg === "--discover" || arg === "--blocker") {
+    if (arg === "--note" || arg === "--decide" || arg === "--defer" || arg === "--discover" || arg === "--blocker") {
       positional.push(arg);
       i++;
       continue;
@@ -33,7 +33,7 @@ export function parseArgs(argv: string[]): ParsedCommand {
       i += 2;
       continue;
     }
-    if (arg === "--done") {
+    if (arg === "--done" || arg === "--undone") {
       positional.push(arg);
       i++;
       continue;
@@ -107,6 +107,7 @@ function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags &
         params.id = parseInt(rest[1]!, 10);
       }
       if (rest.includes("--done")) params.done = true;
+      else if (rest.includes("--undone")) params.done = false;
       const groupIdx = rest.indexOf("--group");
       if (groupIdx >= 0) params.group = parseInt(rest[groupIdx + 1]!, 10);
       return params;
@@ -119,6 +120,7 @@ function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags &
       else if (rest.includes("--defer")) params.type = "deferral";
       else if (rest.includes("--discover")) params.type = "discovery";
       else if (rest.includes("--blocker")) params.type = "blocker";
+      else if (rest.includes("--note")) params.type = "note";
       const reasonIdx = rest.indexOf("--reason");
       if (reasonIdx >= 0) params.reason = rest[reasonIdx + 1];
       const impactIdx = rest.indexOf("--impact");
