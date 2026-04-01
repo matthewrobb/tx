@@ -12,7 +12,7 @@ const ROOT = resolve(import.meta.dirname, "../..");
 
 describe("generated skill files", () => {
   const skills = [
-    "twisted-work",
+    "tx",
   ];
 
   for (const skill of skills) {
@@ -31,8 +31,8 @@ describe("generated skill files", () => {
     });
   }
 
-  test("twisted-work is user-invocable", () => {
-    const content = readFileSync(resolve(ROOT, "skills/twisted-work/SKILL.md"), "utf-8");
+  test("tx is user-invocable", () => {
+    const content = readFileSync(resolve(ROOT, "skills/tx/SKILL.md"), "utf-8");
     expect(content).toContain("user-invocable: true");
     expect(content).toContain("argument-hint:");
   });
@@ -44,23 +44,13 @@ describe("generated preset files", () => {
     expect(() => JSON.parse(content)).not.toThrow();
   });
 
-  test("superpowers.json sets code_review provider", () => {
-    const preset = JSON.parse(readFileSync(resolve(ROOT, "presets/superpowers.json"), "utf-8"));
-    expect(preset.pipeline?.code_review?.provider).toBe("superpowers:requesting-code-review");
-  });
-
-  test("superpowers.json sets discipline", () => {
-    const preset = JSON.parse(readFileSync(resolve(ROOT, "presets/superpowers.json"), "utf-8"));
-    expect(preset.execution?.discipline).toBe("superpowers:test-driven-development");
-  });
-
   test("minimal.json skips research", () => {
     const preset = JSON.parse(readFileSync(resolve(ROOT, "presets/minimal.json"), "utf-8"));
     expect(preset.pipeline?.research?.provider).toBe("skip");
   });
 
   test("presets are sparse (no version field)", () => {
-    for (const name of ["twisted", "superpowers", "minimal"]) {
+    for (const name of ["twisted", "minimal"]) {
       const preset = JSON.parse(readFileSync(resolve(ROOT, `presets/${name}.json`), "utf-8"));
       expect(preset.version).toBeUndefined();
     }

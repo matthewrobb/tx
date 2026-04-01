@@ -12,7 +12,6 @@ export const defaults: TwistedConfig = {
   tools: {
     detected: {
       gstack: false,
-      superpowers: false,
       nimbalyst_skills: false,
     },
     last_scan: null,

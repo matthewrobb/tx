@@ -17,7 +17,6 @@
           {
             "enum": [
               "twisted",
-              "superpowers",
               "gstack",
               "nimbalyst",
               "minimal"
@@ -66,10 +65,6 @@
               "type": "boolean",
               "description": "Whether gstack is installed."
             },
-            "superpowers": {
-              "type": "boolean",
-              "description": "Whether Superpowers is installed."
-            },
             "nimbalyst_skills": {
               "type": "boolean",
               "description": "Whether Nimbalyst skills are installed."
@@ -96,7 +91,7 @@
           "properties": {
             "provider": {
               "type": "string",
-              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"superpowers:requesting-code-review\", \"nimbalyst:deep-researcher\""
+              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"nimbalyst:deep-researcher\""
             },
             "fallback": {
               "type": "string",
@@ -115,7 +110,7 @@
           "properties": {
             "provider": {
               "type": "string",
-              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"superpowers:requesting-code-review\", \"nimbalyst:deep-researcher\""
+              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"nimbalyst:deep-researcher\""
             },
             "fallback": {
               "type": "string",
@@ -134,7 +129,7 @@
           "properties": {
             "provider": {
               "type": "string",
-              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"superpowers:requesting-code-review\", \"nimbalyst:deep-researcher\""
+              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"nimbalyst:deep-researcher\""
             },
             "fallback": {
               "type": "string",
@@ -153,7 +148,7 @@
           "properties": {
             "provider": {
               "type": "string",
-              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"superpowers:requesting-code-review\", \"nimbalyst:deep-researcher\""
+              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"nimbalyst:deep-researcher\""
             },
             "fallback": {
               "type": "string",
@@ -172,7 +167,7 @@
           "properties": {
             "provider": {
               "type": "string",
-              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"superpowers:requesting-code-review\", \"nimbalyst:deep-researcher\""
+              "description": "Provider string. Examples: \"built-in\", \"skip\", \"ask\", \"gstack:/review\", \"nimbalyst:deep-researcher\""
             },
             "fallback": {
               "type": "string",
@@ -207,7 +202,7 @@
             "string",
             "null"
           ],
-          "description": "Build discipline provider invoked within each agent. Example: \"superpowers:test-driven-development\". Default: null"
+          "description": "Build discipline provider invoked within each agent. Example: \"gstack:/discipline\". Default: null"
         },
         "worktree_tiers": {
           "type": "integer",

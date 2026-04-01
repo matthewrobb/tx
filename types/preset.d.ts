@@ -14,7 +14,6 @@ import type { TwistedConfig } from "./config";
 /** Built-in preset names. */
 export type BuiltInPresetName =
   | "twisted"
-  | "superpowers"
   | "minimal";
 
 /** Preset name — built-in or custom string. */

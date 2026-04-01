@@ -24,7 +24,7 @@ export function generateSchema(): object {
           type: "string",
           anyOf: [
             {
-              enum: ["twisted", "superpowers", "gstack", "nimbalyst", "minimal"],
+              enum: ["twisted", "gstack", "nimbalyst", "minimal"],
               description: "Built-in preset name.",
             },
             { type: "string", description: "Custom preset name." },
@@ -58,7 +58,6 @@ export function generateSchema(): object {
             additionalProperties: false,
             properties: {
               gstack: { type: "boolean", description: "Whether gstack is installed." },
-              superpowers: { type: "boolean", description: "Whether Superpowers is installed." },
               nimbalyst_skills: { type: "boolean", description: "Whether Nimbalyst skills are installed." },
             },
           },
@@ -87,7 +86,7 @@ export function generateSchema(): object {
           discipline: {
             type: ["string", "null"],
             description:
-              'Build discipline provider invoked within each agent. Example: "superpowers:test-driven-development". Default: null',
+              "Build discipline provider invoked within each agent. Example: \"gstack:/discipline\". Default: null",
           },
           worktree_tiers: {
             type: "integer",
@@ -373,7 +372,7 @@ function phaseProviderSchema(): object {
       provider: {
         type: "string",
         description:
-          'Provider string. Examples: "built-in", "skip", "ask", "gstack:/review", "superpowers:requesting-code-review", "nimbalyst:deep-researcher"',
+          'Provider string. Examples: "built-in", "skip", "ask", "gstack:/review", "nimbalyst:deep-researcher"',
       },
       fallback: {
         type: "string",

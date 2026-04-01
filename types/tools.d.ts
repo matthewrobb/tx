@@ -6,7 +6,7 @@
  */
 
 /** Known tool names that twisted-workflow can detect and integrate with. */
-export type ToolName = "gstack" | "superpowers" | "nimbalyst_skills";
+export type ToolName = "gstack" | "nimbalyst_skills";
 
 /** Detection state for each known tool. */
 export type DetectedTools = Record<ToolName, boolean>;

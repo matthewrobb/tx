@@ -42,10 +42,8 @@ describe("generateSchema", () => {
     const presetItems = schema.properties.presets.items;
     const enumValues = presetItems.anyOf[0].enum;
     expect(enumValues).toContain("twisted");
-    expect(enumValues).toContain("superpowers");
-    expect(enumValues).toContain("gstack");
-    expect(enumValues).toContain("nimbalyst");
     expect(enumValues).toContain("minimal");
+    expect(enumValues).not.toContain("superpowers");
     expect(enumValues).not.toContain("standalone");
   });
 

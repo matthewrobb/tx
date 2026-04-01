@@ -2,7 +2,6 @@ export type ProviderString =
   | "built-in"
   | "skip"
   | "ask"
-  | `superpowers:${string}`
   | (string & {});
 
 export interface PhaseProviderConfig {

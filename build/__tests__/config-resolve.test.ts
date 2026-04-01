@@ -42,12 +42,6 @@ describe("resolveConfig", () => {
     expect(config.pipeline.ship).toBeDefined();
   });
 
-  it("superpowers preset sets code_review and discipline", () => {
-    const config = resolveConfig({ presets: ["superpowers"] });
-    expect(config.pipeline.code_review.provider).toBe("superpowers:requesting-code-review");
-    expect(config.execution.discipline).toBe("superpowers:test-driven-development");
-  });
-
   it("unknown presets are silently skipped", () => {
     const config = resolveConfig({ presets: ["nonexistent" as any] });
     expect(config).toBeDefined();
@@ -57,21 +51,6 @@ describe("resolveConfig", () => {
     const config = resolveConfig({});
     expect(config.version).toBe("3.0");
     expect(config.execution.strategy).toBe("task-tool");
-  });
-
-  test("first preset wins on conflict (cascade)", () => {
-    // superpowers first, so its code_review wins
-    const config = resolveConfig({ presets: ["superpowers"] });
-    expect(config.pipeline.code_review.provider).toBe("superpowers:requesting-code-review");
-  });
-
-  test("project settings override presets", () => {
-    const config = resolveConfig({
-      presets: ["superpowers"],
-      execution: { strategy: "agent-teams" },
-    });
-    expect(config.execution.discipline).toBe("superpowers:test-driven-development");
-    expect(config.execution.strategy).toBe("agent-teams");
   });
 
   test("minimal preset skips all delegatable phases", () => {

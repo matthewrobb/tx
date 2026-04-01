@@ -7,11 +7,6 @@ import type { TwistedSettings } from "../../types/config.js";
 /** No config — pure defaults. */
 export const empty: TwistedSettings = {};
 
-/** Superpowers only. */
-export const superpowersOnly: TwistedSettings = {
-  presets: ["superpowers"],
-};
-
 /** gstack only. */
 export const gstackOnly: TwistedSettings = {
   presets: ["gstack"],
@@ -19,7 +14,7 @@ export const gstackOnly: TwistedSettings = {
 
 /** Nimbalyst primary, also track in twisted format. */
 export const nimbalystWithTwisted: TwistedSettings = {
-  presets: ["nimbalyst", "superpowers"],
+  presets: ["nimbalyst"],
   tracking: ["nimbalyst", "twisted"],
 };
 
@@ -29,9 +24,9 @@ export const gstackWithNimbalyst: TwistedSettings = {
   tracking: ["gstack", "nimbalyst"],
 };
 
-/** Full stack: nimbalyst > superpowers > gstack. */
+/** Full stack: nimbalyst > gstack. */
 export const fullStack: TwistedSettings = {
-  presets: ["nimbalyst", "superpowers", "gstack"],
+  presets: ["nimbalyst", "gstack"],
   tracking: ["nimbalyst", "twisted"],
 };
 
@@ -42,7 +37,7 @@ export const minimalOnly: TwistedSettings = {
 
 /** Custom overrides on top of presets. */
 export const customized: TwistedSettings = {
-  presets: ["superpowers", "gstack"],
+  presets: ["gstack"],
   tracking: ["twisted", "nimbalyst"],
   execution: {
     strategy: "agent-teams",
