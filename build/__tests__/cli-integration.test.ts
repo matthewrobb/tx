@@ -52,6 +52,66 @@ describe("CLI integration", () => {
     expect(state.step).toBe("research");
   });
 
+  it("tx note adds a note", async () => {
+    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+      cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
+    });
+    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], {
+      cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
+    });
+    const result = Bun.spawnSync(
+      ["bun", "run", CLI_PATH, "note", "Test decision", "--decide", "--reason", "because", "-a"],
+      { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
+    );
+    const response = JSON.parse(result.stdout.toString());
+    expect(response.status).toBe("ok");
+    expect(response.display).toContain("Test decision");
+  });
+
+  it("tx tasks add creates a task", async () => {
+    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+      cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
+    });
+    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], {
+      cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
+    });
+    const result = Bun.spawnSync(
+      ["bun", "run", CLI_PATH, "tasks", "add", "First task", "-a"],
+      { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
+    );
+    const response = JSON.parse(result.stdout.toString());
+    expect(response.status).toBe("ok");
+    expect(response.display).toContain("First task");
+  });
+
+  it("tx next advances pipeline step", async () => {
+    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+      cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
+    });
+    Bun.spawnSync(["bun", "run", CLI_PATH, "open", "my-feature", "-a"], {
+      cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
+    });
+    const result = Bun.spawnSync(
+      ["bun", "run", CLI_PATH, "next", "-a"],
+      { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
+    );
+    const response = JSON.parse(result.stdout.toString());
+    expect(response.status).toBe("ok");
+    expect(response.state?.step).toBe("scope");
+  });
+
+  it("tx error on missing objective", async () => {
+    Bun.spawnSync(["bun", "run", CLI_PATH, "init", "-y", "-a"], {
+      cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR },
+    });
+    const result = Bun.spawnSync(
+      ["bun", "run", CLI_PATH, "next", "-a"],
+      { cwd: TEST_DIR, env: { ...process.env, TWISTED_ROOT: TEST_DIR } },
+    );
+    const response = JSON.parse(result.stdout.toString());
+    expect(response.status).toBe("error");
+  });
+
   it("tx status shows objective", async () => {
     Bun.spawnSync(
       ["bun", "run", CLI_PATH, "init", "-y", "-a"],
