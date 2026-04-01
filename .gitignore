@@ -36,5 +36,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # test output (filesystem integration tests)
 .test-output
 
-# twisted-workflow worktrees
+# worktrees
 .twisted/worktrees
+.claude/worktrees
+
+# dogfood worktree — v3 plugin pinned at tag for local marketplace
+.claude/plugins
