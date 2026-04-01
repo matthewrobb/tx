@@ -731,7 +731,7 @@ async function main(): Promise<void> {
 
     default: {
       if (command.flags.version) {
-        respond({ status: "ok", command: "version", display: `twisted-workflow v${config.version}` });
+        respond({ status: "ok", command: "version", display: `twisted-workflow v${configV4.version}` });
       } else if (command.flags.help) {
         respond({ status: "ok", command: "help", display: getHelpText() });
       } else {
