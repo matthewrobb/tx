@@ -16,10 +16,9 @@ describe("extractDeclaration", () => {
   });
 
   test("extracts a const declaration", () => {
-    const code = extractDeclaration("src/state/machine.ts", "PIPELINE_ORDER");
-    expect(code).toContain("PIPELINE_ORDER");
-    expect(code).toContain("research");
-    expect(code).toContain("close");
+    const code = extractDeclaration("src/engine/artifacts.ts", "artifactSatisfied");
+    expect(code).toContain("artifactSatisfied");
+    expect(code).toContain("epicDir");
   });
 
   test("throws on missing declaration", () => {
@@ -33,7 +32,6 @@ describe("extractSignature", () => {
   test("extracts function signature without body", () => {
     const sig = extractSignature("src/config/resolve.ts", "resolveConfig");
     expect(sig).toContain("export function resolveConfig");
-    expect(sig).toContain("TwistedSettings");
     expect(sig).toContain("TwistedConfig");
     expect(sig).toContain("{ /* ... */ }");
     // Should NOT contain implementation details

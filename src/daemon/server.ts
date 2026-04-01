@@ -12,10 +12,9 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { writeServerJson, deleteServerJson } from "./lifecycle.js";
 import { txNext } from "../engine/next.js";
-import { resolveConfigV4 } from "../config/resolve.js";
+import { resolveConfig } from "../config/resolve.js";
 import { readSettings } from "../cli/fs.js";
-import type { TwistedSettings } from "../../types/config.js";
-import type { EngineResult } from "../../types/engine.js";
+import type { EngineResult } from "../types/engine.js";
 
 interface DaemonRequest extends MessageBase {
   command: "next" | "status";
@@ -59,7 +58,7 @@ export class TxDaemonServer extends SockDaemonServer<DaemonRequest, DaemonRespon
     try {
       const root = req.root ?? this.#twistedRoot;
       const rawSettings = readSettings(root);
-      const config = resolveConfigV4(rawSettings as TwistedSettings);
+      const config = resolveConfig(rawSettings as Record<string, unknown>);
 
       if (req.command === "next") {
         if (!req.epic) return { error: "epic required" };

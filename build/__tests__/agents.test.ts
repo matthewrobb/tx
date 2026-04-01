@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdirSync, rmSync, existsSync, writeFileSync } from "fs";
 import { join } from "path";
 import { createAgentSymlink, removeAgentSymlink, syncAgentSymlinks, agentsDir } from "../../src/agents/generate.js";
-import type { CoreState } from "../../types/state.js";
+import type { CoreState } from "../../src/types/state.js";
 
 const TMP = join(import.meta.dirname, "../.test-output/agents");
 

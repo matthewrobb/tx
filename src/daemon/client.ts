@@ -16,7 +16,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { isDaemonAlive, cleanupStale, readServerJson } from "./lifecycle.js";
 import { daemonSocketPath } from "./server.js";
-import type { EngineResult } from "../../types/engine.js";
+import type { EngineResult } from "../types/engine.js";
 
 interface DaemonRequest extends MessageBase {
   command: "next" | "status";

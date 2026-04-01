@@ -10,8 +10,8 @@
  */
 
 import { setup, assign } from "xstate";
-import type { EpicContext, EpicEvent } from "../../types/xstate.js";
-import type { EngineResult } from "../../types/engine.js";
+import type { EpicContext, EpicEvent } from "../types/xstate.js";
+import type { EngineResult } from "../types/engine.js";
 
 export const epicMachine = setup({
   types: {

@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { aggregateRetro, writeRetro, readCandidates, promoteCandidateById } from "../../src/engine/retro.js";
-import type { Note } from "../../types/notes.js";
+import type { Note } from "../../src/types/notes.js";
 
 const TMP = join(import.meta.dirname, "../.test-output/retro");
 

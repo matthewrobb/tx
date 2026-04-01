@@ -1,5 +1,5 @@
 // src/cli/output.ts
-import type { AgentResponse } from "../../types/output.js";
+import type { AgentResponse } from "../types/output.js";
 
 export function formatAgent(response: AgentResponse): string {
   return JSON.stringify(response, null, 2);

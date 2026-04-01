@@ -10,9 +10,9 @@
 
 import { existsSync } from "fs";
 import { join } from "path";
-import type { CoreState } from "../../types/state.js";
-import type { TwistedConfigV4 } from "../../types/config.js";
-import type { EpicType } from "../../types/epic.js";
+import type { CoreState } from "../types/state.js";
+import type { TwistedConfig } from "../types/config.js";
+import type { EpicType } from "../types/epic.js";
 import { laneSequenceForType } from "./lanes.js";
 import { moveEpicToLane, loadCoreState, saveCoreState } from "./next.js";
 
@@ -37,7 +37,7 @@ export function promoteEpic(
   twistedRoot: string,
   epicName: string,
   targetType: EpicType,
-  config: TwistedConfigV4,
+  config: TwistedConfig,
 ): PromoteResult {
   const twistedDir = join(twistedRoot, ".twisted");
 

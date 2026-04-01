@@ -120,7 +120,6 @@ tx config [section] [sub]        # Show config
 -a, --agent       # JSON output (for agent use)
 -y, --yolo        # Skip confirmations
 -e, --epic        # Target a specific epic
--o, --objective   # Target a specific epic (v3 compat alias)
 -h, --help        # Show help
 -v, --version     # Show version
 ```

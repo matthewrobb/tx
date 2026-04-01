@@ -2,7 +2,7 @@
  * Fixture data for objective states at various pipeline stages.
  */
 
-import type { ObjectiveState } from "../../types/state.js";
+type ObjectiveState = Record<string, unknown>;
 
 // ---------------------------------------------------------------------------
 // Research fixtures

@@ -1,10 +1,10 @@
 // src/cli/fs.ts
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync, renameSync } from "fs";
 import { join, dirname } from "path";
-import type { ObjectiveState, CoreState } from "../../types/state.js";
-import type { Task } from "../../types/tasks.js";
-import type { Note } from "../../types/notes.js";
-import type { ActiveSession, SessionSummary } from "../../types/session.js";
+import type { CoreState } from "../types/state.js";
+import type { Task } from "../types/tasks.js";
+import type { Note } from "../types/notes.js";
+import type { ActiveSession, SessionSummary } from "../types/session.js";
 
 // Use a loose type for settings since TwistedSettings may not exist
 type SettingsData = Record<string, unknown>;
@@ -27,11 +27,11 @@ export function ensureDir(dir: string): void {
 
 // --- State ---
 
-export function readState(objDir: string): ObjectiveState {
+export function readState(objDir: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(objDir, "state.json"), "utf-8"));
 }
 
-export function writeState(objDir: string, state: ObjectiveState): void {
+export function writeState(objDir: string, state: Record<string, unknown>): void {
   writeFileSync(join(objDir, "state.json"), JSON.stringify(state, null, 2) + "\n");
 }
 
@@ -248,7 +248,7 @@ export function writeCoreState(epicDirectory: string, state: CoreState): void {
 
 // --- Stories ---
 
-import type { StoriesFile } from "../../types/stories.js";
+import type { StoriesFile } from "../types/stories.js";
 
 export function readStories(epicDirectory: string): StoriesFile | null {
   const path = join(epicDirectory, "stories.json");

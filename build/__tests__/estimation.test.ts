@@ -37,7 +37,7 @@ describe("tx estimate", () => {
     expect(response.command).toBe("estimate");
 
     // Find estimate.json in any lane
-    const todoPath = join(TEST_DIR, ".twisted/todo/my-epic/estimate.json");
+    const todoPath = join(TEST_DIR, ".twisted/0-backlog/my-epic/estimate.json");
     expect(existsSync(todoPath)).toBe(true);
     const estimate = JSON.parse(readFileSync(todoPath, "utf-8"));
     expect(estimate.size).toBe("M");
@@ -47,7 +47,7 @@ describe("tx estimate", () => {
 
   it("writes timebox for spike type", () => {
     run(["estimate", "my-epic", "--size", "S", "--rationale", "time-boxed spike", "--timebox", "P2D"]);
-    const todoPath = join(TEST_DIR, ".twisted/todo/my-epic/estimate.json");
+    const todoPath = join(TEST_DIR, ".twisted/0-backlog/my-epic/estimate.json");
     const estimate = JSON.parse(readFileSync(todoPath, "utf-8"));
     expect(estimate.timebox).toBe("P2D");
   });
@@ -60,7 +60,7 @@ describe("tx estimate", () => {
 
   it("stores confidence level", () => {
     run(["estimate", "my-epic", "--size", "L", "--rationale", "large", "--confidence", "5"]);
-    const todoPath = join(TEST_DIR, ".twisted/todo/my-epic/estimate.json");
+    const todoPath = join(TEST_DIR, ".twisted/0-backlog/my-epic/estimate.json");
     const estimate = JSON.parse(readFileSync(todoPath, "utf-8"));
     expect(estimate.confidence).toBe(5);
   });

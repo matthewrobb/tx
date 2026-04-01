@@ -16,16 +16,14 @@ const SHARED_MODULES: Record<string, string[]> = {
 
 /** Map of type definition files → type names they export. */
 const TYPE_FILES: Record<string, string[]> = {
-  "types/config.d.ts": ["TwistedConfig", "TwistedSettings"],
-  "types/state.d.ts": ["ObjectiveState", "ObjectiveStatus", "ObjectiveStep"],
-  "types/pipeline.d.ts": ["PipelineConfig", "PhaseProviderConfig", "ProviderString", "DelegatablePhase"],
-  "types/execution.d.ts": ["ExecutionConfig", "ExecutionStrategy", "MergeStrategy", "ReviewFrequency", "TestRequirement", "WorktreeTiers"],
-  "types/decompose.d.ts": ["DecomposeConfig", "EstimationScale", "ComplexityThresholds"],
-  "types/flow.d.ts": ["FlowConfig", "PauseReason"],
-  "types/phases.d.ts": ["PhasesConfig", "PhaseSettings", "ModelName", "EffortLevel"],
-  "types/commands.d.ts": ["ParsedCommand", "TwistedSubcommand", "ConfigSection", "ConfigParams"],
-  "types/templates.d.ts": ["IssueTemplate", "IssueField"],
-  "types/strings.d.ts": ["StringTemplates", "CommitMessageTemplates", "HandoffMessageTemplates"],
+  "src/types/config.d.ts": ["TwistedConfig", "TwistedSettings", "ArtifactRef", "PredicateRef", "StepConfig", "LaneConfig", "DeepPartial"],
+  "src/types/state.d.ts": ["CoreState", "EpicStatus"],
+  "src/types/commands.d.ts": ["ParsedCommand", "TwistedSubcommand", "ConfigSection", "ConfigParams"],
+  "src/types/engine.d.ts": ["EngineResult", "StepEvaluation", "StepStatus"],
+  "src/types/epic.d.ts": ["EpicType", "TypeConfig"],
+  "src/types/notes.d.ts": ["Note", "NoteType", "RetroNote", "BacklogCandidate"],
+  "src/types/tasks.d.ts": ["Task"],
+  "src/types/session.d.ts": ["ActiveSession", "SessionData", "SessionSummary"],
 };
 
 /**
@@ -64,8 +62,8 @@ export function resolveReadFirst(
 
   // Sort: types first, then src modules
   return [...needed].sort((a, b) => {
-    const aIsType = a.startsWith("types/");
-    const bIsType = b.startsWith("types/");
+    const aIsType = a.startsWith("src/types/");
+    const bIsType = b.startsWith("src/types/");
     if (aIsType && !bIsType) return -1;
     if (!aIsType && bIsType) return 1;
     return a.localeCompare(b);
@@ -78,8 +76,8 @@ export function resolveReadFirst(
 export function formatReadFirst(modules: string[]): string {
   if (modules.length === 0) return "";
 
-  const types = modules.filter(m => m.startsWith("types/"));
-  const src = modules.filter(m => m.startsWith("src/"));
+  const types = modules.filter(m => m.startsWith("src/types/"));
+  const src = modules.filter(m => m.startsWith("src/") && !m.startsWith("src/types/"));
 
   const lines = ["**Read first:**"];
   if (types.length > 0) {

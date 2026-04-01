@@ -45,13 +45,13 @@ export function loadSnapshot(epicDir: string): Snapshot<unknown> | null {
 export function createOrRehydrateActor(
   machine: EpicMachine,
   epicDir: string,
-  input: Parameters<typeof machine.provide>[0] extends never ? never : import("../../types/xstate.js").EpicContext,
+  input: Parameters<typeof machine.provide>[0] extends never ? never : import("../types/xstate.js").EpicContext,
 ) {
   const snapshot = loadSnapshot(epicDir);
 
   if (snapshot) {
     // XState v5 requires input even when restoring from snapshot; the snapshot overrides context.
-    return createActor(machine, { snapshot, input: {} as import("../../types/xstate.js").EpicContext });
+    return createActor(machine, { snapshot, input: {} as import("../types/xstate.js").EpicContext });
   }
 
   return createActor(machine, { input });

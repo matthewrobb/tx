@@ -4,11 +4,11 @@
 export interface ActiveSession {
   number: number;
   name: string | null;
-  step_started: import("./state").ObjectiveStep;
+  step_started: string;
   started: string;
   notes_added: number[];
   artifacts_created: string[];
-  steps_advanced: import("./state").ObjectiveStep[];
+  steps_advanced: string[];
 }
 
 /** Session data returned in AgentResponse. */

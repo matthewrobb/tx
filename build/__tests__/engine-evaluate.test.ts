@@ -5,7 +5,7 @@ import { join } from "path";
 import { artifactSatisfied, allArtifactsSatisfied, missingArtifacts } from "../../src/engine/artifacts.js";
 import { evaluatePredicate, evaluateAllPredicates, failingPredicates } from "../../src/engine/predicates.js";
 import { evaluateSteps, activeStep, laneComplete } from "../../src/engine/evaluate.js";
-import type { LaneConfig } from "../../types/config.js";
+import type { LaneConfig } from "../../src/types/config.js";
 import type { PredicateContext } from "../../src/engine/predicates.js";
 
 const TMP = join(import.meta.dirname, "../.test-output/engine-evaluate");

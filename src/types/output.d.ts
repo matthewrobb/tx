@@ -1,6 +1,5 @@
 // types/output.d.ts
-import type { ObjectiveState, CoreState } from "./state";
-import type { TwistedConfig } from "./config";
+import type { CoreState } from "./state";
 
 /** What --agent mode returns for every command. */
 export interface AgentResponse {
@@ -9,10 +8,10 @@ export interface AgentResponse {
   action?: AgentAction;
   display?: string;
   /** v3 state (kept for compatibility during migration). */
-  state?: ObjectiveState;
+  state?: Record<string, unknown>;
   /** v4 epic state. */
   epic?: CoreState;
-  config?: TwistedConfig;
+  config?: Record<string, unknown>;
   error?: string;
   session?: import("./session").SessionData;
 }

@@ -1,7 +1,7 @@
 // build/__tests__/cli-output.test.ts
 import { describe, it, expect } from "vitest";
 import { formatAgent, formatHuman } from "../../src/cli/output.ts";
-import type { AgentResponse } from "../../types/output";
+import type { AgentResponse } from "../../src/types/output";
 
 describe("formatAgent", () => {
   it("serializes AgentResponse as JSON", () => {

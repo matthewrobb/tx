@@ -9,8 +9,8 @@
 
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import type { PredicateRef } from "../../types/config.js";
-import type { TaskV4 } from "../../types/tasks.js";
+import type { PredicateRef } from "../types/config.js";
+import type { Task } from "../types/tasks.js";
 
 /** Context passed to every predicate. */
 export interface PredicateContext {
@@ -32,7 +32,7 @@ const registry: Record<string, PredicateFn> = {
   "tasks.all_done"(_args, { epicDir }) {
     const tasksPath = join(epicDir, "tasks.json");
     if (!existsSync(tasksPath)) return false;
-    const tasks: TaskV4[] = JSON.parse(readFileSync(tasksPath, "utf-8"));
+    const tasks: Task[] = JSON.parse(readFileSync(tasksPath, "utf-8"));
     return tasks.length > 0 && tasks.every((t) => t.done);
   },
 

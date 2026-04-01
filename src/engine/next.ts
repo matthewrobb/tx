@@ -15,9 +15,9 @@
 
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync } from "fs";
 import { join, dirname } from "path";
-import type { CoreState } from "../../types/state.js";
-import type { EngineResult } from "../../types/engine.js";
-import type { TwistedConfigV4 } from "../../types/config.js";
+import type { CoreState } from "../types/state.js";
+import type { EngineResult } from "../types/engine.js";
+import type { TwistedConfig } from "../types/config.js";
 import { evaluateSteps, activeStep, laneComplete } from "./evaluate.js";
 import { computeAdvancement, findLane } from "./lanes.js";
 import type { PredicateContext } from "./predicates.js";
@@ -73,7 +73,7 @@ export function moveEpicToLane(
 export function txNext(
   twistedRoot: string,
   epicName: string,
-  config: TwistedConfigV4,
+  config: TwistedConfig,
 ): EngineResult {
   // Locate the epic — search all lane directories
   let epicDir: string | null = null;

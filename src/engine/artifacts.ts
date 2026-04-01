@@ -8,7 +8,7 @@
 
 import { existsSync } from "fs";
 import { join } from "path";
-import type { ArtifactRef } from "../../types/config.js";
+import type { ArtifactRef } from "../types/config.js";
 
 /**
  * Check whether a single artifact is satisfied.

@@ -6,8 +6,8 @@
  * 2. The next lane's entry_requires predicates all pass.
  */
 
-import type { LaneConfig, TwistedConfigV4 } from "../../types/config.js";
-import type { EngineResult } from "../../types/engine.js";
+import type { LaneConfig, TwistedConfig } from "../types/config.js";
+import type { EngineResult } from "../types/engine.js";
 import type { PredicateContext } from "./predicates.js";
 import { evaluateAllPredicates } from "./predicates.js";
 
@@ -17,7 +17,7 @@ import { evaluateAllPredicates } from "./predicates.js";
  * @param config - v4 config.
  * @param dir - Lane directory name (e.g. "2-active").
  */
-export function findLane(config: TwistedConfigV4, dir: string): LaneConfig | undefined {
+export function findLane(config: TwistedConfig, dir: string): LaneConfig | undefined {
   return config.lanes.find((l) => l.dir === dir);
 }
 
@@ -27,7 +27,7 @@ export function findLane(config: TwistedConfigV4, dir: string): LaneConfig | und
  * @param config - v4 config.
  * @param epicType - Epic type string.
  */
-export function laneSequenceForType(config: TwistedConfigV4, epicType: string): string[] {
+export function laneSequenceForType(config: TwistedConfig, epicType: string): string[] {
   const typeConfig = config.types.find((t) => t.type === epicType);
   return typeConfig?.lanes ?? config.lanes.map((l) => l.dir);
 }
@@ -40,7 +40,7 @@ export function laneSequenceForType(config: TwistedConfigV4, epicType: string): 
  * @param currentLaneDir - Current lane directory name.
  */
 export function nextLane(
-  config: TwistedConfigV4,
+  config: TwistedConfig,
   epicType: string,
   currentLaneDir: string,
 ): string | null {
@@ -74,7 +74,7 @@ export function canEnterLane(lane: LaneConfig, ctx: PredicateContext): boolean {
  * @param ctx - Predicate evaluation context.
  */
 export function computeAdvancement(
-  config: TwistedConfigV4,
+  config: TwistedConfig,
   epicType: string,
   currentLaneDir: string,
   allStepsComplete: boolean,

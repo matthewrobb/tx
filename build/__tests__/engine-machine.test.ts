@@ -5,7 +5,7 @@ import { join } from "path";
 import { createActor } from "xstate";
 import { epicMachine } from "../../src/engine/machine.js";
 import { saveSnapshot, loadSnapshot } from "../../src/engine/persist.js";
-import type { EpicContext } from "../../types/xstate.js";
+import type { EpicContext } from "../../src/types/xstate.js";
 
 const TMP = join(import.meta.dirname, "../.test-output/engine-machine");
 

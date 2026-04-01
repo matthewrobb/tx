@@ -3,8 +3,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdirSync, rmSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { promoteEpic } from "../../src/engine/promote.js";
-import { defaultsV4 } from "../../src/config/defaults.js";
-import type { CoreState } from "../../types/state.js";
+import { defaults } from "../../src/config/defaults.js";
+import type { CoreState } from "../../src/types/state.js";
 
 const TMP = join(import.meta.dirname, "../.test-output/promote");
 const TWISTED = join(TMP, ".twisted");
@@ -35,12 +35,12 @@ describe("promoteEpic", () => {
   it("promotes a spike to feature and moves to backlog", () => {
     createEpic("my-spike", "0-backlog");
 
-    const result = promoteEpic(TMP, "my-spike", "feature", defaultsV4);
+    const result = promoteEpic(TMP, "my-spike", "feature", defaults);
 
     expect(result.from_type).toBe("spike");
     expect(result.to_type).toBe("feature");
     expect(result.from_lane).toBe("0-backlog");
-    // feature starts in 0-backlog per defaultsV4 type config
+    // feature starts in 0-backlog per defaults type config
     expect(result.to_lane).toBe("0-backlog");
     expect(result.state.type).toBe("feature");
   });
@@ -48,7 +48,7 @@ describe("promoteEpic", () => {
   it("promotes a spike in active lane to chore (moves to backlog)", () => {
     createEpic("my-spike", "2-active");
 
-    const result = promoteEpic(TMP, "my-spike", "chore", defaultsV4);
+    const result = promoteEpic(TMP, "my-spike", "chore", defaults);
 
     expect(result.to_type).toBe("chore");
     // chore starts in 0-backlog
@@ -60,11 +60,11 @@ describe("promoteEpic", () => {
   });
 
   it("throws when epic is not found", () => {
-    expect(() => promoteEpic(TMP, "ghost-epic", "feature", defaultsV4)).toThrow("not found");
+    expect(() => promoteEpic(TMP, "ghost-epic", "feature", defaults)).toThrow("not found");
   });
 
   it("throws when epic is not a spike", () => {
     createEpic("my-feature", "0-backlog", { type: "feature" });
-    expect(() => promoteEpic(TMP, "my-feature", "chore", defaultsV4)).toThrow("not a spike");
+    expect(() => promoteEpic(TMP, "my-feature", "chore", defaults)).toThrow("not a spike");
   });
 });

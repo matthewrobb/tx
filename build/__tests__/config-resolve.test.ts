@@ -33,33 +33,34 @@ describe("deepMerge", () => {
 });
 
 describe("resolveConfig", () => {
-  it("defaults have 5-step pipeline", () => {
+  it("defaults have 6-lane model", () => {
     const config = resolveConfig();
-    expect(config.pipeline.research).toBeDefined();
-    expect(config.pipeline.arch_review).toBeDefined();
-    expect(config.pipeline.code_review).toBeDefined();
-    expect(config.pipeline.qa).toBeDefined();
-    expect(config.pipeline.ship).toBeDefined();
+    expect(config.version).toBe("4.0");
+    expect(config.lanes).toHaveLength(6);
+    const laneDirs = config.lanes.map((l) => l.dir);
+    expect(laneDirs).toContain("0-backlog");
+    expect(laneDirs).toContain("2-active");
+    expect(laneDirs).toContain("4-done");
   });
 
   test("empty settings returns defaults", () => {
     const config = resolveConfig({});
-    expect(config.version).toBe("3.0");
-    expect(config.execution.strategy).toBe("task-tool");
+    expect(config.version).toBe("4.0");
+    expect(config.types.length).toBeGreaterThan(0);
   });
 
   test("project settings override defaults", () => {
-    const config = resolveConfig({ execution: { strategy: "agent-teams" } });
-    expect(config.execution.strategy).toBe("agent-teams");
-    // Other defaults preserved
-    expect(config.version).toBe("3.0");
-    expect(config.pipeline.research).toBeDefined();
+    const config = resolveConfig({ context_skills: ["/my-skill"] });
+    expect(config.context_skills).toContain("/my-skill");
+    // Lanes still come from defaults
+    expect(config.lanes.length).toBe(6);
   });
 
   test("nested settings merge with defaults", () => {
-    const config = resolveConfig({ flow: { auto_advance: false } });
-    expect(config.flow.auto_advance).toBe(false);
-    // Other flow fields still come from defaults
-    expect(config.flow.pause_on_config_change).toBe(true);
+    const customLanes = [{ name: "backlog", dir: "0-backlog", steps: [] }];
+    const config = resolveConfig({ lanes: customLanes });
+    expect(config.lanes).toHaveLength(1);
+    // Version still from defaults
+    expect(config.version).toBe("4.0");
   });
 });

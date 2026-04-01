@@ -1,6 +1,5 @@
 // src/cli/args.ts
-import type { ParsedCommand, GlobalFlags, TwistedSubcommand } from "../../types/commands.js";
-import type { NoteType } from "../../types/notes.js";
+import type { ParsedCommand, GlobalFlags, TwistedSubcommand } from "../types/commands.js";
 
 export function parseArgs(argv: string[]): ParsedCommand {
   const flags: GlobalFlags & { version?: boolean; help?: boolean } = {
@@ -8,7 +7,6 @@ export function parseArgs(argv: string[]): ParsedCommand {
     yolo: false,
   };
 
-  // Extract flags
   const positional: string[] = [];
   let i = 0;
   while (i < argv.length) {
@@ -17,18 +15,12 @@ export function parseArgs(argv: string[]): ParsedCommand {
     if (arg === "-y" || arg === "--yolo") { flags.yolo = true; i++; continue; }
     if (arg === "-v" || arg === "--version") { flags.version = true; i++; continue; }
     if (arg === "-h" || arg === "--help") { flags.help = true; i++; continue; }
-    if ((arg === "-o" || arg === "--objective") && argv[i + 1]) {
-      flags.objective = argv[i + 1];
-      i += 2;
-      continue;
-    }
     if ((arg === "-e" || arg === "--epic") && argv[i + 1]) {
       flags.epic = argv[i + 1];
       i += 2;
       continue;
     }
-    // Note type flags
-    if (arg === "--note" || arg === "--decide" || arg === "--defer" || arg === "--discover" || arg === "--blocker") {
+    if (arg === "--note" || arg === "--decide" || arg === "--defer" || arg === "--discover" || arg === "--blocker" || arg === "--retro") {
       positional.push(arg);
       i++;
       continue;
@@ -63,75 +55,76 @@ export function parseArgs(argv: string[]): ParsedCommand {
   return { subcommand, params, flags, raw_args: argv.join(" ") };
 }
 
+function epic(rest: string[], flags: GlobalFlags & { version?: boolean; help?: boolean }): string | undefined {
+  return rest.find((r) => !r.startsWith("-")) ?? flags.epic;
+}
+
 function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags & { version?: boolean; help?: boolean }): Record<string, unknown> {
   switch (sub) {
     case "open": {
       const typeIdx = rest.indexOf("--type");
       const type = typeIdx >= 0 ? rest[typeIdx + 1] : undefined;
-      const epicName = rest.find((r) => !r.startsWith("-"));
-      const params: Record<string, unknown> = { objective: epicName };
+      const name = rest.find((r) => !r.startsWith("-"));
+      const params: Record<string, unknown> = { epic: name };
       if (type) params.type = type;
       return params;
     }
 
     case "ready":
-      return { epic: rest[0] ?? flags.epic };
+    case "resume":
+    case "close":
+    case "status":
+    case "artifacts":
+      return { epic: epic(rest, flags) };
+
+    case "next":
+    case "research":
+    case "scope":
+    case "plan":
+    case "build":
+      return { epic: epic(rest, flags) };
 
     case "archive": {
       const reasonIdx = rest.indexOf("--reason");
       const reason = reasonIdx >= 0 ? rest[reasonIdx + 1] : undefined;
-      return { epic: rest.find((r) => !r.startsWith("-")) ?? flags.epic, reason };
+      return { epic: epic(rest, flags), reason };
     }
 
     case "estimate": {
-      const epic = rest.find((r) => !r.startsWith("-")) ?? flags.epic ?? flags.objective;
       const sizeIdx = rest.indexOf("--size");
-      const size = sizeIdx >= 0 ? rest[sizeIdx + 1] : undefined;
       const rationaleIdx = rest.indexOf("--rationale");
-      const rationale = rationaleIdx >= 0 ? rest[rationaleIdx + 1] : undefined;
       const timeboxIdx = rest.indexOf("--timebox");
-      const timebox = timeboxIdx >= 0 ? rest[timeboxIdx + 1] : undefined;
       const confidenceIdx = rest.indexOf("--confidence");
-      const confidence = confidenceIdx >= 0 ? parseInt(rest[confidenceIdx + 1]!, 10) : undefined;
-      return { epic, size, rationale, timebox, confidence };
+      return {
+        epic: epic(rest, flags),
+        size: sizeIdx >= 0 ? rest[sizeIdx + 1] : undefined,
+        rationale: rationaleIdx >= 0 ? rest[rationaleIdx + 1] : undefined,
+        timebox: timeboxIdx >= 0 ? rest[timeboxIdx + 1] : undefined,
+        confidence: confidenceIdx >= 0 ? parseInt(rest[confidenceIdx + 1]!, 10) : undefined,
+      };
     }
 
     case "backlog": {
       const action = rest[0];
-      if (action === "promote") {
-        return { action: "promote", id: rest[1] };
-      }
+      if (action === "promote") return { action: "promote", id: rest[1] };
       return { action };
     }
 
     case "promote": {
-      const epic = rest.find((r) => !r.startsWith("-")) ?? flags.epic ?? flags.objective;
       const typeIdx = rest.indexOf("--type");
-      const type = typeIdx >= 0 ? rest[typeIdx + 1] : undefined;
-      return { epic, type };
+      return { epic: epic(rest, flags), type: typeIdx >= 0 ? rest[typeIdx + 1] : undefined };
     }
 
     case "stories": {
-      const epic = rest.find((r) => !r.startsWith("-")) ?? flags.epic ?? flags.objective;
+      const e = epic(rest, flags);
       const action = rest.includes("add") ? "add"
         : rest.includes("done") ? "done"
         : rest.includes("show") ? "show"
         : undefined;
       const id = action && rest.find((r) => r.startsWith("S-"));
       const summaryIdx = action === "add" ? rest.indexOf("add") + 1 : -1;
-      const summary = summaryIdx >= 0 ? rest[summaryIdx] : undefined;
-      return { epic, action, id, summary };
+      return { epic: e, action, id, summary: summaryIdx >= 0 ? rest[summaryIdx] : undefined };
     }
-
-    case "close":
-    case "next":
-    case "resume":
-    case "research":
-    case "scope":
-    case "plan":
-    case "build":
-    case "status":
-      return { objective: rest.find((r) => !r.startsWith("-")) };
 
     case "config":
       return { section: rest[0], subsection: rest[1] };
@@ -146,30 +139,26 @@ function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags &
     case "write":
     case "read": {
       const type = rest[0];
-      const objective = rest.find((r, i) => i > 0 && !r.startsWith("-")) ?? flags.objective;
+      const e = rest.find((r, idx) => idx > 0 && !r.startsWith("-")) ?? flags.epic;
       const numberIdx = rest.indexOf("--number");
-      const number = numberIdx >= 0 ? parseInt(rest[numberIdx + 1]!, 10) : undefined;
-      return { type, objective, number };
+      return { type, epic: e, number: numberIdx >= 0 ? parseInt(rest[numberIdx + 1]!, 10) : undefined };
     }
-
-    case "artifacts":
-      return { objective: rest[0] };
 
     case "tasks": {
       const action = rest[0];
       if (!action || !["add", "update", "assign", "show"].includes(action)) {
-        return { objective: rest[0] };
+        return { epic: epic(rest, flags) };
       }
       const params: Record<string, unknown> = { action };
       if (action === "add") {
         params.summary = rest[1];
       } else {
-        params.id = parseInt(rest[1]!, 10);
+        params.id = rest[1];
       }
       if (rest.includes("--done")) params.done = true;
       else if (rest.includes("--undone")) params.done = false;
       const groupIdx = rest.indexOf("--group");
-      if (groupIdx >= 0) params.group = parseInt(rest[groupIdx + 1]!, 10);
+      if (groupIdx >= 0) params.group = rest[groupIdx + 1];
       return params;
     }
 
@@ -180,7 +169,8 @@ function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags &
       else if (rest.includes("--defer")) params.type = "deferral";
       else if (rest.includes("--discover")) params.type = "discovery";
       else if (rest.includes("--blocker")) params.type = "blocker";
-      else if (rest.includes("--note")) params.type = "note";
+      else if (rest.includes("--retro")) params.type = "retro";
+      else params.type = "note";
       const reasonIdx = rest.indexOf("--reason");
       if (reasonIdx >= 0) params.reason = rest[reasonIdx + 1];
       const impactIdx = rest.indexOf("--impact");
@@ -189,9 +179,7 @@ function parseSubcommandParams(sub: string, rest: string[], flags: GlobalFlags &
     }
 
     case "notes": {
-      const params: Record<string, unknown> = {};
-      const objective = rest.find((r) => !r.startsWith("-"));
-      if (objective) params.objective = objective;
+      const params: Record<string, unknown> = { epic: epic(rest, flags) };
       const typeIdx = rest.indexOf("--type");
       if (typeIdx >= 0) params.type = rest[typeIdx + 1];
       const stepIdx = rest.indexOf("--step");

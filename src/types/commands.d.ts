@@ -29,41 +29,29 @@ export type TwistedSubcommand =
 export interface GlobalFlags {
   yolo: boolean;
   agent: boolean;
-  /** v3: target objective by name. */
-  objective?: string;
-  /** v4: target epic by name (-e / --epic). */
+  /** Target epic by name (-e / --epic). */
   epic?: string;
 }
 
-/** v4: Open with an epic type. */
-export interface OpenParamsV4 {
+export interface OpenParams {
   epic: string;
   type?: import("./epic").EpicType;
 }
 
-/** v4: Archive an epic with a reason. */
 export interface ArchiveParams {
   epic?: string;
   reason?: string;
 }
 
-export interface OpenParams {
-  objective: string;
-}
-
-export interface CloseParams {
-  objective?: string;
-}
-
 export interface WriteParams {
   type: ArtifactType;
-  objective?: string;
+  epic?: string;
   number?: number;
 }
 
 export interface ReadParams {
   type: ArtifactType;
-  objective?: string;
+  epic?: string;
 }
 
 export type ArtifactType = "research" | "scope" | "plan" | "changelog";
@@ -76,23 +64,15 @@ export interface NoteParams {
 }
 
 export interface TasksParams {
-  action?: "add" | "update" | "assign" | "show";
-  id?: number;
+  action?: "add" | "update" | "show";
+  id?: string;
   summary?: string;
   done?: boolean;
-  group?: number;
+  group?: string | null;
 }
 
 export interface SessionParams {
   action: "status" | "save" | "list";
-  name?: string;
-}
-
-export interface PickupParams {
-  name?: string;
-}
-
-export interface HandoffParams {
   name?: string;
 }
 

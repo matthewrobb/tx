@@ -5,7 +5,7 @@
  * Produced by the decompose step; each story links to one or more tasks.
  */
 
-import type { Story, StoriesFile } from "../../types/stories.js";
+import type { Story, StoriesFile } from "../types/stories.js";
 
 /**
  * Create a new story with the given summary and acceptance criteria.

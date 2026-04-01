@@ -5,7 +5,7 @@ export type NoteType = "note" | "decision" | "deferral" | "discovery" | "blocker
 export interface Note {
   id: number;
   type: NoteType;
-  step: import("./state").ObjectiveStep;
+  step: string;
   summary: string;
   reason?: string;
   impact?: string;

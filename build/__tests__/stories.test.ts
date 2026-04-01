@@ -7,7 +7,7 @@ import {
   createStory, markStoryDone, findStory, buildStoriesFile, formatStory,
 } from "../../src/stories/stories.js";
 import { readStories, writeStories } from "../../src/cli/fs.js";
-import type { Story } from "../../types/stories.js";
+import type { Story } from "../../src/types/stories.js";
 
 const TMP = join(import.meta.dirname, "../.test-output/stories");
 const TEST_DIR = join(import.meta.dirname, "../.test-output/stories-cli");
