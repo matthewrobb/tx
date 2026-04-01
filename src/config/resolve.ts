@@ -31,8 +31,8 @@ export function resolveConfig(
 
   // Load presets — unknown names are silently skipped
   const presetOverrides = presetNames
-    .map((name) => presetRegistry[name])
-    .filter((p): p is PresetOverrides => p !== undefined);
+    .map((name: string) => presetRegistry[name])
+    .filter((p: PresetOverrides | undefined): p is PresetOverrides => p !== undefined);
 
   // Apply right-to-left so the first preset has highest priority
   const reversedPresets = [...presetOverrides].reverse();
@@ -40,10 +40,10 @@ export function resolveConfig(
   // Extract project settings (everything except presets)
   const { presets: _, ...projectSettings } = settings;
 
-  // 3-layer merge
+  // 3-layer merge — cast through unknown to satisfy Record<string, unknown> constraint
   return deepMerge(
-    defaults,
+    defaults as unknown as Record<string, unknown>,
     ...reversedPresets,
     projectSettings as Partial<TwistedConfig>,
-  );
+  ) as unknown as TwistedConfig;
 }
