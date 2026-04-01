@@ -10,10 +10,9 @@ describe("extractDeclaration", () => {
   });
 
   test("extracts an interface declaration", () => {
-    const code = extractDeclaration("src/strategies/writer.ts", "ResearchAgent");
-    expect(code).toContain("export interface ResearchAgent");
-    expect(code).toContain("agentNumber: number");
-    expect(code).toContain("findings: string");
+    const code = extractDeclaration("src/strategies/worktree.ts", "WorktreePaths");
+    expect(code).toContain("export interface WorktreePaths");
+    expect(code).toContain("objective: string");
   });
 
   test("extracts a const declaration", () => {
@@ -41,11 +40,11 @@ describe("extractSignature", () => {
     expect(sig).not.toContain("deepMerge(");
   });
 
-  test("extracts writeResearch signature", () => {
-    const sig = extractSignature("src/strategies/writer.ts", "writeResearch");
-    expect(sig).toContain("strategy: TrackingStrategy");
-    expect(sig).toContain("agents: ResearchAgent[]");
-    expect(sig).toContain("string[]");
+  test("extracts getWorktreePaths signature", () => {
+    const sig = extractSignature("src/strategies/worktree.ts", "getWorktreePaths");
+    expect(sig).toContain("worktreeDir: string");
+    expect(sig).toContain("WorktreePaths");
+    expect(sig).toContain("{ /* ... */ }");
   });
 });
 

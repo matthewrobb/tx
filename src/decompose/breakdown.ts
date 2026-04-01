@@ -5,10 +5,7 @@
 import type { TwistedConfig } from "../../types/config.js";
 import type { ObjectiveState } from "../../types/state.js";
 import type { Issue, IssueGroup, DependencyGraph } from "../../types/issues.js";
-import { forEachStrategy } from "../pipeline/dispatch.js";
 import { advanceState } from "../state/machine.js";
-import { writeIssuesAndPlan } from "../strategies/writer.js";
-import { getArtifactPaths } from "../strategies/paths.js";
 
 /**
  * Read research + requirements from the primary tracking strategy's location.
@@ -18,29 +15,10 @@ export function readInputsForDecompose(
   objective: string,
   objDir: string,
 ): { research: string | null; requirements: string | null } {
-  const primaryStrategy = config.tracking[0] ?? "twisted";
-
-  switch (primaryStrategy) {
-    case "twisted":
-      return {
-        research: readGlob(`${objDir}/RESEARCH-*.md`),
-        requirements: readFile(`${objDir}/REQUIREMENTS.md`),
-      };
-    case "nimbalyst":
-      // Research + requirements are both in the plan doc
-      const planDoc = readFile(`nimbalyst-local/plans/${objective}.md`);
-      return { research: planDoc, requirements: planDoc };
-    case "gstack":
-      return {
-        research: readFile(`${objDir}/DESIGN.md`),
-        requirements: readFile(`${objDir}/DESIGN.md`),
-      };
-    default:
-      return {
-        research: readGlob(`${objDir}/RESEARCH-*.md`),
-        requirements: readFile(`${objDir}/REQUIREMENTS.md`),
-      };
-  }
+  return {
+    research: readGlob(`${objDir}/RESEARCH-*.md`),
+    requirements: readFile(`${objDir}/REQUIREMENTS.md`),
+  };
 }
 
 /**
@@ -105,12 +83,8 @@ export function writeDecomposeOutput(
   groups: IssueGroup[],
   graph: DependencyGraph,
 ): ObjectiveState {
-  forEachStrategy(config, (strategy) => {
-    writeIssuesAndPlan(strategy, objective, objDir, issues, groups, graph, {
-      nimbalystConfig: config.nimbalyst,
-    });
-  });
+  writeIssuesAndPlan(objective, objDir, issues, groups, graph);
 
-  // Handoff: display config.strings.handoff_messages.decompose_to_execute
+  // Handoff: display config.strings.handoff_messages.plan_to_build
   return advanceState(state, config.pipeline, "built-in");
 }

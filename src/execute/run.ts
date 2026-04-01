@@ -6,9 +6,7 @@ import type { TwistedConfig } from "../../types/config.js";
 import type { ObjectiveState } from "../../types/state.js";
 import type { Issue, IssueGroup, DependencyGraph } from "../../types/issues.js";
 import { advanceState, statusForStep } from "../state/machine.js";
-import { getArtifactPaths } from "../strategies/paths.js";
 import { getWorktreePaths, getWorktreeCommands } from "../strategies/worktree.js";
-import { computeExecutionOrder } from "../strategies/writer.js";
 
 /**
  * Read issues and plan from the primary tracking strategy.
@@ -18,20 +16,7 @@ export function readIssuesForExecute(
   objective: string,
   objDir: string,
 ): { issues: Issue[]; groups: IssueGroup[] } {
-  const primaryStrategy = config.tracking[0] ?? "twisted";
-  const paths = getArtifactPaths(primaryStrategy, objective, objDir);
-
-  switch (primaryStrategy) {
-    case "twisted":
-    case "gstack":
-      // Both use ISSUES.md in objDir (gstack always writes it for execute)
-      return readIssuesFile(paths.issues!);
-    case "nimbalyst":
-      // Parse the plan doc's Implementation Progress checklist
-      return readNimbalystChecklist(paths.plan);
-    default:
-      return readIssuesFile(`${objDir}/ISSUES.md`);
-  }
+  return readIssuesFile(`${objDir}/ISSUES.md`);
 }
 
 /**
@@ -91,7 +76,7 @@ export function executeGroups(
   graph: DependencyGraph,
   yolo: boolean,
 ): ObjectiveState {
-  const executionOrder = computeExecutionOrder(groups);
+  const executionOrder = computeGroupOrder(groups);
   const worktreePaths = getWorktreePaths(
     config.directories.worktrees,
     objective,

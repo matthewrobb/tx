@@ -1,6 +1,1 @@
-export {
-  type ArtifactPaths,
-  objectiveDir,
-  getArtifactPaths,
-  getAllArtifactPaths,
-} from "./paths.js";
+export { getWorktreePaths, getWorktreeCommands } from "./worktree.js";
