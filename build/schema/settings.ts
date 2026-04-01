@@ -18,21 +18,6 @@ export function generateSchema(): object {
         type: "string",
         description: "JSON Schema reference (auto-added by /twisted-work init).",
       },
-      presets: {
-        type: "array",
-        items: {
-          type: "string",
-          anyOf: [
-            {
-              enum: ["twisted", "gstack", "nimbalyst", "minimal"],
-              description: "Built-in preset name.",
-            },
-            { type: "string", description: "Custom preset name." },
-          ],
-        },
-        description:
-          "Preset array. First wins on conflict — put the most important one first. Default: []",
-      },
       tracking: {
         type: "array",
         items: {

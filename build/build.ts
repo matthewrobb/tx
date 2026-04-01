@@ -1,11 +1,10 @@
 /**
- * Build script — generates SKILL.md files, preset JSON, and JSON Schema
+ * Build script — generates SKILL.md files and JSON Schema
  * from TypeScript source. Run with: bun run build
  */
 
 import { resolve } from "path";
 import { writeJSON, writeSkill } from "./lib/skill.js";
-import { allPresets } from "../src/presets/index.js";
 
 import { twistedWork } from "./skills/twisted-work.js";
 
@@ -13,14 +12,8 @@ const ROOT = resolve(import.meta.dirname, "..");
 
 console.log("Building twisted-workflow...\n");
 
-// --- Presets ---
-console.log("Presets:");
-for (const [name, preset] of Object.entries(allPresets)) {
-  writeJSON(`${ROOT}/presets/${name}.json`, preset);
-}
-
 // --- Skills ---
-console.log("\nSkills:");
+console.log("Skills:");
 writeSkill(`${ROOT}/skills/tx/SKILL.md`, twistedWork);
 
 // --- Schema ---

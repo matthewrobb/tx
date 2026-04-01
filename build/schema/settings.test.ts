@@ -18,7 +18,7 @@ describe("generateSchema", () => {
     const schema = generateSchema() as any;
     const keys = Object.keys(schema.properties);
     expect(keys).toContain("$schema");
-    expect(keys).toContain("presets");
+    expect(keys).not.toContain("presets");
     expect(keys).toContain("tracking");
     expect(keys).toContain("tools");
     expect(keys).toContain("pipeline");
@@ -35,16 +35,6 @@ describe("generateSchema", () => {
     expect(keys).toContain("naming");
     expect(keys).toContain("strings");
     expect(keys).toContain("context_skills");
-  });
-
-  test("presets has enum with built-in names", () => {
-    const schema = generateSchema() as any;
-    const presetItems = schema.properties.presets.items;
-    const enumValues = presetItems.anyOf[0].enum;
-    expect(enumValues).toContain("twisted");
-    expect(enumValues).toContain("minimal");
-    expect(enumValues).not.toContain("superpowers");
-    expect(enumValues).not.toContain("standalone");
   });
 
   test("tracking has enum with built-in strategies", () => {

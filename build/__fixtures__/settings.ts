@@ -7,38 +7,23 @@ import type { TwistedSettings } from "../../types/config.js";
 /** No config — pure defaults. */
 export const empty: TwistedSettings = {};
 
-/** gstack only. */
-export const gstackOnly: TwistedSettings = {
-  presets: ["gstack"],
+/** Custom execution settings. */
+export const customExecution: TwistedSettings = {
+  execution: {
+    strategy: "agent-teams",
+    worktree_tiers: 3,
+  },
 };
 
-/** Nimbalyst primary, also track in twisted format. */
-export const nimbalystWithTwisted: TwistedSettings = {
-  presets: ["nimbalyst"],
-  tracking: ["nimbalyst", "twisted"],
+/** Custom flow settings. */
+export const customFlow: TwistedSettings = {
+  flow: {
+    auto_advance: false,
+  },
 };
 
-/** gstack primary, also track in nimbalyst. */
-export const gstackWithNimbalyst: TwistedSettings = {
-  presets: ["gstack"],
-  tracking: ["gstack", "nimbalyst"],
-};
-
-/** Full stack: nimbalyst > gstack. */
-export const fullStack: TwistedSettings = {
-  presets: ["nimbalyst", "gstack"],
-  tracking: ["nimbalyst", "twisted"],
-};
-
-/** Minimal — skip everything. */
-export const minimalOnly: TwistedSettings = {
-  presets: ["minimal"],
-};
-
-/** Custom overrides on top of presets. */
+/** Full custom overrides. */
 export const customized: TwistedSettings = {
-  presets: ["gstack"],
-  tracking: ["twisted", "nimbalyst"],
   execution: {
     strategy: "agent-teams",
     worktree_tiers: 3,
@@ -46,7 +31,7 @@ export const customized: TwistedSettings = {
   flow: {
     auto_advance: false,
   },
-  decompose: {
+  plan: {
     categories: ["scope", "behavior", "constraints", "acceptance", "performance"],
   },
 };

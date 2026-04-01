@@ -7,7 +7,6 @@ import type { TwistedConfig } from "../../types/config.js";
 
 export const defaults: TwistedConfig = {
   version: "3.0",
-  presets: [],
 
   tools: {
     detected: {
@@ -190,7 +189,6 @@ import type { TwistedConfigV4 } from "../../types/config.js";
  */
 export const defaultsV4: TwistedConfigV4 = {
   version: "4.0",
-  presets: [],
 
   lanes: [
     {

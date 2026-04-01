@@ -42,22 +42,24 @@ describe("resolveConfig", () => {
     expect(config.pipeline.ship).toBeDefined();
   });
 
-  it("unknown presets are silently skipped", () => {
-    const config = resolveConfig({ presets: ["nonexistent" as any] });
-    expect(config).toBeDefined();
-  });
-
   test("empty settings returns defaults", () => {
     const config = resolveConfig({});
     expect(config.version).toBe("3.0");
     expect(config.execution.strategy).toBe("task-tool");
   });
 
-  test("minimal preset skips all delegatable phases", () => {
-    const config = resolveConfig({ presets: ["minimal"] });
-    expect(config.pipeline.research.provider).toBe("skip");
-    expect(config.pipeline.arch_review.provider).toBe("skip");
-    expect(config.pipeline.qa.provider).toBe("skip");
-    expect(config.execution.test_requirement).toBe("deferred");
+  test("project settings override defaults", () => {
+    const config = resolveConfig({ execution: { strategy: "agent-teams" } });
+    expect(config.execution.strategy).toBe("agent-teams");
+    // Other defaults preserved
+    expect(config.version).toBe("3.0");
+    expect(config.pipeline.research).toBeDefined();
+  });
+
+  test("nested settings merge with defaults", () => {
+    const config = resolveConfig({ flow: { auto_advance: false } });
+    expect(config.flow.auto_advance).toBe(false);
+    // Other flow fields still come from defaults
+    expect(config.flow.pause_on_config_change).toBe(true);
   });
 });

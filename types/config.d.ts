@@ -6,10 +6,9 @@
  *
  * Resolution order:
  *   1. Built-in defaults (complete TwistedConfig)
- *   2. Preset overrides (sparse, keyed by `preset` field)
- *   3. Per-project overrides (sparse, everything else in settings.json)
+ *   2. Per-project overrides (sparse, everything in settings.json)
  *
- * Result: deepMerge(defaults, presets[name] ?? {}, projectSettings ?? {})
+ * Result: deepMerge(defaults, projectSettings ?? {})
  */
 
 import type { ToolsConfig } from "./tools";
@@ -22,16 +21,24 @@ import type { StateConfig } from "./state";
 import type { FlowConfig } from "./flow";
 import type { WritingConfig } from "./writing";
 import type { DirectoryConfig, FilePathConfig, NamingConfig } from "./directories";
-import type { PresetName, DeepPartial } from "./preset";
 import type { StringTemplates } from "./strings";
+
+/**
+ * Deep partial utility — makes all nested properties optional.
+ * Used for sparse override layers (per-project settings).
+ */
+export type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object
+    ? T[K] extends Array<infer U>
+      ? Array<DeepPartial<U>>
+      : DeepPartial<T[K]>
+    : T[K];
+};
 
 /** Fully resolved configuration — all fields present and required. */
 export interface TwistedConfig {
   /** Schema version. */
   version: "3.0";
-
-  /** Active presets. First wins — earlier presets override later ones on conflict. */
-  presets: PresetName[];
 
   /** Detected external tools. */
   tools: ToolsConfig;
@@ -82,12 +89,9 @@ export interface TwistedConfig {
 /**
  * What the user writes in `.twisted/settings.json`.
  *
- * All fields are optional (sparse overrides). The `presets` field selects
- * base presets applied left-to-right. All other fields override the resolved result.
+ * All fields are optional (sparse overrides on top of defaults).
  */
-export type TwistedSettings = DeepPartial<TwistedConfig> & {
-  presets?: PresetName[];
-};
+export type TwistedSettings = DeepPartial<TwistedConfig>;
 
 // --- v4 config types ---
 
@@ -142,7 +146,6 @@ export interface LaneConfig {
 /** Fully resolved v4 configuration. */
 export interface TwistedConfigV4 {
   version: "4.0";
-  presets: string[];
   /** Lane definitions in traversal order. */
   lanes: LaneConfig[];
   /** Per-type lane sequences. */
@@ -152,9 +155,7 @@ export interface TwistedConfigV4 {
 }
 
 /** What the user writes in `.twisted/settings.json` for v4. */
-export type TwistedSettingsV4 = Partial<TwistedConfigV4> & {
-  presets?: string[];
-};
+export type TwistedSettingsV4 = Partial<TwistedConfigV4>;
 
 // Re-export all types for convenient access from a single import.
 export type {
@@ -232,14 +233,6 @@ export type {
   FilePathConfig,
   NamingConfig,
 } from "./directories";
-
-export type {
-  PresetName,
-  BuiltInPresetName,
-  PresetOverrides,
-  BuiltInPresets,
-  DeepPartial,
-} from "./preset";
 
 export type {
   TwistedSubcommand,

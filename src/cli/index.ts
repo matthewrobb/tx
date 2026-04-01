@@ -92,8 +92,8 @@ async function main(): Promise<void> {
       } catch {
         // Non-fatal — agent symlinks are best-effort
       }
-      if (!rawSettings.presets) {
-        writeSettings(root, { $schema: "./schemas/settings.schema.json", presets: [] });
+      if (!rawSettings || Object.keys(rawSettings).length === 0) {
+        writeSettings(root, { $schema: "./schemas/settings.schema.json" });
       }
       respond({ status: "ok", command: "init", display: "Initialized .twisted/", config });
       break;

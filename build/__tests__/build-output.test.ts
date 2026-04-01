@@ -37,22 +37,3 @@ describe("generated skill files", () => {
     expect(content).toContain("argument-hint:");
   });
 });
-
-describe("generated preset files", () => {
-  test("twisted.json exists and is valid JSON", () => {
-    const content = readFileSync(resolve(ROOT, "presets/twisted.json"), "utf-8");
-    expect(() => JSON.parse(content)).not.toThrow();
-  });
-
-  test("minimal.json skips research", () => {
-    const preset = JSON.parse(readFileSync(resolve(ROOT, "presets/minimal.json"), "utf-8"));
-    expect(preset.pipeline?.research?.provider).toBe("skip");
-  });
-
-  test("presets are sparse (no version field)", () => {
-    for (const name of ["twisted", "minimal"]) {
-      const preset = JSON.parse(readFileSync(resolve(ROOT, `presets/${name}.json`), "utf-8"));
-      expect(preset.version).toBeUndefined();
-    }
-  });
-});
