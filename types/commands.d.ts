@@ -49,7 +49,7 @@ export type ArtifactType = "research" | "scope" | "plan" | "changelog";
 
 export interface NoteParams {
   summary: string;
-  type?: import("../types/notes").NoteType;
+  type?: import("./notes").NoteType;
   reason?: string;
   impact?: string;
 }
