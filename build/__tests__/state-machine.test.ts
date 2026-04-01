@@ -8,77 +8,81 @@ import {
   advanceState,
   stepsRemaining,
   stepsCompleted,
+  PIPELINE_ORDER,
 } from "../../src/state/machine.js";
 import { defaults } from "../../src/config/defaults.js";
 
 const pipeline = defaults.pipeline;
 
-// Pipeline with arch_review and qa skipped (default config)
-const defaultPipeline = pipeline;
-
-// Pipeline with everything enabled
-const fullPipeline = {
-  ...pipeline,
-  arch_review: { provider: "gstack:/plan-eng-review" as const, fallback: "skip" as const, options: {} },
-  qa: { provider: "gstack:/qa" as const, fallback: "skip" as const, options: {} },
-};
+describe("PIPELINE_ORDER", () => {
+  test("has 5 steps", () => {
+    expect(PIPELINE_ORDER).toEqual(["research", "scope", "plan", "build", "close"]);
+  });
+});
 
 describe("isStepSkipped", () => {
   test("core steps are never skipped", () => {
-    expect(isStepSkipped("scope", defaultPipeline)).toBe(false);
-    expect(isStepSkipped("decompose", defaultPipeline)).toBe(false);
-    expect(isStepSkipped("execute", defaultPipeline)).toBe(false);
+    expect(isStepSkipped("scope", pipeline)).toBe(false);
+    expect(isStepSkipped("plan", pipeline)).toBe(false);
+    expect(isStepSkipped("build", pipeline)).toBe(false);
+    expect(isStepSkipped("close", pipeline)).toBe(false);
   });
 
-  test("delegatable steps with skip provider are skipped", () => {
-    expect(isStepSkipped("arch_review", defaultPipeline)).toBe(true);
-    expect(isStepSkipped("qa", defaultPipeline)).toBe(true);
+  test("research with skip provider is skipped", () => {
+    const skipResearch = {
+      ...pipeline,
+      research: { provider: "skip" as const, fallback: "skip" as const, options: {} },
+    };
+    expect(isStepSkipped("research", skipResearch)).toBe(true);
   });
 
-  test("delegatable steps with real provider are not skipped", () => {
-    expect(isStepSkipped("research", defaultPipeline)).toBe(false);
-    expect(isStepSkipped("code_review", defaultPipeline)).toBe(false);
-    expect(isStepSkipped("ship", defaultPipeline)).toBe(false);
+  test("research with real provider is not skipped", () => {
+    expect(isStepSkipped("research", pipeline)).toBe(false);
   });
 });
 
 describe("getEffectiveSteps", () => {
-  test("default pipeline skips arch_review and qa", () => {
-    const steps = getEffectiveSteps(defaultPipeline);
-    expect(steps).toEqual([
-      "research", "scope", "decompose", "execute", "code_review", "ship",
-    ]);
-    expect(steps).not.toContain("arch_review");
-    expect(steps).not.toContain("qa");
+  test("default pipeline includes all 5 steps", () => {
+    const steps = getEffectiveSteps(pipeline);
+    expect(steps).toEqual(["research", "scope", "plan", "build", "close"]);
   });
 
-  test("full pipeline includes all steps", () => {
-    const steps = getEffectiveSteps(fullPipeline);
-    expect(steps).toEqual([
-      "research", "scope", "arch_review", "decompose", "execute",
-      "code_review", "qa", "ship",
-    ]);
+  test("skips research when provider is skip", () => {
+    const skipResearch = {
+      ...pipeline,
+      research: { provider: "skip" as const, fallback: "skip" as const, options: {} },
+    };
+    expect(getEffectiveSteps(skipResearch)).toEqual(["scope", "plan", "build", "close"]);
   });
 });
 
 describe("nextStep", () => {
-  test("advances through default pipeline", () => {
-    expect(nextStep("research", defaultPipeline)).toBe("scope");
-    expect(nextStep("scope", defaultPipeline)).toBe("decompose");
-    expect(nextStep("decompose", defaultPipeline)).toBe("execute");
-    expect(nextStep("execute", defaultPipeline)).toBe("code_review");
-    expect(nextStep("code_review", defaultPipeline)).toBe("ship");
-    expect(nextStep("ship", defaultPipeline)).toBeNull();
+  test("research → scope", () => {
+    expect(nextStep("research", pipeline)).toBe("scope");
   });
 
-  test("skips arch_review in default pipeline", () => {
-    // scope → decompose (skips arch_review)
-    expect(nextStep("scope", defaultPipeline)).toBe("decompose");
+  test("scope → plan", () => {
+    expect(nextStep("scope", pipeline)).toBe("plan");
   });
 
-  test("includes arch_review in full pipeline", () => {
-    expect(nextStep("scope", fullPipeline)).toBe("arch_review");
-    expect(nextStep("arch_review", fullPipeline)).toBe("decompose");
+  test("plan → build", () => {
+    expect(nextStep("plan", pipeline)).toBe("build");
+  });
+
+  test("build → close", () => {
+    expect(nextStep("build", pipeline)).toBe("close");
+  });
+
+  test("close → null", () => {
+    expect(nextStep("close", pipeline)).toBeNull();
+  });
+
+  test("skips research when provider is skip", () => {
+    const skipResearch = {
+      ...pipeline,
+      research: { provider: "skip" as const, fallback: "skip" as const, options: {} },
+    };
+    expect(getEffectiveSteps(skipResearch)).toEqual(["scope", "plan", "build", "close"]);
   });
 });
 
@@ -86,80 +90,79 @@ describe("statusForStep", () => {
   test("early steps are todo", () => {
     expect(statusForStep("research")).toBe("todo");
     expect(statusForStep("scope")).toBe("todo");
-    expect(statusForStep("decompose")).toBe("todo");
+    expect(statusForStep("plan")).toBe("todo");
   });
 
-  test("execute and later are in-progress", () => {
-    expect(statusForStep("execute")).toBe("in-progress");
-    expect(statusForStep("code_review")).toBe("in-progress");
-    expect(statusForStep("qa")).toBe("in-progress");
+  test("build and close are in-progress", () => {
+    expect(statusForStep("build")).toBe("in-progress");
+    expect(statusForStep("close")).toBe("in-progress");
   });
 });
 
 describe("stepsRemaining / stepsCompleted", () => {
   test("at research, all others remaining", () => {
-    const remaining = stepsRemaining("research", defaultPipeline);
-    expect(remaining).toEqual(["scope", "decompose", "execute", "code_review", "ship"]);
+    const remaining = stepsRemaining("research", pipeline);
+    expect(remaining).toEqual(["scope", "plan", "build", "close"]);
   });
 
-  test("at execute, review and ship remaining", () => {
-    const remaining = stepsRemaining("execute", defaultPipeline);
-    expect(remaining).toEqual(["code_review", "ship"]);
+  test("at build, close remaining", () => {
+    const remaining = stepsRemaining("build", pipeline);
+    expect(remaining).toEqual(["close"]);
   });
 
   test("at research, nothing completed", () => {
-    expect(stepsCompleted("research", defaultPipeline)).toEqual([]);
+    expect(stepsCompleted("research", pipeline)).toEqual([]);
   });
 
-  test("at execute, research+scope+decompose completed", () => {
-    const completed = stepsCompleted("execute", defaultPipeline);
-    expect(completed).toEqual(["research", "scope", "decompose"]);
+  test("at build, research+scope+plan completed", () => {
+    const completed = stepsCompleted("build", pipeline);
+    expect(completed).toEqual(["research", "scope", "plan"]);
   });
 });
 
 describe("createInitialState", () => {
   test("creates state starting at first effective step", () => {
-    const state = createInitialState("auth-refactor", defaultPipeline);
+    const state = createInitialState("auth-refactor", pipeline);
     expect(state.objective).toBe("auth-refactor");
     expect(state.status).toBe("todo");
     expect(state.step).toBe("research");
     expect(state.steps_completed).toEqual([]);
-    expect(state.issues_done).toBe(0);
-    expect(state.issues_total).toBeNull();
+    expect(state.tasks_done).toBe(0);
+    expect(state.tasks_total).toBeNull();
+    expect(state.notes).toBeNull();
   });
 });
 
 describe("advanceState", () => {
   test("advances from research to scope", () => {
-    const initial = createInitialState("test-obj", defaultPipeline);
-    const next = advanceState(initial, defaultPipeline, "built-in");
+    const initial = createInitialState("test-obj", pipeline);
+    const next = advanceState(initial, pipeline, "built-in");
 
     expect(next.step).toBe("scope");
     expect(next.steps_completed).toEqual(["research"]);
-    expect(next.tools_used.research).toBe("built-in");
     expect(next.status).toBe("todo");
   });
 
-  test("status changes to in-progress at execute", () => {
-    let state = createInitialState("test-obj", defaultPipeline);
-    // Advance: research → scope → decompose → execute
-    state = advanceState(state, defaultPipeline);
-    state = advanceState(state, defaultPipeline);
-    state = advanceState(state, defaultPipeline);
+  test("status changes to in-progress at build", () => {
+    let state = createInitialState("test-obj", pipeline);
+    // Advance: research → scope → plan → build
+    state = advanceState(state, pipeline);
+    state = advanceState(state, pipeline);
+    state = advanceState(state, pipeline);
 
-    expect(state.step).toBe("execute");
+    expect(state.step).toBe("build");
     expect(state.status).toBe("in-progress");
   });
 
   test("final step marks as done", () => {
-    let state = createInitialState("test-obj", defaultPipeline);
+    let state = createInitialState("test-obj", pipeline);
     // Advance through all steps
     while (state.status !== "done") {
-      state = advanceState(state, defaultPipeline);
+      state = advanceState(state, pipeline);
     }
 
     expect(state.status).toBe("done");
     expect(state.steps_remaining).toEqual([]);
-    expect(state.steps_completed).toContain("ship");
+    expect(state.steps_completed).toContain("close");
   });
 });
