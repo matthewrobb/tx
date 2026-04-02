@@ -8,8 +8,7 @@
   "files": [
     "dist/",
     "schemas/",
-    "skills/",
-    "presets/"
+    "skills/"
   ],
   "scripts": {
     "build": "tsx build/build.ts",

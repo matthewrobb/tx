@@ -15,12 +15,11 @@
   "include": [
     "src/cli/**/*.ts",
     "src/config/**/*.ts",
-    "src/state/**/*.ts",
-    "src/notes/**/*.ts",
-    "src/tasks/**/*.ts",
-    "src/session/**/*.ts",
-    "src/artifacts/**/*.ts",
-    "src/presets/**/*.ts"
+    "src/engine/**/*.ts",
+    "src/daemon/**/*.ts",
+    "src/stories/**/*.ts",
+    "src/agents/**/*.ts",
+    "src/types/**/*.ts"
   ],
   "exclude": ["build/**", "**/*.test.ts"]
 }
