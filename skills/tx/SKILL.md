@@ -8,6 +8,8 @@ argument-hint: "[init | open <epic> [--type] | ready | next | close | status | r
 
 IMPORTANT: Run all commands using the `tx` binary (globally installed via npm link). Do NOT run `node dist/cli.js` or attempt to execute files directly — use `tx` as the command.
 
+When communicating with the user, refer to commands using the skill syntax `/tx <command>` (e.g. `/tx next`, `/tx open`) — not the raw `tx` CLI form. The user invokes this as a skill, not a shell command.
+
 ## Using the tx CLI
 
 All twisted-workflow operations go through `tx` commands. Use `-a` (`--agent`) for JSON output when working programmatically.

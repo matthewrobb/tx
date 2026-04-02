@@ -1,0 +1,12 @@
+{
+  "epic": "mattpocock-skills-integration",
+  "description": "Integrate mattpocock skills (tdd, grill-me, prd-to-plan, prd-to-issues) as pluggable step replacements and wire skills into step config for smarter defaults",
+  "type": "feature",
+  "lane": "0-backlog",
+  "step": "research",
+  "status": "active",
+  "tasks_done": 0,
+  "tasks_total": null,
+  "created": "2026-04-02",
+  "updated": "2026-04-02T01:30:48.064Z"
+}
