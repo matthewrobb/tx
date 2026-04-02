@@ -14,6 +14,10 @@ export interface AgentResponse {
   config?: Record<string, unknown>;
   error?: string;
   session?: import("./session").SessionData;
+  /** Review skill to offer after the primary skill completes (e.g. grill-me after plan). */
+  review_skill?: string;
+  /** Context skills to load before executing the step. */
+  context_skills?: string[];
 }
 
 export type AgentAction =

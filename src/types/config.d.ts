@@ -80,6 +80,10 @@ export interface TwistedConfig {
   types: TypeConfig[];
   /** Skills injected at the start of every pipeline step. */
   context_skills: string[];
+  /** Per-step skill overrides: step name → skill path (e.g. "skills/mattpocock/tdd"). */
+  step_skills: Record<string, string>;
+  /** Per-step review skill: offered to the user after the primary skill writes its artifact. */
+  step_review_skills: Record<string, string>;
 }
 
 /** What the user writes in `.twisted/settings.json`. */

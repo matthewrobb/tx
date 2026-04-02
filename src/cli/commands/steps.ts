@@ -6,9 +6,9 @@ import type { CliContext } from "../context.js";
 export function registerStepsCommands(program: Command, ctx: CliContext): void {
   const { root, respond } = ctx;
 
-  // ─── research / scope / plan / build ───────────────────────────────────────
+  // ─── research / scope / plan / decompose / build ───────────────────────────
 
-  for (const stepName of ["research", "scope", "plan", "build"] as const) {
+  for (const stepName of ["research", "scope", "plan", "decompose", "build"] as const) {
     program
       .command(stepName)
       .description(`Run ${stepName} step`)
@@ -41,16 +41,39 @@ export function registerStepsCommands(program: Command, ctx: CliContext): void {
           });
           return;
         }
-        respond({
-          status: "handoff",
-          command: stepName,
-          epic: active.state,
-          action: {
-            type: "prompt_user",
-            prompt: `Execute the ${stepName} step for epic "${active.epicName}".`,
-          },
-          display: `Step: ${stepName} (epic: ${active.epicName})`,
-        });
+
+        const cfg = ctx.config;
+        const skill = cfg.step_skills[stepName];
+        const reviewSkill = cfg.step_review_skills[stepName];
+        const contextSkills = cfg.context_skills.length > 0 ? cfg.context_skills : undefined;
+
+        if (skill) {
+          respond({
+            status: "handoff",
+            command: stepName,
+            epic: active.state,
+            action: {
+              type: "invoke_skill",
+              skill,
+              prompt: `Execute the ${stepName} step for epic "${active.epicName}".`,
+            },
+            review_skill: reviewSkill || undefined,
+            context_skills: contextSkills,
+            display: `Step: ${stepName} (epic: ${active.epicName})`,
+          });
+        } else {
+          respond({
+            status: "handoff",
+            command: stepName,
+            epic: active.state,
+            action: {
+              type: "prompt_user",
+              prompt: `Execute the ${stepName} step for epic "${active.epicName}".`,
+            },
+            context_skills: contextSkills,
+            display: `Step: ${stepName} (epic: ${active.epicName})`,
+          });
+        }
       });
   }
 }

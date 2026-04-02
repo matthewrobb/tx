@@ -144,6 +144,8 @@ interface AgentResponse {
   config?: TwistedConfig;
   error?: string;
   session?: SessionData;
+  review_skill?: string;     // present on step handoffs when a review skill is configured
+  context_skills?: string[]; // present when context_skills config is non-empty
 }
 
 interface CoreState {
@@ -174,9 +176,39 @@ type AgentAction =
 - `"handoff"` — agent action required, execute `action`
 
 **Handling action types:**
-- `"invoke_skill"` — load the named skill
+- `"invoke_skill"` — load and execute the skill at the given path (look for `SKILL.md` inside the directory). The `prompt` field describes the step context to carry in.
 - `"confirm"` — display message, run next_command to proceed
 - `"done"` — pipeline complete
 - `"prompt_user"` — execute the step described in `prompt`
 - `"run_agents"` — spawn agents for the listed assignments
+
+**Skill dispatch — step handoffs:**
+
+When a step command returns `invoke_skill`, follow this sequence:
+
+1. If `context_skills` is present, load each listed skill as context before proceeding.
+2. Load and execute the skill at `action.skill` (read its `SKILL.md`).
+3. After the skill writes its artifact, check for `review_skill` on the response.
+4. If `review_skill` is present, ask the user: *"[Artifact] written. Would you like to run [skill name] to review it before moving on? (y/n)"*
+   - Yes → load and execute the `review_skill`.
+   - No → continue.
+5. Call `tx next` to advance the epic.
+
+**Configuring step skills** (in `.twisted/settings.json`):
+
+```jsonc
+{
+  // Override the primary skill for any step:
+  "step_skills": {
+    "build": "skills/mattpocock/tdd",
+    "scope": ""  // empty string disables the default
+  },
+  // Override the review skill for any step:
+  "step_review_skills": {
+    "plan": ""   // empty string disables grill-me review
+  },
+  // Inject skills as context before every step:
+  "context_skills": ["skills/mattpocock/tdd"]
+}
+```
 

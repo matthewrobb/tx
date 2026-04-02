@@ -5,6 +5,8 @@
  *   - lanes: override lane definitions
  *   - types: override epic type → lane sequences
  *   - context_skills: inject skills at every step
+ *   - step_skills: per-step primary skill overrides
+ *   - step_review_skills: per-step review skill overrides
  */
 
 export function generateSchema(): object {
@@ -106,7 +108,21 @@ export function generateSchema(): object {
         type: "array",
         items: { type: "string" },
         description:
-          "Skills injected at the start of every pipeline step. Example: [\"/my-project-nav\"]. Default: []",
+          "Skills injected at the start of every pipeline step. Example: [\"skills/mattpocock/tdd\"]. Default: []",
+      },
+
+      step_skills: {
+        type: "object",
+        additionalProperties: { type: "string" },
+        description:
+          "Per-step primary skill overrides. Key = step name, value = path to skill directory (e.g. \"skills/mattpocock/tdd\"). Set to \"\" to disable the default skill for a step.",
+      },
+
+      step_review_skills: {
+        type: "object",
+        additionalProperties: { type: "string" },
+        description:
+          "Per-step review skill overrides. Offered to the user after the primary skill writes its artifact. Key = step name, value = path to skill directory. Set to \"\" to disable.",
       },
     },
   };

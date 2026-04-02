@@ -256,6 +256,22 @@ Issues and pull requests welcome at [matthewrobb/twisted-workflow](https://githu
 
 ---
 
+## Bundled Skills
+
+twisted-workflow ships with bundled copies of skills from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT License). These are copied into `skills/mattpocock/` at build time and wired as smarter defaults for each step.
+
+| Skill | Step | Purpose |
+|---|---|---|
+| `write-a-prd` | `scope` | Structured user interview → full PRD |
+| `prd-to-plan` | `plan` | PRD → phased implementation plan |
+| `grill-me` | `plan` (review, opt-in) | Stress-tests the plan before decompose |
+| `prd-to-issues` | `decompose` | Plan → thin vertical-slice stories |
+| `tdd` | `build` | Strict red-green-refactor TDD cycles |
+
+To regenerate from upstream: delete `vendor/mattpocock-skills/` and run `npm run build`.
+
+---
+
 ## License
 
 MIT

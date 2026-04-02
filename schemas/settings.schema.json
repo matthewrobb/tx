@@ -174,7 +174,21 @@
       "items": {
         "type": "string"
       },
-      "description": "Skills injected at the start of every pipeline step. Example: [\"/my-project-nav\"]. Default: []"
+      "description": "Skills injected at the start of every pipeline step. Example: [\"skills/mattpocock/tdd\"]. Default: []"
+    },
+    "step_skills": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Per-step primary skill overrides. Key = step name, value = path to skill directory (e.g. \"skills/mattpocock/tdd\"). Set to \"\" to disable the default skill for a step."
+    },
+    "step_review_skills": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Per-step review skill overrides. Offered to the user after the primary skill writes its artifact. Key = step name, value = path to skill directory. Set to \"\" to disable."
     }
   }
 }

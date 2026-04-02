@@ -110,4 +110,15 @@ export const defaults: TwistedConfig = {
   ],
 
   context_skills: [],
+
+  step_skills: {
+    scope:    "skills/mattpocock/write-a-prd",
+    plan:     "skills/mattpocock/prd-to-plan",
+    decompose: "skills/mattpocock/prd-to-issues",
+    build:    "skills/mattpocock/tdd",
+  },
+
+  step_review_skills: {
+    plan: "skills/mattpocock/grill-me",
+  },
 };
