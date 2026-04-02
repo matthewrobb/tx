@@ -63,6 +63,36 @@
       "type": "artifact",
       "summary": "Wrote plan",
       "timestamp": "2026-04-02T02:29:05.988Z"
+    },
+    {
+      "type": "artifact",
+      "summary": "Wrote changelog",
+      "timestamp": "2026-04-02T03:58:28.041Z"
+    },
+    {
+      "type": "task",
+      "summary": "Added T-001: Verify skill dispatch end-to-end",
+      "timestamp": "2026-04-02T03:59:42.917Z"
+    },
+    {
+      "type": "task",
+      "summary": "Updated T-001 → done",
+      "timestamp": "2026-04-02T04:00:01.455Z"
+    },
+    {
+      "type": "note",
+      "summary": "[retro] Lane model gap: 1-ready gate steps (plan.md → estimate-tasks → decompose) are undocumented in CLAUDE.md. Caused friction — had to manually reset state.json.",
+      "timestamp": "2026-04-02T04:00:55.158Z"
+    },
+    {
+      "type": "note",
+      "summary": "[retro] Missing tx rewind/reset-lane command — no way to move an epic back a lane without manually editing state.json.",
+      "timestamp": "2026-04-02T04:00:55.357Z"
+    },
+    {
+      "type": "note",
+      "summary": "[retro] estimate-tasks has no CLI command — tx estimate-tasks does not exist.",
+      "timestamp": "2026-04-02T04:00:55.561Z"
     }
   ]
 }
