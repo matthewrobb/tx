@@ -1,6 +1,8 @@
 import type { SkillDefinition } from "../lib/skill.js";
 
 const TX_COMMANDS = `
+IMPORTANT: Run all commands using the \`tx\` binary (globally installed via npm link). Do NOT run \`node dist/cli.js\` or attempt to execute files directly — use \`tx\` as the command.
+
 ## Using the tx CLI
 
 All twisted-workflow operations go through \`tx\` commands. Use \`-a\` (\`--agent\`) for JSON output when working programmatically.
