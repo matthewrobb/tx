@@ -1,8 +1,7 @@
 # twisted-workflow
 
-A configurable orchestration layer for agentic development
-with Claude Code — parallel execution, provider delegation,
-session-independent state, and preset-based configuration.
+Artifact-driven orchestration for agentic development with Claude Code —
+6-lane epic lifecycle, XState engine, story tier, and session-independent state.
 
 ## Project Structure
 
@@ -13,123 +12,133 @@ twisted-workflow/
 │   ├── plugin.json
 │   └── marketplace.json
 ├── src/                          ← runtime source
-│   ├── cli/                      ← CLI entry point (index.ts) and filesystem layer (fs.ts)
+│   ├── cli/                      ← CLI entry (index.ts), command modules, fs layer
+│   │   └── commands/             ← lifecycle, steps, tasks, notes, session, artifacts, epic, config
 │   ├── config/                   ← deepMerge, defaults, resolveConfig
-│   ├── state/                    ← state machine, step sequencing
-│   ├── notes/                    ← typed notes (decision, deferral, discovery, blocker)
-│   ├── tasks/                    ← task CRUD and group assignment
-│   ├── session/                  ← session lifecycle (pickup/handoff)
-│   ├── artifacts/                ← artifact path resolution and listing
-│   └── presets/                  ← typed preset definitions
-├── build/                        ← tooling (generates skills, never read by Claude)
-│   ├── build.ts                  ← bun run build
+│   ├── engine/                   ← artifact evaluator, predicates, XState machine, txNext
+│   ├── daemon/                   ← on-demand daemon server/client (sock-daemon)
+│   ├── stories/                  ← story CRUD (epic → story → task)
+│   ├── agents/                   ← .claude/agents/ symlink generation
+│   └── types/                    ← all type definitions + index.ts barrel
+├── build/                        ← tooling (generates skills/schemas, never read by Claude)
+│   ├── build.ts                  ← npm run build
 │   ├── lib/                      ← AST extraction, skill assembly
-│   ├── skills/                   ← MarkdownDocument builders (2 files)
+│   ├── skills/                   ← skill content builder
 │   ├── schema/                   ← JSON Schema generator
-│   ├── __tests__/                ← all tests (157)
+│   ├── __tests__/                ← all tests
 │   └── __fixtures__/             ← test data
 ├── skills/                       ← generated SKILL.md (committed)
-├── presets/                      ← generated preset JSON (committed)
 ├── schemas/                      ← generated JSON Schema (committed)
 │   └── settings.schema.json
-├── types/                        ← type definitions (18 .d.ts files)
 ├── README.md
 └── CHANGELOG.md
 ```
 
 ## Architecture
 
-`src/` is the source of truth. TypeScript functions with JSDoc
-comments define all behavior. The build script extracts these
-functions via the TypeScript compiler API and embeds them in
-generated SKILL.md files as code blocks.
+`src/` is the source of truth. The engine is artifact-driven: each step
+declares what files it produces (`produces`), what it requires (`requires`),
+and what conditions mark it complete (`exit_when`). `txNext()` evaluates
+these conditions and advances automatically.
 
-Generated skills tell Claude to "read first" the shared source
-files and type definitions they depend on, then show the
-skill-specific functions.
+Types live in `src/types/` with an `index.ts` barrel — import from
+`../types/index.js` to get everything.
 
 ## Build
 
 ```
-bun run build     # generates skills/, presets/, schemas/
-bun test          # 157 tests across 17 files
+npm run build       # generate skills/, schemas/
+npm run build:cli   # compile tx binary to dist/
+npm test            # 109 tests across 14 files
 ```
 
-## Pipeline
+## Lane Model
+
+Epics move through 6 lanes. Default sequence for a `feature`:
 
 ```
-tx init        ← one-time setup
-tx open        ← create objective, enters research step
-  → research   ← delegatable (built-in or external provider)
-  → scope      ← requirements interrogation
-  → plan       ← issue breakdown and execution planning
-  → build      ← implementation
-  → close      ← QA, changelog, ship
+0-backlog → 1-ready → 2-active → 4-done
 ```
 
-`tx next` auto-advances the active objective one step at a time.
+Within `2-active`, steps advance when artifacts are written:
+
+```
+research → scope → plan → decompose → build
+```
+
+`tx next` runs the engine — no manual step tracking needed.
 
 ## tx CLI commands
 
 ```
-tx init                      — setup .twisted/
-tx open <objective>          — create objective
-tx close [objective]         — final close step
-tx next [objective]          — advance active objective one step
-tx resume <objective>        — resume named objective
-tx status [objective]        — show all or one objective
+tx init                              — setup .twisted/ and .claude/agents/
+tx open <epic> [--type <type>]       — create epic in 0-backlog
+tx ready <epic>                      — move to 1-ready
+tx next [epic]                       — advance active epic one step (engine-driven)
+tx close [epic]                      — retro + ship
+tx resume <epic>                     — resume at current step
+tx status [epic]                     — show all epics or detail for one
+tx archive <epic> [--reason]         — move to 5-archive
 
-tx research [objective]      — run research step
-tx scope [objective]         — run scope step
-tx plan [objective]          — run plan step
-tx build [objective]         — run build step
+tx research|scope|plan|build [epic]  — run named step
 
-tx pickup [name]             — start a session
-tx handoff [name]            — end a session
-tx session status|save|list  — manage sessions
+tx estimate <epic> --size --rationale [--timebox] [--confidence]
+tx promote <epic> --type <type>      — convert spike to another type
 
-tx write <type> [obj]        — write artifact (from stdin)
-tx read <type> [obj]         — read artifact (to stdout)
-tx artifacts [obj]           — list artifacts
+tx stories <epic> [add|done|show]    — story CRUD
+tx backlog [promote <id>]            — retro backlog candidates
 
-tx tasks [obj]               — list tasks
-tx tasks add <summary>       — add a task
-tx tasks update <id>         — update a task
-tx tasks show <id>           — show task detail
+tx pickup [name]                     — start session
+tx handoff                           — end session
+tx session status|save|list          — manage sessions
 
-tx note <summary>            — add a note
-tx notes [obj]               — query notes
+tx write <type> [epic]               — write artifact (stdin)
+tx read <type> [epic]                — read artifact (stdout)
+tx artifacts [epic]                  — list artifacts
 
-tx config [section] [sub]    — show config
+tx tasks [epic]                      — list tasks
+tx tasks add <summary>               — add task (T-001 format)
+tx tasks update <T-001> [--done]     — update task
+tx tasks show <T-001>                — show task detail
+
+tx note <summary> [--decide|--defer|--discover|--blocker|--retro]
+tx notes [epic]                      — query notes
+
+tx config                            — show config
 
 Flags:
   -a, --agent       JSON output (for agent use)
   -y, --yolo        skip confirmations
-  -o, --objective   target a specific objective
+  -e, --epic        target a specific epic
 ```
 
 ## Config Resolution
 
-Three-layer sparse override system with composable presets:
+Two-layer merge: defaults + project settings.
 
 ```
-deepMerge(defaults, ...presets.reverse().map(load), projectSettings ?? {})
+deepMerge(defaults, projectSettings ?? {})
 ```
 
-First preset wins — put the most important one first.
-Built-in presets: twisted, superpowers, minimal.
+`settings.json` stores only your overrides — all fields optional.
 
 ## Artifacts
 
-State and artifacts are stored as JSON files under `.twisted/{lane}/{objective}/`:
+State and artifacts live under `.twisted/{lane}/{epic}/`:
 
 | File | Purpose |
 |---|---|
-| `state.json` | Objective state (step, status, progress) |
-| `tasks.json` | Task list |
-| `notes.json` | Typed notes (decision, deferral, discovery, blocker) |
+| `state.json` | CoreState (lane, step, type, status) |
+| `tasks.json` | TaskV4 list (T-001 format) |
+| `stories.json` | Story list (from decompose step) |
+| `notes.json` | Typed notes |
+| `estimate.json` | Size, confidence, rationale |
+| `research/research.md` | Research artifact |
+| `scope.md` | Scope artifact |
+| `plan.md` | Plan artifact |
+| `retro.md` | Retrospective (generated at close) |
+| `backlog-candidates.json` | Promoted retro items |
 | `sessions/active.json` | Active session |
 | `sessions/{n}-{name}.md` | Saved session summaries |
-| `research/` | Research artifacts |
 
-Agents write and read artifacts via `tx write <type>` and `tx read <type>`.
+Agents write artifacts via `tx write <type>` and read via `tx read <type>`.

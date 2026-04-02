@@ -1,6 +1,6 @@
 # twisted-workflow
 
-A configurable orchestration layer for agentic development with Claude Code — artifact-driven execution, 6-lane lifecycle management, session-independent state, and preset-based configuration.
+Artifact-driven orchestration for agentic development with Claude Code — 6-lane epic lifecycle, XState engine, story tier, and session-independent state.
 
 ## How It Works
 
@@ -171,29 +171,20 @@ tx config [section] [sub]        # Show config
 
 ## Configuration
 
-Settings live in `.twisted/settings.json`. Three-layer merge:
+Settings live in `.twisted/settings.json`. Two-layer merge:
 
 ```
-deepMerge(defaults, ...presets, projectSettings)
+deepMerge(defaults, projectSettings)
 ```
 
-First preset wins. `settings.json` stores only your overrides.
+`settings.json` stores only your overrides — all fields optional.
 
 ```json
 {
   "$schema": "./schemas/settings.schema.json",
-  "presets": ["superpowers"],
   "context_skills": ["/my-project-nav"]
 }
 ```
-
-### Presets
-
-| Preset | What it overrides |
-|---|---|
-| `twisted` | twisted-workflow's own artifact format |
-| `superpowers` | TDD discipline, code review → Superpowers |
-| `minimal` | Skips review lane for all types |
 
 ## Agent Use
 
@@ -205,8 +196,7 @@ interface AgentResponse {
   command: string;
   action?: AgentAction;
   display?: string;
-  state?: ObjectiveState;   // v3 compat
-  epic?: CoreState;         // v4 epic state
+  epic?: CoreState;
   config?: TwistedConfig;
   error?: string;
   session?: SessionData;
@@ -217,7 +207,7 @@ type AgentAction =
   | { type: "confirm"; message: string; next_command: string }
   | { type: "done" }
   | { type: "prompt_user"; prompt: string; categories?: string[] }
-  | { type: "run_agents"; agents: AgentAssignmentV4[] }
+  | { type: "run_agents"; agents: AgentAssignment[] }
   | { type: "install_cli"; instructions: string };
 ```
 
@@ -230,31 +220,26 @@ Agents read `action` to know what to do next:
 
 ## Development
 
-TypeScript source in `src/` is the source of truth. The build script extracts functions via the TypeScript compiler API and embeds them in generated SKILL.md files. Generated files (`skills/`, `presets/`, `schemas/`) are committed to git.
+TypeScript source in `src/` is the source of truth. The build script generates the SKILL.md and JSON Schema from source. Generated files (`skills/`, `schemas/`) are committed to git.
 
 ```bash
 npm install          # install dependencies
-npm run build        # generate skills/, presets/, schemas/
+npm run build        # generate skills/, schemas/
 npm run build:cli    # compile tx binary to dist/
-npm test             # 175 tests across 20 files
+npm test             # 109 tests across 14 files
 ```
 
 **Runtime** (`src/`):
 
 | Module | Purpose |
 |---|---|
-| `src/cli/` | CLI entry point, arg parser, output formatter, filesystem layer |
-| `src/config/` | Config resolution, v4 defaults (6 lanes), deepMerge |
+| `src/cli/` | CLI (commander), command modules, filesystem layer |
+| `src/types/` | All type definitions with barrel export |
+| `src/config/` | Config resolution, defaults (6 lanes), deepMerge |
 | `src/engine/` | Artifact evaluator, predicate engine, XState v5 machine, `txNext()` |
 | `src/daemon/` | On-demand daemon server/client (sock-daemon) |
-| `src/state/` | v3 state machine (backwards compat) |
-| `src/notes/` | Typed notes (decision, deferral, discovery, blocker, retro) |
-| `src/tasks/` | Task CRUD and group assignment |
 | `src/stories/` | Story CRUD (epic → story → task hierarchy) |
 | `src/agents/` | Agent symlink generation (.claude/agents/) |
-| `src/session/` | Session lifecycle (pickup/handoff) |
-| `src/artifacts/` | Artifact path resolution and listing |
-| `src/presets/` | Typed preset definitions (v3 + v4) |
 
 **Tooling** (`build/`):
 
