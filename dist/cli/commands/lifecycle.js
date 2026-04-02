@@ -45,20 +45,52 @@ export function registerLifecycleCommands(program, ctx) {
     program
         .command("open")
         .description("Create epic")
-        .argument("<epic>", "epic name")
-        .option("--type <type>", "epic type (feature|bug|chore|release|spike)", "feature")
-        .action((epicName, opts) => {
+        .option("--name <name>", "epic name (kebab-case, max 36 chars)")
+        .option("--type <type>", "epic type (feature|bug|chore|release|spike)")
+        .option("--description <description>", "what this epic is about")
+        .action((opts) => {
+        const description = opts.description;
+        // No description — tell the agent to gather it
+        if (!description) {
+            respond({
+                status: "paused",
+                command: "open",
+                action: {
+                    type: "prompt_user",
+                    prompt: [
+                        "Ask the user what they want to work on. Get a clear description of the objective.",
+                        "",
+                        "Then call back with:",
+                        "  tx open --name <kebab-case-name> --description \"<description>\" [--type <type>] -a",
+                        "",
+                        "Rules:",
+                        "  - --name: kebab-case, max 36 chars, derived from the description",
+                        "  - --description: the user's description (quoted)",
+                        "  - --type: infer from context — feature (default), bug, chore, spike, or release",
+                    ].join("\n"),
+                },
+                display: "Describe what you want to work on.",
+            });
+            return;
+        }
+        if (!opts.name) {
+            respond({ status: "error", command: "open", error: "Name required: tx open --name <name> --description \"...\" -a" });
+            return;
+        }
+        const epicName = opts.name;
         const epicType = opts.type ?? "feature";
         const now = new Date().toISOString();
         const today = now.slice(0, 10);
         const dir = join(twistedDir(root), "0-backlog", epicName);
         ensureDir(dir);
         ensureDir(join(dir, "sessions"));
+        const firstStep = config.lanes.find((l) => l.dir === "0-backlog")?.steps[0]?.name ?? "research";
         const state = {
             epic: epicName,
+            description: description.trim(),
             type: epicType,
             lane: "0-backlog",
-            step: "start",
+            step: firstStep,
             status: "active",
             tasks_done: 0,
             tasks_total: null,
@@ -68,7 +100,7 @@ export function registerLifecycleCommands(program, ctx) {
         writeCoreState(dir, state);
         writeNotes(dir, []);
         writeTasks(dir, []);
-        respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nLane: 0-backlog\nStep: start` });
+        respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nType: ${epicType}\nDescription: ${description.trim().slice(0, 120)}\nLane: 0-backlog\nStep: ${firstStep}` });
     });
     // ─── ready ─────────────────────────────────────────────────────────────────
     program
@@ -92,8 +124,9 @@ export function registerLifecycleCommands(program, ctx) {
         moveDir(root, epicName, "0-backlog", "1-ready");
         const newDir = join(twistedDir(root), "1-ready", epicName);
         const state = readCoreState(newDir);
+        const readyFirstStep = config.lanes.find((l) => l.dir === "1-ready")?.steps[0]?.name ?? "plan";
         state.lane = "1-ready";
-        state.step = "estimate";
+        state.step = readyFirstStep;
         state.updated = new Date().toISOString();
         writeCoreState(newDir, state);
         respond({
@@ -155,7 +188,14 @@ export function registerLifecycleCommands(program, ctx) {
             epicName = active.epicName;
         }
         const twistedRoot = twistedDir(root);
+        const location = locateEpic(root, epicName);
+        if (location) {
+            ctx.ensureSession(location.dir, readCoreState(location.dir).step);
+        }
         const result = txNext(twistedRoot, epicName, config);
+        if (location && result.to_step) {
+            ctx.logAction(location.dir, { type: "step", summary: `Advanced: ${result.from_step ?? "?"} → ${result.to_step}`, timestamp: new Date().toISOString() });
+        }
         respond({ status: "ok", command: "next", display: JSON.stringify(result, null, 2) });
     });
     // ─── close ─────────────────────────────────────────────────────────────────

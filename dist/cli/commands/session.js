@@ -1,5 +1,31 @@
 import { join } from "path";
 import { readActiveSession, writeActiveSession, deleteActiveSession, listSessions, writeArtifact, ensureDir, } from "../fs.js";
+import { readFileSync, existsSync } from "fs";
+/**
+ * Generate a session summary markdown from the action log.
+ */
+function generateSummary(sess, epicName) {
+    const lines = [
+        `# Session #${sess.number}${sess.name ? ` — ${sess.name}` : ""}`,
+        "",
+        `**Epic:** ${epicName}`,
+        `**Started:** ${sess.started}`,
+        `**Ended:** ${sess.ended ?? new Date().toISOString()}`,
+        `**Step at start:** ${sess.step_started}`,
+        "",
+    ];
+    if (sess.actions.length === 0) {
+        lines.push("_No actions logged._");
+    }
+    else {
+        lines.push("## Actions", "");
+        for (const a of sess.actions) {
+            lines.push(`- **${a.type}**: ${a.summary}`);
+        }
+    }
+    lines.push("");
+    return lines.join("\n");
+}
 export function registerSessionCommands(program, ctx) {
     const { respond } = ctx;
     // ─── pickup ────────────────────────────────────────────────────────────────
@@ -13,6 +39,7 @@ export function registerSessionCommands(program, ctx) {
             respond({ status: "error", command: "pickup", error: "No active epic" });
             return;
         }
+        // If a session already exists, just report it
         const existing = readActiveSession(active.dir);
         if (existing) {
             respond({
@@ -23,7 +50,20 @@ export function registerSessionCommands(program, ctx) {
             });
             return;
         }
+        // Find previous session for context
         const sessions = listSessions(active.dir);
+        const previous = sessions.length > 0
+            ? sessions.sort((a, b) => b.number - a.number)[0] ?? null
+            : null;
+        // Read previous session content for handoff context
+        let previousContent = null;
+        if (previous) {
+            const prevPath = join(active.dir, "sessions", previous.file);
+            if (existsSync(prevPath)) {
+                previousContent = readFileSync(prevPath, "utf-8");
+            }
+        }
+        // Create new session
         const nextNumber = sessions.length > 0
             ? Math.max(...sessions.map((s) => s.number)) + 1
             : 1;
@@ -33,44 +73,51 @@ export function registerSessionCommands(program, ctx) {
             name,
             step_started: active.state.step,
             started: new Date().toISOString(),
-            notes_added: [],
-            artifacts_created: [],
-            steps_advanced: [],
+            actions: [],
         };
         writeActiveSession(active.dir, sess);
+        const displayLines = [
+            `Session #${nextNumber} started${name ? ` (${name})` : ""}`,
+            `Epic: ${active.epicName} | Lane: ${active.state.lane} | Step: ${active.state.step}`,
+        ];
+        if (previousContent) {
+            displayLines.push("", "--- Previous session ---", previousContent);
+        }
         respond({
             status: "ok",
             command: "pickup",
-            session: { active: sess, previous: null },
-            display: `Session #${nextNumber} started${name ? ` (${name})` : ""}`,
+            session: { active: sess, previous },
+            display: displayLines.join("\n"),
         });
     });
     // ─── handoff ───────────────────────────────────────────────────────────────
     program
         .command("handoff")
-        .description("End a session")
+        .description("End session — generates summary and saves")
         .action(() => {
         const active = ctx.findActiveEpic();
         if (!active) {
             respond({ status: "error", command: "handoff", error: "No active epic" });
             return;
         }
-        const session = readActiveSession(active.dir);
-        if (!session) {
+        const sess = readActiveSession(active.dir);
+        if (!sess) {
             respond({ status: "error", command: "handoff", error: "No active session" });
             return;
         }
-        const ended = new Date().toISOString();
-        writeActiveSession(active.dir, { ...session, ended });
+        // Generate and save summary
+        sess.ended = new Date().toISOString();
+        const summary = generateSummary(sess, active.epicName);
+        const sessName = sess.name ?? `session-${sess.number}`;
+        const sessionsDir = join(active.dir, "sessions");
+        ensureDir(sessionsDir);
+        const filename = `${String(sess.number).padStart(3, "0")}-${sessName}.md`;
+        writeArtifact(join(sessionsDir, filename), summary);
+        deleteActiveSession(active.dir);
         respond({
-            status: "handoff",
+            status: "ok",
             command: "handoff",
-            session: { active: session, previous: null },
-            action: {
-                type: "prompt_user",
-                prompt: "Write session summary, then run: tx session save",
-            },
-            display: `Ending session #${session.number}. Write summary and run: tx session save`,
+            display: `Session #${sess.number} closed → sessions/${filename}\n\n${summary}`,
         });
     });
     // ─── session ───────────────────────────────────────────────────────────────
@@ -93,29 +140,6 @@ export function registerSessionCommands(program, ctx) {
         else {
             respond({ status: "ok", command: "session", display: "No active session." });
         }
-    });
-    sessionCmd
-        .command("save")
-        .description("Save active session (reads summary from stdin)")
-        .action(async () => {
-        const active = ctx.findActiveEpic();
-        if (!active) {
-            respond({ status: "error", command: "session", error: "No active epic" });
-            return;
-        }
-        const sess = readActiveSession(active.dir);
-        if (!sess) {
-            respond({ status: "error", command: "session", error: "No active session to save" });
-            return;
-        }
-        const sessName = (sess.name ?? `session-${sess.number}`);
-        const content = await ctx.readStdin();
-        const sessionsDir = join(active.dir, "sessions");
-        ensureDir(sessionsDir);
-        const filename = `${sess.number}-${sessName}.md`;
-        writeArtifact(join(sessionsDir, filename), content);
-        deleteActiveSession(active.dir);
-        respond({ status: "ok", command: "session", display: `Session saved: sessions/${filename}` });
     });
     sessionCmd
         .command("list")

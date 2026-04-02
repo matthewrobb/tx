@@ -70,6 +70,8 @@ export function registerTasksCommands(program, ctx) {
         tasks.push(newTask);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         writeTasks(active.dir, tasks);
+        ctx.ensureSession(active.dir, active.state.step);
+        ctx.logAction(active.dir, { type: "task", summary: `Added ${newTask.id}: ${summary}`, timestamp: new Date().toISOString() });
         respond({ status: "ok", command: "tasks", display: `Task ${newTask.id}: ${summary}` });
     });
     tasksCmd
@@ -113,6 +115,8 @@ export function registerTasksCommands(program, ctx) {
             task.group = opts.group;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         writeTasks(active.dir, tasks);
+        ctx.ensureSession(active.dir, active.state.step);
+        ctx.logAction(active.dir, { type: "task", summary: `Updated ${task.id}${opts.done ? " → done" : ""}`, timestamp: new Date().toISOString() });
         respond({ status: "ok", command: "tasks", display: `Updated task ${task.id}` });
     });
     tasksCmd
