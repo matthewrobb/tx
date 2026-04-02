@@ -5,8 +5,7 @@
  * The current active step is "active"; completed steps are "complete"; blocked steps are "blocked".
  */
 
-import type { LaneConfig, StepConfig } from "../types/config.js";
-import type { StepEvaluation, StepStatus } from "../types/engine.js";
+import type { LaneConfig, StepConfig, StepEvaluation, StepStatus } from "../types/index.js";
 import { allArtifactsSatisfied, missingArtifacts } from "./artifacts.js";
 import { evaluateAllPredicates, failingPredicates } from "./predicates.js";
 import type { PredicateContext } from "./predicates.js";

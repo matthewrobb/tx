@@ -7,8 +7,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
-import type { Note, RetroNote, BacklogCandidate } from "../types/notes.js";
-import type { EpicType } from "../types/epic.js";
+import type { Note, RetroNote, BacklogCandidate, EpicType } from "../types/index.js";
 
 /**
  * Aggregate retro notes from an epic's notes.json into retro.md.

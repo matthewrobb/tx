@@ -9,8 +9,7 @@
 
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import type { PredicateRef } from "../types/config.js";
-import type { Task } from "../types/tasks.js";
+import type { PredicateRef, Task } from "../types/index.js";
 
 /** Context passed to every predicate. */
 export interface PredicateContext {

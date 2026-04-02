@@ -10,9 +10,7 @@
 
 import { existsSync } from "fs";
 import { join } from "path";
-import type { CoreState } from "../types/state.js";
-import type { TwistedConfig } from "../types/config.js";
-import type { EpicType } from "../types/epic.js";
+import type { CoreState, TwistedConfig, EpicType } from "../types/index.js";
 import { laneSequenceForType } from "./lanes.js";
 import { moveEpicToLane, loadCoreState, saveCoreState } from "./next.js";
 

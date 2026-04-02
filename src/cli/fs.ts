@@ -1,10 +1,7 @@
 // src/cli/fs.ts
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync, renameSync } from "fs";
 import { join, dirname } from "path";
-import type { CoreState } from "../types/state.js";
-import type { Task } from "../types/tasks.js";
-import type { Note } from "../types/notes.js";
-import type { ActiveSession, SessionSummary } from "../types/session.js";
+import type { CoreState, Task, Note, ActiveSession, SessionSummary } from "../types/index.js";
 
 // Use a loose type for settings since TwistedSettings may not exist
 type SettingsData = Record<string, unknown>;

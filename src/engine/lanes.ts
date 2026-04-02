@@ -6,8 +6,7 @@
  * 2. The next lane's entry_requires predicates all pass.
  */
 
-import type { LaneConfig, TwistedConfig } from "../types/config.js";
-import type { EngineResult } from "../types/engine.js";
+import type { LaneConfig, TwistedConfig, EngineResult } from "../types/index.js";
 import type { PredicateContext } from "./predicates.js";
 import { evaluateAllPredicates } from "./predicates.js";
 

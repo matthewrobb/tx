@@ -15,9 +15,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync } from "fs";
 import { join, dirname } from "path";
-import type { CoreState } from "../types/state.js";
-import type { EngineResult } from "../types/engine.js";
-import type { TwistedConfig } from "../types/config.js";
+import type { CoreState, EngineResult, TwistedConfig } from "../types/index.js";
 import { evaluateSteps, activeStep, laneComplete } from "./evaluate.js";
 import { computeAdvancement, findLane } from "./lanes.js";
 import type { PredicateContext } from "./predicates.js";
