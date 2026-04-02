@@ -54,38 +54,43 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
   program
     .command("open")
     .description("Create epic")
-    .argument("[name]", "epic name (generated from description if omitted)")
-    .option("--type <type>", "epic type (feature|bug|chore|release|spike)", "feature")
+    .option("--name <name>", "epic name (kebab-case, max 36 chars)")
+    .option("--type <type>", "epic type (feature|bug|chore|release|spike)")
     .option("--description <description>", "what this epic is about")
-    .action((nameArg: string | undefined, opts: { type?: string; description?: string }) => {
-      const epicType = (opts.type as EpicType | undefined) ?? "feature";
+    .action((opts: { name?: string; type?: string; description?: string }) => {
       const description = opts.description;
 
-      // No description — ask for it
+      // No description — tell the agent to gather it
       if (!description) {
         respond({
           status: "paused",
           command: "open",
           action: {
             type: "prompt_user",
-            prompt: `Ask the user to describe this epic — what are we trying to accomplish?\n\nThen generate a short kebab-case name for the epic and run:\n  tx open <name> --description "<description>" --type ${epicType} -a`,
+            prompt: [
+              "Ask the user what they want to work on. Get a clear description of the objective.",
+              "",
+              "Then call back with:",
+              "  tx open --name <kebab-case-name> --description \"<description>\" [--type <type>] -a",
+              "",
+              "Rules:",
+              "  - --name: kebab-case, max 36 chars, derived from the description",
+              "  - --description: the user's description (quoted)",
+              "  - --type: infer from context — feature (default), bug, chore, spike, or release",
+            ].join("\n"),
           },
-          display: "Waiting for epic description.",
+          display: "Describe what you want to work on.",
         });
         return;
       }
 
-      // Name is required at this point
-      if (!nameArg) {
-        respond({
-          status: "error",
-          command: "open",
-          error: "Epic name required: tx open <name> --description \"...\" -a",
-        });
+      if (!opts.name) {
+        respond({ status: "error", command: "open", error: "Name required: tx open --name <name> --description \"...\" -a" });
         return;
       }
 
-      const epicName = nameArg;
+      const epicName = opts.name;
+      const epicType = (opts.type as EpicType | undefined) ?? "feature";
 
       const now = new Date().toISOString();
       const today = now.slice(0, 10);
