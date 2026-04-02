@@ -14,76 +14,51 @@ describe("generateSchema", () => {
     expect(schema).toHaveProperty("properties");
   });
 
-  test("has all top-level config sections", () => {
+  test("has v4 top-level config sections only", () => {
     const schema = generateSchema() as any;
     const keys = Object.keys(schema.properties);
     expect(keys).toContain("$schema");
-    expect(keys).not.toContain("presets");
-    expect(keys).toContain("tracking");
-    expect(keys).toContain("tools");
-    expect(keys).toContain("pipeline");
-    expect(keys).toContain("execution");
-    expect(keys).toContain("phases");
-    expect(keys).toContain("decompose");
-    expect(keys).toContain("templates");
-    expect(keys).toContain("state");
-    expect(keys).toContain("flow");
-    expect(keys).toContain("writing");
-    expect(keys).toContain("nimbalyst");
-    expect(keys).toContain("directories");
-    expect(keys).toContain("files");
-    expect(keys).toContain("naming");
-    expect(keys).toContain("strings");
+    expect(keys).toContain("lanes");
+    expect(keys).toContain("types");
     expect(keys).toContain("context_skills");
+    // v3 fields must not be present
+    expect(keys).not.toContain("presets");
+    expect(keys).not.toContain("pipeline");
+    expect(keys).not.toContain("execution");
+    expect(keys).not.toContain("phases");
+    expect(keys).not.toContain("state");
+    expect(keys).not.toContain("flow");
   });
 
-  test("tracking has enum with built-in strategies", () => {
+  test("lanes items have name, dir, steps", () => {
     const schema = generateSchema() as any;
-    const trackingItems = schema.properties.tracking.items;
-    const enumValues = trackingItems.anyOf[0].enum;
-    expect(enumValues).toContain("twisted");
-    expect(enumValues).toContain("nimbalyst");
-    expect(enumValues).toContain("gstack");
+    const laneProps = schema.properties.lanes.items.properties;
+    expect(laneProps).toHaveProperty("name");
+    expect(laneProps).toHaveProperty("dir");
+    expect(laneProps).toHaveProperty("steps");
+    expect(laneProps).toHaveProperty("entry_requires");
   });
 
-  test("execution.strategy has correct enum", () => {
+  test("types items have type enum and lanes array", () => {
     const schema = generateSchema() as any;
-    const strategy = schema.properties.execution.properties.strategy;
-    expect(strategy.enum).toEqual(["task-tool", "agent-teams", "manual", "auto"]);
+    const typeProps = schema.properties.types.items.properties;
+    expect(typeProps.type.enum).toEqual(["feature", "bug", "spike", "chore", "release"]);
+    expect(typeProps.lanes.type).toBe("array");
   });
 
-  test("execution.worktree_tiers has correct enum", () => {
+  test("step items have produces, requires, exit_when, prompt", () => {
     const schema = generateSchema() as any;
-    const tiers = schema.properties.execution.properties.worktree_tiers;
-    expect(tiers.enum).toEqual([1, 2, 3]);
+    const stepProps = schema.properties.lanes.items.properties.steps.items.properties;
+    expect(stepProps).toHaveProperty("produces");
+    expect(stepProps).toHaveProperty("requires");
+    expect(stepProps).toHaveProperty("exit_when");
+    expect(stepProps).toHaveProperty("prompt");
   });
 
-  test("phases have model/effort/context/mode", () => {
+  test("context_skills is a string array", () => {
     const schema = generateSchema() as any;
-    for (const phase of ["scope", "decompose", "execute"]) {
-      const props = schema.properties.phases.properties[phase].properties;
-      expect(props.model.enum).toContain("opus");
-      expect(props.model.enum).toContain("sonnet");
-      expect(props.effort.enum).toContain("max");
-      expect(props.context.enum).toContain("1m");
-      expect(props.mode.enum).toContain("plan");
-    }
-  });
-
-  test("pipeline phases have provider/fallback/options", () => {
-    const schema = generateSchema() as any;
-    for (const phase of ["research", "arch_review", "code_review", "qa", "ship"]) {
-      const props = schema.properties.pipeline.properties[phase].properties;
-      expect(props).toHaveProperty("provider");
-      expect(props).toHaveProperty("fallback");
-      expect(props).toHaveProperty("options");
-    }
-  });
-
-  test("nimbalyst has priority enum", () => {
-    const schema = generateSchema() as any;
-    const priority = schema.properties.nimbalyst.properties.default_priority;
-    expect(priority.enum).toEqual(["low", "medium", "high", "critical"]);
+    expect(schema.properties.context_skills.type).toBe("array");
+    expect(schema.properties.context_skills.items.type).toBe("string");
   });
 });
 
