@@ -169,7 +169,14 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
         epicName = active.epicName;
       }
       const twistedRoot = twistedDir(root);
+      const location = locateEpic(root, epicName);
+      if (location) {
+        ctx.ensureSession(location.dir, readCoreState(location.dir).step);
+      }
       const result = txNext(twistedRoot, epicName, config);
+      if (location && result.to_step) {
+        ctx.logAction(location.dir, { type: "step", summary: `Advanced: ${result.from_step ?? "?"} → ${result.to_step}`, timestamp: new Date().toISOString() });
+      }
       respond({ status: "ok", command: "next", display: JSON.stringify(result, null, 2) });
     });
 

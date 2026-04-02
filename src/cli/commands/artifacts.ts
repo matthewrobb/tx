@@ -50,6 +50,8 @@ export function registerArtifactsCommands(program: Command, ctx: CliContext): vo
         artifactPath = join(active.dir, `${type}.md`);
       }
       writeArtifact(artifactPath, content);
+      ctx.ensureSession(active.dir, active.state.step);
+      ctx.logAction(active.dir, { type: "artifact", summary: `Wrote ${type}`, timestamp: new Date().toISOString() });
       respond({ status: "ok", command: "write", display: `Wrote ${type} to ${artifactPath}` });
     });
 

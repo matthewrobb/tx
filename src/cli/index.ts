@@ -3,8 +3,11 @@
 import { Command } from "commander";
 import { output } from "./output.js";
 import { resolveConfig } from "../config/resolve.js";
-import { findRoot, twistedDir, findEpics, locateEpic, readCoreState } from "./fs.js";
-import type { AgentResponse, TwistedConfig } from "../types/index.js";
+import {
+  findRoot, twistedDir, findEpics, locateEpic, readCoreState,
+  readActiveSession, writeActiveSession, listSessions,
+} from "./fs.js";
+import type { AgentResponse, TwistedConfig, SessionAction, ActiveSession } from "../types/index.js";
 import type { CliContext } from "./context.js";
 import { registerLifecycleCommands } from "./commands/lifecycle.js";
 import { registerStepsCommands } from "./commands/steps.js";
@@ -81,12 +84,38 @@ async function readStdin(): Promise<string> {
   return Buffer.concat(chunks).toString("utf-8");
 }
 
+function ensureSession(epicDir: string, step: string): void {
+  const existing = readActiveSession(epicDir);
+  if (existing) return;
+  const sessions = listSessions(epicDir);
+  const nextNumber = sessions.length > 0
+    ? Math.max(...sessions.map((s) => s.number)) + 1
+    : 1;
+  const sess: ActiveSession = {
+    number: nextNumber,
+    name: null,
+    step_started: step,
+    started: new Date().toISOString(),
+    actions: [],
+  };
+  writeActiveSession(epicDir, sess);
+}
+
+function logAction(epicDir: string, action: SessionAction): void {
+  const sess = readActiveSession(epicDir);
+  if (!sess) return;
+  sess.actions.push(action);
+  writeActiveSession(epicDir, sess);
+}
+
 const ctx: CliContext = {
   root,
   config,
   respond,
   findActiveEpic,
   readStdin,
+  ensureSession,
+  logAction,
 };
 
 registerLifecycleCommands(program, ctx);

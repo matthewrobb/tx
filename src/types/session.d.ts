@@ -1,14 +1,20 @@
 // types/session.d.ts
 
+/** An action that occurred during a session. */
+export interface SessionAction {
+  type: "note" | "task" | "artifact" | "step" | "story";
+  summary: string;
+  timestamp: string;
+}
+
 /** Active session tracking — written to sessions/active.json. */
 export interface ActiveSession {
   number: number;
   name: string | null;
   step_started: string;
   started: string;
-  notes_added: number[];
-  artifacts_created: string[];
-  steps_advanced: string[];
+  ended?: string;
+  actions: SessionAction[];
 }
 
 /** Session data returned in AgentResponse. */

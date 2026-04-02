@@ -44,6 +44,8 @@ export function registerNotesCommands(program: Command, ctx: CliContext): void {
       };
       notes.push(newNote);
       writeNotes(active.dir, notes);
+      ctx.ensureSession(active.dir, active.state.step);
+      ctx.logAction(active.dir, { type: "note", summary: `[${noteType}] ${summary}`, timestamp: newNote.created });
       respond({ status: "ok", command: "note", display: `Note #${newNote.id}: ${summary}` });
     });
 

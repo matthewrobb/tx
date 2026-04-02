@@ -95,24 +95,20 @@ describe("CLI integration", () => {
     expect(existsSync(activePath)).toBe(true);
   });
 
-  it("tx handoff then session save persists session and cleans up active", () => {
+  it("tx handoff saves session and cleans up active", () => {
     run(["init", "-y"]);
     run(["open", "my-feature"]);
     run(["pickup", "my-session"]);
 
     const handoffR = parse(run(["handoff"]));
-    expect(handoffR.status).toBe("handoff");
+    expect(handoffR.status).toBe("ok");
     expect(handoffR.command).toBe("handoff");
 
+    // active.json should be deleted after handoff
     const activePath = join(TEST_DIR, ".twisted/0-backlog/my-feature/sessions/active.json");
-    expect(existsSync(activePath)).toBe(true);
-
-    const saveR = parse(run(["session", "save"], { input: Buffer.from("## Session summary\n\nDid things.") }));
-    expect(saveR.status).toBe("ok");
-    expect(saveR.display).toContain("saved");
-
     expect(existsSync(activePath)).toBe(false);
 
+    // session .md file should exist
     const sessionsDir = join(TEST_DIR, ".twisted/0-backlog/my-feature/sessions");
     const files = readdirSync(sessionsDir).filter((f) => f.endsWith(".md"));
     expect(files.length).toBe(1);
@@ -123,7 +119,7 @@ describe("CLI integration", () => {
     run(["init", "-y"]);
     run(["open", "my-feature"]);
     run(["pickup", "first-session"]);
-    run(["session", "save"], { input: Buffer.from("Summary content") });
+    run(["handoff"]);
 
     const r = parse(run(["session", "list"]));
     expect(r.status).toBe("ok");
