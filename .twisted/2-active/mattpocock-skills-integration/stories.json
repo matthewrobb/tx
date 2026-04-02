@@ -1,0 +1,56 @@
+{
+  "epic": "mattpocock-skills-integration",
+  "stories": [
+    {
+      "id": "S-001",
+      "summary": "Phase 1: Extend TwistedConfig with step_skills + step_review_skills; add review_skill + context_skills to AgentResponse",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-02"
+    },
+    {
+      "id": "S-002",
+      "summary": "Phase 2: Wire step_skills and step_review_skills defaults in defaults.ts",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-02"
+    },
+    {
+      "id": "S-003",
+      "summary": "Phase 3: Build vendor skill copy — build/skills/vendor.ts with auto-clone, provenance headers, directory output",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-02"
+    },
+    {
+      "id": "S-004",
+      "summary": "Phase 4: Step dispatch — add decompose command, skill resolution + invoke_skill emission in steps.ts",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-02"
+    },
+    {
+      "id": "S-005",
+      "summary": "Phase 5: Verify step_skills flows through resolveConfig and deepMerge",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-02"
+    },
+    {
+      "id": "S-006",
+      "summary": "Phase 6: Docs — README bundled skills attribution + SKILL.md skill dispatch documentation",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-02"
+    },
+    {
+      "id": "S-007",
+      "summary": "Phase 7: Manually update build/schema/settings.ts with step_skills and step_review_skills; regenerate schema",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-02"
+    }
+  ],
+  "created": "2026-04-02T02:29:57.340Z",
+  "updated": "2026-04-02T02:29:58.497Z"
+}

@@ -43,6 +43,26 @@
       "type": "note",
       "summary": "[deferral] Remaining v3 deferrals: v2-to-v3 migration tooling, config editing via CLI (tx config set), findRoot upward traversal (skip), npm publish workflow / CI.",
       "timestamp": "2026-04-02T01:31:18.050Z"
+    },
+    {
+      "type": "artifact",
+      "summary": "Wrote research",
+      "timestamp": "2026-04-02T01:46:55.479Z"
+    },
+    {
+      "type": "artifact",
+      "summary": "Wrote scope",
+      "timestamp": "2026-04-02T01:57:12.342Z"
+    },
+    {
+      "type": "artifact",
+      "summary": "Wrote plan",
+      "timestamp": "2026-04-02T02:21:06.116Z"
+    },
+    {
+      "type": "artifact",
+      "summary": "Wrote plan",
+      "timestamp": "2026-04-02T02:29:05.988Z"
     }
   ]
 }

@@ -41,3 +41,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # dogfood worktree — v3 plugin pinned at tag for local marketplace
 .claude/plugins
+
+# vendored external skill repos
+vendor/
