@@ -25,7 +25,7 @@ describe("tx estimate", () => {
   beforeEach(() => {
     mkdirSync(TEST_DIR, { recursive: true });
     run(["init", "-y"]);
-    run(["open", "my-epic"]);
+    run(["open", "my-epic", "Test epic"]);
   });
 
   afterEach(() => rmSync(TEST_DIR, { recursive: true, force: true }));

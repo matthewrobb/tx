@@ -55,19 +55,22 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
     .command("open")
     .description("Create epic")
     .argument("<epic>", "epic name")
+    .argument("<description>", "what this epic is about")
     .option("--type <type>", "epic type (feature|bug|chore|release|spike)", "feature")
-    .action((epicName: string, opts: { type?: string }) => {
+    .action((epicName: string, description: string, opts: { type?: string }) => {
       const epicType = (opts.type as EpicType | undefined) ?? "feature";
       const now = new Date().toISOString();
       const today = now.slice(0, 10);
       const dir = join(twistedDir(root), "0-backlog", epicName);
       ensureDir(dir);
       ensureDir(join(dir, "sessions"));
+      const firstStep = config.lanes.find((l) => l.dir === "0-backlog")?.steps[0]?.name ?? "research";
       const state = {
         epic: epicName,
+        description,
         type: epicType,
         lane: "0-backlog",
-        step: "start",
+        step: firstStep,
         status: "active" as const,
         tasks_done: 0,
         tasks_total: null,
@@ -77,7 +80,7 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
       writeCoreState(dir, state);
       writeNotes(dir, []);
       writeTasks(dir, []);
-      respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nLane: 0-backlog\nStep: start` });
+      respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nType: ${epicType}\nDescription: ${description}\nLane: 0-backlog\nStep: ${firstStep}` });
     });
 
   // ─── ready ─────────────────────────────────────────────────────────────────
@@ -103,8 +106,9 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
       moveDir(root, epicName, "0-backlog", "1-ready");
       const newDir = join(twistedDir(root), "1-ready", epicName);
       const state = readCoreState(newDir);
+      const readyFirstStep = config.lanes.find((l) => l.dir === "1-ready")?.steps[0]?.name ?? "plan";
       state.lane = "1-ready";
-      state.step = "estimate";
+      state.step = readyFirstStep;
       state.updated = new Date().toISOString();
       writeCoreState(newDir, state);
       respond({

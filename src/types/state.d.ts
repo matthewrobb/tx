@@ -13,6 +13,9 @@ export interface CoreState {
   /** Epic identifier (also the directory name). */
   epic: string;
 
+  /** Initial description / brainstorm prompt. */
+  description: string;
+
   /** Epic type determines lane sequence. */
   type: import("./epic").EpicType;
 

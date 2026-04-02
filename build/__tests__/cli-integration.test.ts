@@ -39,7 +39,7 @@ describe("CLI integration", () => {
 
   it("tx open creates epic in 0-backlog", () => {
     run(["init", "-y"]);
-    const r = parse(run(["open", "my-feature"]));
+    const r = parse(run(["open", "my-feature", "Test feature epic"]));
     expect(r.status).toBe("ok");
     expect(r.epic?.epic).toBe("my-feature");
     expect(r.epic?.lane).toBe("0-backlog");
@@ -54,7 +54,7 @@ describe("CLI integration", () => {
 
   it("tx note adds a note", () => {
     run(["init", "-y"]);
-    run(["open", "my-feature"]);
+    run(["open", "my-feature", "Test feature epic"]);
     const r = parse(run(["note", "Test decision", "--decide", "--reason", "because"]));
     expect(r.status).toBe("ok");
     expect(r.display).toContain("Test decision");
@@ -62,7 +62,7 @@ describe("CLI integration", () => {
 
   it("tx tasks add creates a task", () => {
     run(["init", "-y"]);
-    run(["open", "my-feature"]);
+    run(["open", "my-feature", "Test feature epic"]);
     const r = parse(run(["tasks", "add", "First task"]));
     expect(r.status).toBe("ok");
     expect(r.display).toContain("First task");
@@ -70,7 +70,7 @@ describe("CLI integration", () => {
 
   it("tx next runs engine on active epic", () => {
     run(["init", "-y"]);
-    run(["open", "my-feature"]);
+    run(["open", "my-feature", "Test feature epic"]);
     const r = parse(run(["next"]));
     expect(r.status).toBe("ok");
     expect(r.command).toBe("next");
@@ -84,7 +84,7 @@ describe("CLI integration", () => {
 
   it("tx pickup starts a session", () => {
     run(["init", "-y"]);
-    run(["open", "my-feature"]);
+    run(["open", "my-feature", "Test feature epic"]);
     const r = parse(run(["pickup", "my-session"]));
     expect(r.status).toBe("ok");
     expect(r.command).toBe("pickup");
@@ -97,7 +97,7 @@ describe("CLI integration", () => {
 
   it("tx handoff saves session and cleans up active", () => {
     run(["init", "-y"]);
-    run(["open", "my-feature"]);
+    run(["open", "my-feature", "Test feature epic"]);
     run(["pickup", "my-session"]);
 
     const handoffR = parse(run(["handoff"]));
@@ -117,7 +117,7 @@ describe("CLI integration", () => {
 
   it("tx session list shows saved sessions", () => {
     run(["init", "-y"]);
-    run(["open", "my-feature"]);
+    run(["open", "my-feature", "Test feature epic"]);
     run(["pickup", "first-session"]);
     run(["handoff"]);
 
@@ -128,7 +128,7 @@ describe("CLI integration", () => {
 
   it("tx status shows epic", () => {
     run(["init", "-y"]);
-    run(["open", "my-feature"]);
+    run(["open", "my-feature", "Test feature epic"]);
     const r = parse(run(["status"]));
     expect(r.status).toBe("ok");
     expect(r.display).toContain("my-feature");

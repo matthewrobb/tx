@@ -7,7 +7,14 @@ import type { TwistedConfig } from "../types/config.js";
 
 /**
  * Built-in defaults — artifact-driven engine with 6-lane filesystem.
- * Lanes: 0-backlog | 1-ready | 2-active | 3-review | 4-done | 5-archive
+ *
+ * Lane model:
+ *   0-backlog: understand the work (research → scope → estimate)
+ *   1-ready:   break it down (plan → estimate-tasks → decompose)
+ *   2-active:  do the work (build)
+ *   3-review:  review (release types only)
+ *   4-done:    complete
+ *   5-archive: abandoned / superseded
  */
 export const defaults: TwistedConfig = {
   version: "4.0",
@@ -16,22 +23,6 @@ export const defaults: TwistedConfig = {
     {
       name: "backlog",
       dir: "0-backlog",
-      steps: [],
-    },
-    {
-      name: "ready",
-      dir: "1-ready",
-      steps: [
-        {
-          name: "estimate",
-          produces: [{ path: "estimate.json" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "estimate.json" } }],
-        },
-      ],
-    },
-    {
-      name: "active",
-      dir: "2-active",
       steps: [
         {
           name: "research",
@@ -45,24 +36,47 @@ export const defaults: TwistedConfig = {
           exit_when: [{ name: "artifact.exists", args: { path: "scope.md" } }],
         },
         {
-          name: "plan",
+          name: "estimate",
           requires: [{ path: "scope.md" }],
+          produces: [{ path: "estimate.json" }],
+          exit_when: [{ name: "artifact.exists", args: { path: "estimate.json" } }],
+        },
+      ],
+    },
+    {
+      name: "ready",
+      dir: "1-ready",
+      steps: [
+        {
+          name: "plan",
+          requires: [{ path: "estimate.json" }],
           produces: [{ path: "plan.md" }],
           exit_when: [{ name: "artifact.exists", args: { path: "plan.md" } }],
         },
         {
-          name: "decompose",
+          name: "estimate-tasks",
           requires: [{ path: "plan.md" }],
+          produces: [{ path: "tasks.json" }],
+          exit_when: [{ name: "artifact.exists", args: { path: "tasks.json" } }],
+        },
+        {
+          name: "decompose",
+          requires: [{ path: "tasks.json" }],
           produces: [{ path: "stories.json" }],
           exit_when: [{ name: "artifact.exists", args: { path: "stories.json" } }],
         },
+      ],
+    },
+    {
+      name: "active",
+      dir: "2-active",
+      steps: [
         {
           name: "build",
           requires: [{ path: "stories.json" }],
           exit_when: [{ name: "tasks.all_done" }],
         },
       ],
-      entry_requires: [{ name: "lane.exists", args: { dir: "1-ready" } }],
     },
     {
       name: "review",
@@ -89,9 +103,9 @@ export const defaults: TwistedConfig = {
 
   types: [
     { type: "feature", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
-    { type: "bug", lanes: ["0-backlog", "2-active", "4-done"] },
-    { type: "spike", lanes: ["0-backlog", "2-active", "4-done"] },
-    { type: "chore", lanes: ["0-backlog", "2-active", "4-done"] },
+    { type: "bug", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
+    { type: "spike", lanes: ["0-backlog", "4-done"] },
+    { type: "chore", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
     { type: "release", lanes: ["0-backlog", "1-ready", "2-active", "3-review", "4-done"] },
   ],
 
