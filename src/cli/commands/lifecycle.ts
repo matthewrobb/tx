@@ -15,6 +15,16 @@ import type { EpicType } from "../../types/index.js";
 import type { CliContext } from "../context.js";
 import { readFileSync, existsSync } from "fs";
 
+/** Turn a description into a kebab-case directory name. */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50)
+    .replace(/-+$/, "");
+}
+
 export function registerLifecycleCommands(program: Command, ctx: CliContext): void {
   const { root, config, respond } = ctx;
 
@@ -54,11 +64,31 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
   program
     .command("open")
     .description("Create epic")
-    .argument("<epic>", "epic name")
-    .argument("<description>", "what this epic is about")
+    .argument("[name]", "epic name (generated from description if omitted)")
     .option("--type <type>", "epic type (feature|bug|chore|release|spike)", "feature")
-    .action((epicName: string, description: string, opts: { type?: string }) => {
+    .option("--description <description>", "what this epic is about")
+    .action((nameArg: string | undefined, opts: { type?: string; description?: string }) => {
       const epicType = (opts.type as EpicType | undefined) ?? "feature";
+      const description = opts.description;
+
+      // No description yet — ask the agent/user to provide one and call back
+      if (!description) {
+        const nameHint = nameArg ? ` --name hint: "${nameArg}"` : "";
+        respond({
+          status: "paused",
+          command: "open",
+          action: {
+            type: "prompt_user",
+            prompt: `Describe this epic. What are we trying to accomplish?\n\nOnce you have the description, run:\n  tx open [name] --description "<description>" --type ${epicType} -a\n\nIf no name is given, one will be generated from the description.${nameHint}`,
+          },
+          display: "Waiting for epic description.",
+        });
+        return;
+      }
+
+      // Generate name from description if not provided
+      const epicName = nameArg ?? slugify(description);
+
       const now = new Date().toISOString();
       const today = now.slice(0, 10);
       const dir = join(twistedDir(root), "0-backlog", epicName);
@@ -67,7 +97,7 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
       const firstStep = config.lanes.find((l) => l.dir === "0-backlog")?.steps[0]?.name ?? "research";
       const state = {
         epic: epicName,
-        description,
+        description: description.trim(),
         type: epicType,
         lane: "0-backlog",
         step: firstStep,
@@ -80,7 +110,7 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
       writeCoreState(dir, state);
       writeNotes(dir, []);
       writeTasks(dir, []);
-      respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nType: ${epicType}\nDescription: ${description}\nLane: 0-backlog\nStep: ${firstStep}` });
+      respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nType: ${epicType}\nDescription: ${description.trim().slice(0, 120)}\nLane: 0-backlog\nStep: ${firstStep}` });
     });
 
   // ─── ready ─────────────────────────────────────────────────────────────────
