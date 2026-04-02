@@ -24,25 +24,32 @@ tx archive <epic> [--reason <text>]  # Move to 5-archive
 
 ### Lane Pipeline
 
-Epics move through lanes based on their type. Default for \`feature\`:
+Each lane has its own steps. Steps advance automatically when artifacts are written.
 
+**0-backlog** — understand the work (stays here until you call \`/tx ready\`):
 \`\`\`
-0-backlog → 1-ready → 2-active → 4-done
+research → scope → estimate
 \`\`\`
 
-Within \`2-active\`, steps advance when artifacts are written:
+**1-ready** — break it down (after \`/tx ready\`, before build starts):
+\`\`\`
+plan → estimate-tasks → decompose
+\`\`\`
 
+**2-active** — do the work:
 \`\`\`
-research → scope → plan → decompose → build
+build
 \`\`\`
+
+DO NOT tell the user to run \`/tx ready\` until research, scope, and estimate are all complete in 0-backlog.
 
 ### Steps
 
 \`\`\`bash
-tx research [epic]     # Run research step
-tx scope [epic]        # Run scope step
-tx plan [epic]         # Run plan step
-tx build [epic]        # Run build step
+tx research [epic]     # Run research step (in 0-backlog)
+tx scope [epic]        # Run scope step (in 0-backlog)
+tx plan [epic]         # Run plan step (in 1-ready)
+tx build [epic]        # Run build step (in 2-active)
 \`\`\`
 
 ### Estimation & Promotion

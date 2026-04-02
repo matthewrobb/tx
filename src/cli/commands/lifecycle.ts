@@ -113,7 +113,7 @@ export function registerLifecycleCommands(program: Command, ctx: CliContext): vo
       writeCoreState(dir, state);
       writeNotes(dir, []);
       writeTasks(dir, []);
-      respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nType: ${epicType}\nDescription: ${description.trim().slice(0, 120)}\nLane: 0-backlog\nStep: ${firstStep}` });
+      respond({ status: "ok", command: "open", epic: state, display: `Opened epic: ${epicName}\nType: ${epicType}\nDescription: ${description.trim().slice(0, 120)}\nLane: 0-backlog\nStep: ${firstStep}\n\nNext: run the ${firstStep} step (still in 0-backlog). Do not move to 1-ready until research, scope, and estimate are complete.` });
     });
 
   // ─── ready ─────────────────────────────────────────────────────────────────
