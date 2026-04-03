@@ -40,14 +40,14 @@
       "id": "S-006",
       "summary": "Implement interactive expression functions (confirm, prompt, choose) with pause/resume semantics",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
       "id": "S-007",
       "summary": "Config validation with branded ValidConfig, extends chain resolution, and structured errors",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -61,14 +61,14 @@
       "id": "S-009",
       "summary": "XState v5 machine generator: workflow definition to state machine config at load time",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
       "id": "S-010",
       "summary": "Step evaluation against DB state via expressions (skip, block, done, needs resolution)",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -82,7 +82,7 @@
       "id": "S-012",
       "summary": "Issue CRUD: create, update, close, archive, list with recursive parent/child hierarchy",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -152,7 +152,7 @@
       "id": "S-022",
       "summary": "Projection adapter: DB to filesystem markdown rendering (open, active, closed, checkpoints, snapshot)",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -192,5 +192,5 @@
     }
   ],
   "created": "2026-04-03T01:00:32.791Z",
-  "updated": "2026-04-03T02:26:47.221Z"
+  "updated": "2026-04-03T02:47:12.276Z"
 }
