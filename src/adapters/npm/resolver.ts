@@ -110,12 +110,13 @@ export class NpmPackageResolver implements PackageResolverPort {
     const installDir = path.join(this.baseDir, projectId);
     await mkdir(installDir, { recursive: true });
 
+    // shell: true is required on Windows where npm is a .cmd script.
     await execFileAsync('npm', [
       'install',
       packageName,
       '--prefix', installDir,
       '--save',
-    ]);
+    ], { shell: true });
 
     // Read the installed package's package.json to extract manifest fields.
     // Scoped packages (@org/pkg) map to node_modules/@org/pkg/package.json —
