@@ -1,205 +1,210 @@
-# twisted-workflow v4 — Technical Design
+# twisted-workflow — Technical Design
 
-## Overview
+## Why This Exists
 
-twisted-workflow is a data-driven workflow engine for agentic development with
-Claude Code. The engine is workflow-agnostic: steps, artifacts, transitions,
-conditions, and issue types are all defined in configuration, not code. The
-simplest valid workflow is one step. The most complex is an arbitrary DAG with
-expression-based guards, interactive prompts, and skill-based automation.
+Software development with AI agents breaks the way we've always worked.
 
-**Core invariants:**
-- PGLite (embedded Postgres via WASM) is the single source of truth
-- The daemon owns the DB exclusively — single writer, no contention
-- The CLI is a thin socket client — zero business logic
-- Markdown projection is a read-only view for humans and git
-- Expressions evaluate against DB state, never the filesystem
+Traditional process assumes a human holds context across days and weeks. You open
+a ticket, research the problem, write a plan, build the thing, review it, ship it.
+The human is the continuity. The process is just ceremony around that continuity —
+stand-ups to sync humans, sprints to batch human attention, Jira boards to track
+what humans are doing.
 
-## Architecture
+AI agents don't work that way. A Claude Code session lasts minutes to hours, not
+days. Context resets completely between sessions. The agent has no memory of what
+it did yesterday. It can't pick up where it left off unless someone — or something
+— tells it where "off" was.
 
-### Three-Layer Split
+The naive response is waterfall: write a massive spec up front, hand it to the
+agent, pray. This fails for the same reason waterfall always fails — you don't
+know enough at the start to specify everything, and the act of building reveals
+what the spec got wrong. But with agents, it fails even harder: the agent can't
+course-correct mid-flight because it can't perceive the drift. It follows the
+spec literally, and the spec was wrong.
 
-```
-Engine (generic, workflow-agnostic):
-  Expression parser + evaluator
-  DAG resolver (topological sort)
-  XState machine generator (consistency check)
-  txNext — atomic evaluate → advance → persist loop
-  Projection flusher (DB → filesystem markdown)
+What actually works is what's always worked: small steps, fast feedback, adaptive
+planning. Research before you scope. Scope before you plan. Plan before you build.
+Check your work at each boundary. Except now the entity doing the work forgets
+everything between steps. So the process itself has to carry the context.
 
-Vocabulary (data, not code):
-  Workflow definitions (steps, conditions, artifacts)
-  Built-in defaults (feature, bug, chore, spike)
-  Skill packages (npm or git dependencies)
+That's what twisted-workflow does. It's the memory and the process in one system.
+Each step produces artifacts. Artifacts carry context forward. The next session
+reads the artifacts, knows where things stand, and picks up cleanly. The agent
+doesn't need memory — the workflow has it.
 
-CLI (thin socket client):
-  Serialize request → send to daemon → print response
-  Local commands: init, install, uninstall, manifest
-```
+## The Problems, Specifically
 
-### Ports & Adapters
+Once you accept that agents need structured process, you hit a cascade of
+concrete engineering problems:
 
-Abstract concrete technology behind interfaces. Tests inject in-memory
-adapters; production uses real implementations.
+**Context loss.** Sessions end. The agent that did the research is gone. The agent
+that does the scoping needs to read the research output, not re-derive it. Artifacts
+must be durable, discoverable, and self-describing.
 
-| Port | Interface | Default Adapter | Purpose |
-|------|-----------|----------------|---------|
-| `StoragePort` | `query()`, `exec()`, `transaction()` | `PGLiteStorageAdapter` | SQL persistence with ACID transactions |
-| `ProjectionPort` | `renderIssue()`, `renderCycle()`, etc. | `MarkdownProjectionAdapter` | DB → filesystem rendering |
-| `TransportPort` | `send()`, `close()`, `connected` | `SocketTransportAdapter` | IPC between CLI and daemon |
-| `ExpressionEvaluatorPort` | `evaluate()`, `validate()` | `ExpressionEvaluator` | Condition evaluation |
-| `PackageResolverPort` | `install()`, `resolve()`, `discover()` | `NpmPackageResolver` | Skill/persona package management |
+**Concurrency.** Multiple agents may work in parallel — decomposing an epic into
+stories, then farming stories to sub-agents. If two agents try to update the same
+state simultaneously via file writes, you get corruption. You need a single writer
+with ACID guarantees.
 
-#### StoragePort
+**Workflow rigidity.** Different kinds of work need different processes. A bug fix
+doesn't need a research phase. A spike doesn't need decomposition. Hardcoding the
+step sequence means every workflow change is a code change. The process definition
+should be data, not code.
 
-```typescript
-interface StoragePort {
-  query<T>(sql: string, params?: unknown[], tx?: StorageTx): Promise<QueryResults<T>>;
-  exec(sql: string, tx?: StorageTx): Promise<Array<QueryResults<unknown>>>;
-  transaction<T>(callback: (tx: StorageTx) => Promise<T>): Promise<T>;
-}
+**Condition complexity.** "Advance when all tasks are done" is simple. "Skip
+research if we already have it from a previous cycle" is not. "Block the build
+step until the user confirms the plan" requires interaction. Conditions need to be
+expressive, composable, and capable of pausing for human input.
 
-interface StorageTx {
-  query<T>(sql: string, params?: unknown[]): Promise<QueryResults<T>>;
-  exec(sql: string): Promise<Array<QueryResults<unknown>>>;
-  rollback(): Promise<void>;
-  readonly closed: boolean;
-}
-```
+**Skill incompatibility.** Third-party skills (like mattpocock's TDD skill or
+PRD writer) produce outputs in their own way — creating GitHub issues, writing
+files to arbitrary paths, making git commits. A workflow engine needs to intercept
+these outputs and redirect them through its own pipeline. You can't just "use a
+skill" — you need to adapt its outputs.
 
-Transactions are composable: pass `tx` to `query()` to participate in an
-existing transaction. PGLite's internal mutex serializes concurrent queries,
-so explicit request queuing is unnecessary.
+**Session handoff.** The human starts a session, works with an agent for an hour,
+stops. Tomorrow, a fresh agent needs to know: what was done, what's next, what
+decisions were made, what was deferred. This isn't just "read the issue state" —
+it's a narrative summary that captures working context.
 
-#### ProjectionPort
+## The Cast
 
-```typescript
-interface ProjectionPort {
-  renderIssue(issueSlug: string): Promise<void>;
-  renderCycle(cycleSlug: string): Promise<void>;
-  renderCheckpoint(checkpointId: string): Promise<void>;
-  renderSnapshot(): Promise<void>;
-  deleteIssue(issueSlug: string): Promise<void>;
-}
-```
+twisted-workflow solves these problems with a small set of interlocking concepts.
+Before diving into implementation, here's who they are and how they relate.
 
-One-way rendering. Each method queries the DB for fresh data and writes
-markdown to the filesystem. Projection failures never roll back DB state.
+### Issues
 
-## Data Model
+An **issue** is any unit of work — from a small bug to a large feature. Issues are
+the atoms of the system. They have a type (feature, bug, spike, chore), a workflow
+that governs their lifecycle, and a current step within that workflow. Issues are
+recursive: a feature issue can contain child issues.
 
-### PGLite Schema
+Issues accumulate state over time: notes, tasks, vars (collected prompt responses),
+and artifacts (step outputs). This state persists across sessions. When an agent
+picks up an issue, it reads the accumulated state and knows where things stand.
 
-All state lives in 7 domain tables plus a migrations tracker.
+### Workflows
 
-```sql
--- The unit of work. Recursive via parent_id.
-CREATE TABLE issues (
-  id          TEXT PRIMARY KEY,
-  slug        TEXT NOT NULL UNIQUE,
-  title       TEXT NOT NULL,
-  body        TEXT,
-  type        TEXT NOT NULL,            -- feature | bug | spike | chore | release
-  workflow_id TEXT NOT NULL,            -- references workflow definition by id
-  step        TEXT NOT NULL,            -- current step within the workflow
-  status      TEXT NOT NULL DEFAULT 'open',  -- open | blocked | done | archived
-  parent_id   TEXT REFERENCES issues(id),
-  metadata    JSONB NOT NULL DEFAULT '{}',
-  created_at  TEXT NOT NULL,            -- ISO 8601
-  updated_at  TEXT NOT NULL
-);
+A **workflow** is a directed acyclic graph (DAG) of steps. Each step declares:
+- `needs` — which steps must complete before this one can start
+- `produces` — what artifacts this step creates
+- `done_when` / `skip_when` / `block_when` — expression-based conditions
 
--- Optional focus container. One active at a time.
-CREATE TABLE cycles (
-  id          TEXT PRIMARY KEY,
-  slug        TEXT NOT NULL UNIQUE,
-  title       TEXT NOT NULL,
-  description TEXT,
-  status      TEXT NOT NULL DEFAULT 'active',  -- active | closed
-  started_at  TEXT NOT NULL,
-  closed_at   TEXT
-);
+The simplest workflow is one step. A feature workflow might be `research → scope →
+plan → build`. A complex workflow could have parallel branches: research and
+security review happening simultaneously before the plan step.
 
--- Join table: which issues are in which cycle.
-CREATE TABLE cycle_issues (
-  cycle_id     TEXT NOT NULL REFERENCES cycles(id),
-  issue_id     TEXT NOT NULL REFERENCES issues(id),
-  pulled_at    TEXT NOT NULL,
-  completed_at TEXT,
-  PRIMARY KEY (cycle_id, issue_id)
-);
+Workflows are data — defined in configuration, not code. Changing a workflow
+doesn't require changing the engine. The engine reads the definition and generates
+the execution plan dynamically.
 
--- Typed notes attached to issues or cycles.
-CREATE TABLE notes (
-  id         TEXT PRIMARY KEY,
-  summary    TEXT NOT NULL,
-  tag        TEXT NOT NULL,             -- decide | defer | discover | blocker | retro
-  issue_slug TEXT,
-  cycle_slug TEXT,
-  created_at TEXT NOT NULL
-);
+### Steps
 
--- Context bridges between LLM sessions.
-CREATE TABLE checkpoints (
-  id         TEXT PRIMARY KEY,
-  number     INTEGER NOT NULL,          -- sequential within the project
-  issue_slug TEXT,
-  summary    TEXT NOT NULL,
-  content    TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
+A **step** is one unit of work within a workflow. Steps don't execute code — they
+define conditions and artifacts. The agent does the actual work. The engine's job
+is to evaluate whether a step is done, blocked, ready, or should be skipped.
 
--- Durable key-value store scoped to issue + step.
--- Used for: prompt responses, artifact content, session state.
-CREATE TABLE vars (
-  issue_slug TEXT NOT NULL,
-  step       TEXT NOT NULL,
-  key        TEXT NOT NULL,
-  value      JSONB NOT NULL,
-  PRIMARY KEY (issue_slug, step, key)
-);
+Steps can have skills attached. When the engine reaches a step, it can return an
+`invoke_skill` action telling the agent which skill to use. The skill provides
+methodology; the step provides context and constraints.
 
--- Task list per issue.
-CREATE TABLE tasks (
-  id         TEXT PRIMARY KEY,
-  issue_slug TEXT NOT NULL,
-  summary    TEXT NOT NULL,
-  done       INTEGER NOT NULL DEFAULT 0,  -- PGLite stores booleans as 0/1
-  created_at TEXT NOT NULL
-);
-```
+### Expressions
 
-**Design decisions:**
-- All PKs are TEXT (UUIDs generated at app layer) — avoids `uuid-ossp` extension unavailable in PGLite WASM
-- Timestamps are ISO 8601 TEXT — PGLite WASM has no timezone-aware clock
-- JSONB for `metadata` and `vars.value` — queryable, partially updatable
-- `vars` table doubles as artifact storage: `handleWrite` stores artifact content with `key = artifact_type`
-- No foreign key from `issues.workflow_id` to a workflows table — workflows are config, not DB rows
-
-### File Layout
+**Expressions** are the condition language. Instead of hardcoded predicates, every
+condition is a string that gets parsed and evaluated against the current context:
 
 ```
-~/.twisted/projects/{project-id}/     User-local (not committed)
-  twisted.db                          PGLite database files
-  node_modules/                       Installed skill packages
-  skill-manifest.json                 Agent-generated skill analysis
-
-.twisted/                             In-project (committed)
-  settings.json                       Config overrides
-  issues/{slug}.md                    Projected issue markdown
-  cycles/{slug}.md                    Projected cycle markdown
-  checkpoints/{n}-{id}.md             Projected checkpoints
-  snapshot.md                         All issues at a glance
+done_when: "artifacts.all_present"
+skip_when: "vars.skip_research == true"
+block_when: "not tasks.all_done"
+done_when: "confirm('Ready to deploy?')"
 ```
 
-## Engine
+Expressions access five namespaces: `vars` (user-defined variables), `issue`
+(current issue state), `artifacts` (what's been written), `tasks` (completion
+state), and `cycle` (active cycle, if any). They support `and`/`or`/`not`,
+comparisons, member access with null propagation, and function calls — including
+interactive functions that pause evaluation for user input.
 
-### Expression System
+### Cycles
 
-All conditions are expressions evaluated against a typed context. The
-engine never reads from the filesystem — all evaluation is against DB state.
+A **cycle** is an optional focus container — think "sprint" without the time-boxing
+baggage. You start a cycle, pull issues into it, work through them, close with a
+retrospective and checkpoint. One active cycle at a time.
 
-#### Grammar
+Cycles are optional. You can work issues directly without ever creating a cycle.
+Small projects might never use them. Larger projects use them to batch related
+work and generate retros.
+
+### The Daemon
+
+The **daemon** is the single process that owns all state. Every `tx` command goes
+through it. There is no direct mode, no fallback, no "just read the files."
+
+Why? Because of the single-writer problem. PGLite (the embedded database) supports
+one connection. Multiple agents writing concurrently would corrupt state. The daemon
+serializes all writes through one process. It also batches projection (DB → markdown
+file writes) to avoid thrashing the filesystem during burst activity.
+
+The daemon communicates via Unix domain sockets (or Windows named pipes). The
+protocol is newline-delimited JSON: one request line, one response line, close.
+
+### PGLite
+
+**PGLite** is embedded Postgres compiled to WebAssembly. It's the canonical state
+store — the single source of truth. Every query, every condition check, every
+state transition goes through PGLite.
+
+Why Postgres and not SQLite? JSONB. Vars, metadata, and structured data are stored
+as JSONB columns — queryable, partially updatable, indexable. SQLite's JSON support
+exists but is bolted on; Postgres's is native and battle-tested. PGLite also means
+the query language is real Postgres SQL — if the project ever needs to scale to a
+shared server, the queries migrate unchanged.
+
+Why a database at all and not files? ACID transactions. When `txNext()` evaluates
+conditions, advances the step, and updates the issue — all of that must be atomic.
+If the process crashes mid-update, the state must be consistent. Files can't
+guarantee that. A database can.
+
+### Projections
+
+**Projections** are the markdown files under `.twisted/` — issue summaries, cycle
+reports, snapshot tables, checkpoint documents. They are a read-only view of the
+database, generated for humans and git commits.
+
+Projections can fail without data loss. If the filesystem write fails, the DB state
+is already committed and correct. The next `tx status` or `tx next` call will
+re-render. This is a deliberate design choice: projection is eventual, not
+transactional.
+
+The `ProjectionFlusher` batches renders. When the daemon processes a burst of
+writes, it marks slugs as dirty and flushes every 500ms. This prevents N filesystem
+writes for N rapid mutations — they coalesce into one render per slug.
+
+### Skills
+
+**Skills** are reusable methodology packages — instructions for how to do a kind
+of work. mattpocock's TDD skill teaches red-green-refactor. His write-a-prd skill
+structures a user interview into a product requirements document.
+
+Skills are installed as dependencies, not bundled. `tx install` clones them from
+git (or installs from npm) into `~/.twisted/projects/{id}/node_modules/`. After
+installation, the agent analyzes each skill's SKILL.md, detects external outputs
+(GitHub issues, file writes, git commits), and generates a manifest with override
+suggestions that redirect those outputs through the twisted-workflow pipeline.
+
+This is the three-layer merge:
+1. Skill content (SKILL.md from the package)
+2. Manifest overrides (agent-derived on install — "skip step 7, use `tx issue` instead of `gh issue create`")
+3. Config overrides (user-written in `.twisted/settings.json` — explicit wins)
+
+## The Engine
+
+### Expression Parser
+
+Expressions use a custom grammar designed for readability in JSON/YAML config files.
+Word-form operators (`and`/`or`/`not`) avoid the escaping problems of `&&`/`||`/`!`.
+No arithmetic — expressions are conditions only.
 
 ```
 expr         = or_expr
@@ -212,237 +217,234 @@ call_expr    = primary | IDENT '(' args ')'
 primary      = LITERAL | IDENT | '(' expr ')'
 ```
 
-Word-form `and`/`or`/`not` (not `&&`/`||`/`!`) for YAML/JSON readability.
-No arithmetic — expressions are conditions only.
+The parser produces a typed AST with six node kinds: `literal`, `identifier`,
+`member`, `call`, `binary`, `unary`. All parsing is synchronous and pure — no I/O,
+no side effects, no state.
 
-#### AST
+### Expression Evaluation
 
-```typescript
-type ExpressionNode =
-  | { kind: 'literal'; value: Json }
-  | { kind: 'identifier'; name: string }
-  | { kind: 'member'; object: ExpressionNode; property: string }
-  | { kind: 'call'; callee: ExpressionNode; args: ExpressionNode[] }
-  | { kind: 'binary'; op: BinaryOp; left: ExpressionNode; right: ExpressionNode }
-  | { kind: 'unary'; op: 'not'; operand: ExpressionNode };
-
-type BinaryOp = 'and' | 'or' | 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
-```
-
-#### Evaluation Context
+The evaluator walks the AST against an `ExpressionContext` built from database state:
 
 ```typescript
 interface ExpressionContext {
-  vars: Record<string, Json>;       // User-defined variables from step outputs
-  issue: IssueState;                // step, status, type, workflow_id, etc.
-  artifacts: ArtifactContext;       // { all_present: boolean, exists(path): boolean }
-  tasks: TaskContext;               // { all_done: boolean, done_count, total_count }
+  vars: Record<string, Json>;       // Prompt responses, stored per issue+step
+  issue: IssueState;                // Type, step, status, timestamps
+  artifacts: ArtifactContext;       // { all_present, exists(path) }
+  tasks: TaskContext;               // { all_done, done_count, total_count }
   cycle: CycleContext | null;       // Active cycle or null
 }
 ```
 
-Context is built fresh for each `txNext()` call from DB state:
-- `vars`: `SELECT key, value FROM vars WHERE issue_slug = $1 AND step = $2`
-- `tasks`: `SELECT done FROM tasks WHERE issue_slug = $1`
-- `artifacts`: Step's `produces[].path` matched against vars keys for that step
-- `cycle`: `SELECT id, slug, status FROM cycles WHERE status = 'active' LIMIT 1`
+Key semantics:
 
-#### Evaluation Semantics
+**Null propagation.** `cycle.slug` when `cycle` is null returns null, not an error.
+This is deliberate — expressions like `cycle.status == 'active'` should gracefully
+handle the absence of a cycle, not crash.
 
-- **Null propagation:** `cycle.slug` returns `null` when `cycle` is `null` (no error)
-- **Short-circuit:** `false and X` → `false`; `true or X` → `true`
-- **Truthiness:** `null`, `false`, `0`, `''` are falsy; everything else is truthy
-- **Equality:** `==`/`!=` use deep JSON equality via `JSON.stringify`
-- **Comparison:** `<`/`<=`/`>`/`>=` return `false` for non-numeric operands
-- **Paused propagation:** If any sub-expression returns `{ ok: 'paused' }`, stop immediately
+**Short-circuit evaluation.** `false and expensive_check()` returns false without
+evaluating the right side. `true or expensive_check()` returns true. This matters
+for interactive functions.
 
-#### Built-in Functions
+**Interactive functions.** `confirm('Deploy?')` doesn't return a boolean — it returns
+a `paused` signal with an `AgentAction`. The engine surfaces this to the CLI, the
+agent asks the user, and on the next `txNext()` call, the response arrives via
+`resume_response`. The response is stored in `vars` and the expression re-evaluates
+with the answer available.
 
-| Function | Returns | Purpose |
-|----------|---------|---------|
-| `defined(value)` | boolean | True if value is not null |
-| `not_empty(value)` | boolean | True for non-empty string/array/object |
-| `includes(array, item)` | boolean | Structural equality check |
-| `count(array)` | number | Array length (null for non-arrays) |
-
-**Interactive functions** (pause evaluation for user input):
-
-| Function | AgentAction | Purpose |
-|----------|------------|---------|
-| `confirm(message)` | `{ type: 'confirm' }` | Yes/no from user |
-| `prompt(message)` | `{ type: 'prompt_user' }` | Free-text input |
-| `choose(message, ...options)` | `{ type: 'prompt_user' }` | Multiple choice |
-
-When an interactive function fires, the evaluator returns `{ ok: 'paused', action }`.
-The daemon returns this to the CLI, the agent collects the user's response, and
-re-invokes `txNext` with `resume_response`. The response is stored in `vars` as
-`resume_response` before re-evaluation.
+**Built-in functions:** `defined(value)`, `not_empty(value)`, `includes(array, item)`,
+`count(array)` for deterministic checks. `confirm(msg)`, `prompt(msg)`,
+`choose(msg, ...options)` for interactive pauses.
 
 ### DAG Resolution
 
-Steps declare `needs` (predecessor step IDs). The engine resolves execution
-order via Kahn's algorithm (BFS-based topological sort).
+Steps declare `needs` (predecessor step IDs), forming a directed acyclic graph.
+The engine resolves execution order using Kahn's algorithm — a BFS-based
+topological sort that processes steps level by level.
 
-```typescript
-type DagResult =
-  | { ok: true; order: string[]; groups: string[][] }
-  | { ok: false; cycles: string[][] };
-```
+Each level is a parallel execution group: steps within a group have no dependencies
+on each other. Today, twisted-workflow processes one step at a time. The group
+information is preserved for future parallel agent dispatch.
 
-`groups` are parallel execution groups — steps within a group have no
-dependencies on each other and could run concurrently. Cycle detection
-traces individual cycles for meaningful error diagnostics.
+Cycle detection walks dependency chains and reports each distinct cycle as an
+ordered list of participating step IDs, providing meaningful diagnostics rather
+than a generic "cycle detected" error.
 
 ### Step Evaluation
 
-For each step in topological order:
+For each step in topological order, the evaluator resolves a state:
 
-1. **Check dependencies** — if any `needs` step not done/skip → `pending`
-2. **Evaluate `skip_when`** — if true → `skip` (add to completed set)
-3. **Evaluate `done_when`** — if true → `done` (add to completed set)
-4. **Evaluate `block_when`** — if true → `blocked`
-5. **Check if current step** — if matches `issue.step` → `active`
-6. **Otherwise** → `ready`
+1. **Dependencies unmet?** → `pending` (skip — can't run yet)
+2. **`skip_when` true?** → `skip` (add to completed set, check next)
+3. **`done_when` true?** → `done` (add to completed set, check next)
+4. **`block_when` true?** → `blocked` (stop — issue is stuck)
+5. **Interactive expression paused?** → `paused` (stop — waiting for input)
+6. **Matches current step?** → `active`
+7. **Otherwise** → `ready` (eligible to start)
 
-Resolution states: `pending | ready | active | skip | done | blocked | paused`
+The completed set grows as steps are resolved, which unlocks downstream steps
+whose `needs` are now satisfied. This is evaluated fresh on every `txNext()` call.
 
-### XState Machine (Consistency Check)
+### XState Machine
 
-A machine is generated from each workflow definition at load time. It serves
-as a **consistency check**, not the source of truth. If the machine rejects
-a transition that the evaluator approved, the evaluator wins (it has more
-information via expression context).
+An XState v5 machine is generated from each workflow definition at load time.
+It serves as a **consistency check**, not the source of truth. If the machine
+rejects a transition that the evaluator approved, the evaluator wins — it has
+richer context (expression evaluation, vars, artifacts) than the machine (static
+DAG structure).
 
-```typescript
-type WorkflowEvent =
-  | { type: 'STEP_DONE'; step: string }
-  | { type: 'STEP_SKIP'; step: string }
-  | { type: 'STEP_BLOCK'; step: string }
-  | { type: 'RESET' };
+The machine exists for one reason: to catch category errors where the DAG
+resolution and the expression evaluation disagree about what's possible. In
+practice, this has caught zero bugs — but the invariant check costs nothing
+at runtime and provides confidence during engine changes.
 
-interface WorkflowContext {
-  current_step: string;
-  completed_steps: string[];
-  status: IssueStatus;
-}
-```
+### txNext: The Core Loop
 
-The machine uses `findNextStep()` to compute the next eligible step: the
-first step in topological order whose `needs` are all in the completed set.
-
-### txNext — The Core Loop
-
-All mutations happen inside a single DB transaction:
+Everything comes together in `txNext()`. This is the single function that
+advances an issue through its workflow. It runs inside one database transaction:
 
 ```
 1. Load issue by slug
-2. Load workflow from config
-3. Store resume_response in vars (if present)
-4. Build ExpressionContext (vars, tasks, artifacts, cycle)
-5. Evaluate all steps
-6. Handle result:
-   - paused   → return action for user input
-   - done/skip → advance to next ready step (or close issue)
-   - blocked  → set issue status to blocked
-   - active   → no change
+2. Load workflow definition from config
+3. If resume_response provided, store it in vars (so expressions can read it)
+4. Build ExpressionContext:
+   - vars:      SELECT key, value FROM vars WHERE issue_slug AND step
+   - tasks:     SELECT done FROM tasks WHERE issue_slug
+   - artifacts: Check which produces[].path keys exist in vars for this step
+   - cycle:     SELECT id, slug, status FROM cycles WHERE status = 'active'
+5. Evaluate all steps against the context
+6. Handle the result:
+   - paused  → return action for user/agent input
+   - done    → advance to next ready step (or close issue if all done)
+   - blocked → set issue status to blocked
+   - active  → no change (step is in progress)
 7. [Outside transaction] Run projection (swallow errors)
 ```
 
-Result type:
-```typescript
-type TxNextResult =
-  | { status: 'advanced'; issue: IssueState; from_step: string; to_step: string }
-  | { status: 'done'; issue: IssueState }
-  | { status: 'blocked'; issue: IssueState; step: string }
-  | { status: 'paused'; issue: IssueState; action: AgentAction }
-  | { status: 'no_change'; issue: IssueState }
-  | { status: 'error'; message: string };
-```
+The transaction boundary is critical. Steps 1–6 are atomic: if the process crashes
+after evaluating but before persisting, nothing changes. If it crashes after
+persisting but before projection, the DB is correct and projection catches up on
+the next call. Projection runs outside the transaction deliberately — a filesystem
+error must never roll back a valid state transition.
 
-## Daemon
+## The Daemon in Depth
+
+### Why a Daemon
+
+The daemon exists because of a constraint: PGLite supports one connection. If two
+agents call `tx next` simultaneously, their transactions would interleave
+unpredictably. The daemon serializes all access through one process.
+
+But the daemon does more than serialize. It also:
+
+- **Auto-starts** on first `tx` command (no manual daemon management)
+- **Batches projection** via dirty tracking (no filesystem thrash)
+- **Owns the socket lifecycle** (clean shutdown, graceful reconnect)
+- **Runs migrations** on startup (schema is always current)
 
 ### Socket Protocol
 
-Newline-delimited JSON over Unix domain sockets (or Windows named pipes).
-One request/response per connection: CLI opens, sends, reads response, closes.
+Newline-delimited JSON over Unix domain sockets (or Windows named pipes). One
+request-response per connection:
 
 ```
-CLI → daemon: { "command": "next", "issue_slug": "feat-auth" }\n
-daemon → CLI: { "status": "advanced", "data": { ... } }\n
+CLI opens connection
+CLI sends:   {"command":"next","issue_slug":"feat-auth"}\n
+Daemon sends: {"status":"ok","data":{...}}\n
+CLI closes connection
 ```
+
+13 command types form a closed set. The dispatcher uses a TypeScript discriminated
+union with an exhaustiveness guard — adding a new command to the type without
+handling it is a compile error.
 
 ### Request Dispatch
 
-The `dispatch()` function routes `DaemonRequest` to handler functions via
-a `switch` on `req.command`. Each handler receives `StoragePort` (and
-optionally `ProjectionPort`) plus the narrowed request type.
+Each command maps to a handler function. Handlers receive `StoragePort` (and
+optionally `ProjectionPort`) plus the narrowed request type:
 
-13 commands: `next`, `status`, `open`, `close`, `write`, `read`, `note`,
-`pickup`, `handoff`, `checkpoint`, `cycle_start`, `cycle_pull`, `cycle_close`.
+```typescript
+handleNext(db, projection, req)     // Runs txNext
+handleWrite(db, req)                // Stores artifact in vars table
+handleCycleStart(db, req)           // Delegates to startCycle()
+handleCycleClose(db, req)           // Delegates to closeCycle()
+```
 
-Exhaustiveness guard: a `never` default case ensures TypeScript errors if
-a new command is added to the union but not handled.
+Handlers return `DaemonResponse`. The dispatcher marks dirty slugs for batched
+projection. Handlers never call projection directly — that's the flusher's job.
 
 ### Projection Flushing
 
-The `ProjectionFlusher` batches filesystem writes:
+The `ProjectionFlusher` uses a `Set<string>` for dirty tracking. When a handler
+writes to the DB, the dispatcher calls `flusher.markDirty(slug)`. Every 500ms,
+the flusher renders all dirty slugs via `Promise.allSettled()` (parallel, error-
+tolerant) and clears the set.
 
-- **Dirty tracking:** `Set<string>` deduplicates rapid writes to the same slug
-- **500ms interval:** Timer-based flush coalesces writes
-- **Parallel render:** `Promise.allSettled()` renders independent issues concurrently
-- **Error resilience:** Projection errors are swallowed; DB is source of truth
-- **Graceful shutdown:** Final flush on `stop()`; timer is `unref()`'d to not block exit
+On shutdown, a final flush ensures no dirty slugs are lost. The timer is `unref()`'d
+so it doesn't prevent Node.js from exiting.
 
-### Auto-Start
+## Storage
 
-Before the first socket send, `ensureDaemon()` probes for a running daemon.
-If not reachable, it calls `startDaemon()` and retries 3 times with 500ms
-delays. The daemon creates its PGLite adapter (which runs migrations),
-binds the socket, and starts listening.
+### Schema
 
-## Config Resolution
+Seven domain tables plus a migrations tracker:
 
-Two-layer merge: built-in defaults + project settings.
+| Table | Purpose | Key columns |
+|-------|---------|-------------|
+| `issues` | All units of work | slug, type, workflow_id, step, status, parent_id, metadata (JSONB) |
+| `cycles` | Focus containers | slug, title, status (active/closed), started_at, closed_at |
+| `cycle_issues` | Which issues are in which cycle | cycle_id, issue_id, pulled_at, completed_at |
+| `notes` | Typed observations | summary, tag (decide/defer/discover/blocker/retro), issue_slug |
+| `checkpoints` | Session context bridges | number (sequential), summary, content, issue_slug |
+| `vars` | Durable key-value store | issue_slug, step, key, value (JSONB) — also stores artifacts |
+| `tasks` | Per-issue task lists | issue_slug, summary, done (0/1) |
 
-```
-resolveConfig(settings?) → TwistedConfig
-  = deepMerge(DEFAULT_CONFIG, settings ?? {})
-```
+**Design decisions that matter:**
 
-Workflow merging uses id-based matching:
-- Same id as a built-in → field-level merge (user wins)
-- `extends` another workflow → base + user overlay
-- New id → appended to the workflow list
+All primary keys are TEXT (UUIDs generated at the app layer). PGLite's WASM build
+doesn't include `uuid-ossp`, and importing it would add startup latency for no
+benefit.
 
-Three-layer merge with packages:
-```
-1. Built-in defaults
-2. + Package manifest (workflows, skills from node_modules)
-3. + User config (.twisted/settings.json)
-```
+Timestamps are ISO 8601 TEXT strings. PGLite WASM has no timezone-aware clock.
+Storing as text avoids timezone bugs and makes the data self-describing in JSON
+exports.
 
-### Default Workflows
+The `vars` table doubles as artifact storage. When an agent runs `tx write scope`,
+the handler stores the content in `vars` with `key = 'scope'` and
+`step = issue.step`. This unifies artifact tracking with the expression system —
+`artifacts.all_present` checks whether the step's `produces[].path` entries
+exist as keys in `vars`.
 
-| Workflow | Steps | Default for |
-|----------|-------|-------------|
-| `feature` | research → scope → plan → build | `feature` |
-| `bug` | reproduce → fix → verify | `bug` |
-| `chore` | do | `chore` |
-| `spike` | research → recommend | `spike` |
+### Migrations
 
-No skills configured by default. Steps have no `done_when`/`skip_when`/
-`block_when` — they advance only when the agent explicitly calls `tx next`.
+A `_migrations` table tracks applied schema versions. The runner bootstraps this
+table on startup, checks what's been applied, and runs new migrations inside
+transactions. Currently there's one migration: the full initial schema. Adding
+tables or columns is a new migration — the engine handles the upgrade path
+automatically.
 
-### Config Validation
+## Ports & Adapters
 
-`resolveConfig()` validates:
-- Phase categories exist for all referenced phases
-- Step `needs` form a valid DAG (no cycles via Kahn's algorithm)
-- Expression syntax parses correctly
-- Workflow `extends` chains don't form cycles
-- No duplicate workflow IDs
+Every external dependency is behind an interface:
 
-## Dependency Management
+| Port | What it abstracts | Why |
+|------|-------------------|-----|
+| `StoragePort` | SQL database | Tests use in-memory PGLite; future could swap to server Postgres |
+| `ProjectionPort` | Filesystem rendering | Tests use temp dirs; future could use S3 or HTTP |
+| `TransportPort` | IPC communication | Unix sockets today; HTTP for future service mode |
+| `ExpressionEvaluatorPort` | Condition evaluation | Swappable for custom expression languages |
+| `PackageResolverPort` | Package installation | npm today; could support other registries |
+
+The primary benefit is testability. Every integration test creates a fresh
+`createInMemoryStorageAdapter()` — a real PGLite instance running in WASM with
+the full schema applied. No mocks of SQL, no fake query results. The tests run
+real queries against real Postgres and verify real behavior.
+
+This is the testing philosophy throughout: 415 tests, zero mocks of internal
+collaborators. Tests verify behavior through public interfaces. If a test breaks
+when you refactor but behavior hasn't changed, the test was testing implementation,
+not behavior.
+
+## Dependencies & Skills
 
 ### Installation
 
@@ -456,86 +458,132 @@ Skill packages are declared in `.twisted/settings.json`:
 }
 ```
 
-`tx install` resolves each dependency:
-- **npm packages:** `npm install <pkg> --prefix ~/.twisted/projects/{id}/`
-- **GitHub repos:** `git clone --depth 1` into `node_modules/{name}/`
+`tx install` handles two cases:
 
-For git repos without `package.json`, the installer scans for SKILL.md
-directories and writes a synthetic `package.json` with discovered skills.
+**npm packages** — runs `npm install <pkg> --prefix ~/.twisted/projects/{id}/`
+and reads the package's `twisted` field from `package.json` for skill/persona
+metadata.
+
+**Git repos without `package.json`** — shallow clones into `node_modules/{name}/`,
+scans for directories containing SKILL.md files, and writes a synthetic
+`package.json` with the discovered skills. This is how mattpocock's skills repo
+works — it's just a flat directory of skill folders, not an npm package.
+
+Packages live in `~/.twisted/projects/{id}/node_modules/` — out of the repo,
+in user-local space. Each project gets its own isolated dependency tree.
 
 ### Manifest Discovery
 
-After installation, `tx install -a` returns a `prompt_user` action instructing
-the agent to:
+After installation, `tx install -a` returns a `prompt_user` action with a
+structured prompt. The orchestrating agent reads each SKILL.md, identifies
+external side effects, and writes a manifest via `tx manifest write`.
 
-1. Read each SKILL.md file
-2. Detect external outputs (GitHub issues, PRs, file writes, git ops, etc.)
-3. Generate override directives redirecting outputs through the pipeline
-4. Pipe the manifest JSON to `tx manifest write`
+The manifest records what each skill does and how to adapt it:
 
-The manifest is cached at `~/.twisted/projects/{id}/skill-manifest.json`.
-At runtime, the three-layer merge applies:
-
+```json
+{
+  "@mattpocock/skills": {
+    "version": "0.0.0-git",
+    "discovered": "2026-04-03T05:00:00.000Z",
+    "skills": {
+      "write-a-prd": {
+        "description": "Create a PRD through user interview",
+        "detected_outputs": ["github-issue"],
+        "suggested_overrides": {
+          "omit": ["Step 5"],
+          "directives": [
+            "Do NOT submit as GitHub issue. Use tx write scope."
+          ]
+        }
+      }
+    }
+  }
+}
 ```
-1. Skill content (SKILL.md from node_modules)
-2. + Manifest overrides (agent-derived on install)
-3. + Config overrides (.twisted/settings.json, user-written)
-```
 
-### CLI Commands
+This is agent-driven, not regex-based. The agent understands the skill's intent
+and generates contextually appropriate overrides. A regex can match "create a
+GitHub issue" — an agent can understand that step 5 is the output step and that
+the workflow equivalent is `tx write scope`, not just "don't do it."
 
-```
-tx install [package] [--force]    Install from settings or by name
-tx uninstall <package>            Remove package + manifest entry
-tx manifest write                 Write manifest from stdin (JSON)
-tx manifest show                  Show current manifest
-```
+### Three-Layer Merge
 
-`--force` deletes the existing package directory before re-installing.
-`tx uninstall` removes both the package directory and its manifest entry.
+At runtime, skill invocation merges three layers:
 
-## CLI Protocol
+1. **Skill content** — the raw SKILL.md from `node_modules/`
+2. **Manifest overrides** — agent-derived on install ("skip step 5, redirect to `tx write`")
+3. **Config overrides** — user-written in `.twisted/settings.json` (explicit wins)
 
-Every `tx` command with `-a` returns an `AgentResponse`:
+This means you can install a skill, get smart defaults from the manifest, and
+customize further in your config. The skill author doesn't need to know about
+twisted-workflow. The manifest adapter bridges the gap.
+
+## The CLI
+
+### Thin Client
+
+The CLI has zero business logic. Every command (except `init`, `install`,
+`manifest`) serializes a `DaemonRequest`, sends it over the socket, and prints
+the `DaemonResponse`. The daemon does all the work.
+
+`tx init` runs locally because the daemon may not exist yet when init is called.
+`tx install` and `tx manifest` run locally because they manage files in the user
+directory, not the DB.
+
+### Auto-Start
+
+Before the first socket send, `ensureDaemon()` probes for a running daemon with
+a 2-second timeout. If not reachable, it starts one via `startDaemon()` and
+retries up to 3 times with 500ms delays. The user never manually manages the
+daemon.
+
+### Agent Protocol
+
+Every command with `-a` returns an `AgentResponse`:
 
 ```typescript
 interface AgentResponse {
   status: 'ok' | 'error' | 'paused' | 'handoff';
   command: string;
-  action?: AgentAction;
-  display?: string;
-  issue?: IssueState;
-  config?: TwistedConfig;
+  action?: AgentAction;      // What the agent should do next
+  display?: string;          // Human-readable output
+  issue?: IssueState;        // Current issue snapshot
   error?: string;
-  session?: SessionData;
 }
-
-type AgentAction =
-  | { type: 'invoke_skill'; skill: string; prompt?: string }
-  | { type: 'confirm'; message: string; next_command: string }
-  | { type: 'done' }
-  | { type: 'prompt_user'; prompt: string; categories?: string[] }
-  | { type: 'run_agents'; agents: AgentAssignment[] }
-  | { type: 'install_cli'; instructions: string };
 ```
 
-The orchestrating agent reads `action` to know what to do next. The action
-types form a closed protocol between the engine and the agent layer.
+The `action` field is the interface between the engine and the agent layer.
+Six action types form a closed protocol:
+
+| Action | Agent behavior |
+|--------|---------------|
+| `invoke_skill` | Load and execute the named skill |
+| `confirm` | Display message, run `next_command` to proceed |
+| `prompt_user` | Execute the step described in `prompt` |
+| `run_agents` | Spawn sub-agents for parallel work |
+| `done` | Pipeline complete |
+| `install_cli` | Show CLI installation instructions |
+
+The orchestrating agent (the `/tx` skill in Claude Code) reads the response,
+executes the action, and calls the next command. The engine drives the agent,
+not the other way around.
 
 ## Test Architecture
 
-415 tests across 37 files. Three layers:
+415 tests across 37 files. Three layers, one philosophy: test behavior through
+public interfaces, never mock internal collaborators.
 
-| Layer | What's tested | Adapter |
-|-------|--------------|---------|
-| Unit | Pure functions: parser, evaluator, DAG, context builders, renderers | None |
-| Integration | Handlers, CRUD, lifecycle, txNext, config merge | In-memory PGLite |
-| E2E | Full flows: issue lifecycle, cycle lifecycle, checkpoints | In-memory PGLite + real temp filesystem |
+| Layer | Count | What's tested | Adapter |
+|-------|-------|--------------|---------|
+| Unit | ~150 | Parser, evaluator, DAG, context builders, renderers, retro generation | None (pure functions) |
+| Integration | ~200 | Handlers, CRUD, lifecycle, txNext, config merge, validation | In-memory PGLite |
+| E2E | ~65 | Full flows: issue lifecycle, cycle lifecycle, checkpoints, projection | In-memory PGLite + real temp filesystem |
 
-In-memory PGLite runs the full schema via `createInMemoryStorageAdapter()`.
-Each test gets a fresh DB instance — no cross-test leakage. Projection tests
-use real temp directories cleaned up in `afterEach`.
+Each integration/E2E test gets a fresh `createInMemoryStorageAdapter()` — a real
+PGLite WASM instance with the full schema applied. No cross-test leakage. Projection
+tests use real temp directories, created in `beforeEach` and cleaned up in `afterEach`.
 
-No mocks of internal collaborators. Tests verify behavior through public
-interfaces. The warning sign from the TDD skill applies: "your test breaks
-when you refactor, but behavior hasn't changed" means the test was wrong.
+The TDD methodology (via mattpocock's skill) is vertical slices: one test, one
+implementation, repeat. Each test responds to what you learned from the previous
+cycle. Horizontal slicing (all tests first, all implementation second) produces
+tests that verify imagined behavior, not actual behavior.
