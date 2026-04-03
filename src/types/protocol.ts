@@ -26,7 +26,11 @@ export type DaemonRequest =
   | { command: 'close'; issue_slug: string }
   | { command: 'pickup'; name?: string }
   | { command: 'handoff' }
-  | { command: 'checkpoint'; summary: string };
+  | { command: 'checkpoint'; summary: string }
+  // Cycle commands — group related issues into a named iteration / sprint.
+  | { command: 'cycle_start'; slug: string; title: string; description?: string }
+  | { command: 'cycle_pull'; issue_slugs: string[] }
+  | { command: 'cycle_close'; summary: string };
 
 // ---------------------------------------------------------------------------
 // Daemon response — discriminated union on `status`

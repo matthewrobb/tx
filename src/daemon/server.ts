@@ -97,6 +97,18 @@ async function dispatch(
       const response = await handleCheckpoint(db, req);
       return { response };
     }
+    // Cycle commands — handlers are implemented in S-021 (cycle engine).
+    // Stubs here keep the dispatch exhaustiveness guard satisfied at compile time.
+    case 'cycle_start':
+    case 'cycle_pull':
+    case 'cycle_close': {
+      return {
+        response: {
+          status: 'error',
+          message: `Cycle command '${req.command}' not yet implemented (S-021).`,
+        },
+      };
+    }
     default: {
       // Exhaustiveness guard: if a new command is added to DaemonRequest but not
       // handled here, TypeScript will flag `_never` as an error.

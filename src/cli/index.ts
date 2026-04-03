@@ -1,152 +1,198 @@
 #!/usr/bin/env node
-// src/cli/index.ts
-import { Command } from "commander";
-import { output } from "./output.js";
-import { resolveConfig } from "../config/resolve.js";
-import {
-  findRoot, twistedDir, findEpics, locateEpic, readCoreState,
-  readActiveSession, writeActiveSession, listSessions,
-} from "./fs.js";
-import type { AgentResponse, TwistedConfig, SessionAction, ActiveSession } from "../types/index.js";
-import type { CliContext } from "./context.js";
-import { registerLifecycleCommands } from "./commands/lifecycle.js";
-import { registerStepsCommands } from "./commands/steps.js";
-import { registerTasksCommands } from "./commands/tasks.js";
-import { registerNotesCommands } from "./commands/notes.js";
-import { registerSessionCommands } from "./commands/session.js";
-import { registerArtifactsCommands } from "./commands/artifacts.js";
-import { registerEpicCommands } from "./commands/epic.js";
-import { registerConfigCommands } from "./commands/config.js";
-import { join } from "path";
-import { readFileSync, existsSync } from "fs";
+// src/cli/index.ts — v4 entry point: thin socket client.
+//
+// Every command (except `tx init`) sends a DaemonRequest over a Unix socket
+// and prints the DaemonResponse. No business logic lives here. The daemon owns
+// all state, config resolution, and workflow execution.
+//
+// E2E tests (S-027) cover CLI behaviour end-to-end with a live daemon.
+// Unit-testing this file in isolation is impractical: it requires a live socket
+// and daemon process. Mock-based tests would only validate the mock.
+//
+// Auto-start:
+//   Before the first socket send, ensureDaemon() checks whether the daemon is
+//   reachable. If not, it calls startDaemon() and retries 3 times with 500 ms
+//   delays before giving up.
 
-const root = findRoot(process.cwd());
+import { Command } from 'commander';
 
-function loadSettings(): Record<string, unknown> {
-  const path = join(twistedDir(root), "settings.json");
-  if (!existsSync(path)) return {};
-  try { return JSON.parse(readFileSync(path, "utf-8")); } catch { return {}; }
-}
+import { SocketTransportAdapter } from '../adapters/socket/client.js';
+import { startDaemon } from '../daemon/server.js';
+import { printError, printResponse, setCurrentCommand } from './output.js';
 
-const settings = loadSettings();
-const config: TwistedConfig = resolveConfig(settings);
+import { registerIssueCommands } from './commands/issue.js';
+import { registerCycleCommands } from './commands/cycle.js';
+import { registerNoteCommand } from './commands/note.js';
+import { registerSessionCommands } from './commands/session.js';
+import { registerConfigCommands } from './commands/config.js';
+import { registerInitCommand } from './commands/init.js';
+
+// ── Program setup ─────────────────────────────────────────────────────────────
 
 const program = new Command();
 
 program
-  .name("tx")
-  .description("twisted-workflow CLI")
-  .version(`twisted-workflow v${config.version}`, "-v, --version")
-  .option("-a, --agent", "JSON output", false)
-  .option("-y, --yolo", "skip confirmations", false)
-  .option("-e, --epic <epic>", "target a specific epic");
+  .name('tx')
+  .description('twisted-workflow CLI')
+  .version('4.0.0', '-v, --version')
+  .option('-a, --agent', 'JSON output (prints AgentResponse)', false)
+  .option('-y, --yolo', 'skip confirmations', false);
 
-function respond(response: AgentResponse): void {
-  const opts = program.opts();
-  output(response, opts.agent as boolean);
+// ── Global options accessor ───────────────────────────────────────────────────
+
+// Evaluated lazily inside each command action — program.opts() is only
+// populated after Commander has parsed the argv, so reading it at module level
+// would always return the defaults.
+function getAgent(): boolean {
+  return (program.opts<{ agent: boolean }>().agent) ?? false;
+}
+
+// ── Daemon auto-start ────────────────────────────────────────────────────────
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Find the active epic, respecting -e/--epic global flag.
- * Returns { dir, state } or null.
+ * Return a connected SocketTransportAdapter.
+ *
+ * If the daemon is not reachable, auto-start it via startDaemon() and retry
+ * up to 3 times with 500 ms delays before giving up.
+ *
+ * This function is called lazily — only when a command actually needs the
+ * socket. `tx init` bypasses it entirely.
  */
-function findActiveEpic(): { dir: string; epicName: string; state: ReturnType<typeof readCoreState> } | null {
-  const epicFlag = program.opts().epic as string | undefined;
-  if (epicFlag) {
-    const location = locateEpic(root, epicFlag);
-    if (!location) return null;
-    const state = readCoreState(location.dir);
-    return { dir: location.dir, epicName: epicFlag, state };
+async function ensureDaemon(): Promise<SocketTransportAdapter> {
+  // Probe: attempt a connection with a short timeout.
+  const probe = new SocketTransportAdapter({ timeoutMs: 2_000 });
+  const probeRes = await probe.send({ command: 'status' });
+  await probe.close();
+
+  if (probeRes.status !== 'error') {
+    // Daemon is already running — return a fresh adapter for actual use.
+    return new SocketTransportAdapter();
   }
-  const epics = findEpics(root);
-  const active = epics
-    .map((e) => {
-      try {
-        const state = readCoreState(e.dir);
-        return { dir: e.dir, epicName: e.epic, state };
-      } catch {
-        return null;
-      }
-    })
-    .filter((e): e is { dir: string; epicName: string; state: ReturnType<typeof readCoreState> } =>
-      e !== null && e.state.status === "active"
-    )
-    .sort((a, b) => b.state.updated.localeCompare(a.state.updated));
-  if (active.length === 0) return null;
-  return active[0]!;
+
+  // Daemon is not running — start it.
+  try {
+    await startDaemon(process.cwd());
+  } catch (err) {
+    printError(
+      `Failed to start daemon: ${err instanceof Error ? err.message : String(err)}`,
+      getAgent(),
+    );
+  }
+
+  // Retry up to 3 times with 500 ms delays to wait for the daemon to bind.
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 500;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    await sleep(RETRY_DELAY_MS);
+
+    const retryAdapter = new SocketTransportAdapter({ timeoutMs: 2_000 });
+    const retryRes = await retryAdapter.send({ command: 'status' });
+
+    if (retryRes.status !== 'error') {
+      // Ready — close the probe and hand back a clean adapter.
+      await retryAdapter.close();
+      return new SocketTransportAdapter();
+    }
+
+    await retryAdapter.close();
+  }
+
+  printError(
+    `Daemon did not become ready after ${MAX_RETRIES} retries. Check .twisted/data/ for errors.`,
+    getAgent(),
+  );
 }
 
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(chunk as Buffer);
-  }
-  return Buffer.concat(chunks).toString("utf-8");
-}
+// ── Shared opts factory ───────────────────────────────────────────────────────
 
-function ensureSession(epicDir: string, step: string): void {
-  const existing = readActiveSession(epicDir);
-  if (existing) return;
-  const sessions = listSessions(epicDir);
-  const nextNumber = sessions.length > 0
-    ? Math.max(...sessions.map((s) => s.number)) + 1
-    : 1;
-  const sess: ActiveSession = {
-    number: nextNumber,
-    name: null,
-    step_started: step,
-    started: new Date().toISOString(),
-    actions: [],
+// Commands receive a `GlobalOpts` object. `agent` and `yolo` are read from
+// program.opts() lazily inside each action; `getAdapter` calls ensureDaemon()
+// which is also lazy (only runs when a command action fires).
+
+function makeGlobalOpts() {
+  return {
+    get agent(): boolean {
+      return (program.opts<{ agent: boolean }>().agent) ?? false;
+    },
+    get yolo(): boolean {
+      return (program.opts<{ yolo: boolean }>().yolo) ?? false;
+    },
+    getAdapter: ensureDaemon,
   };
-  writeActiveSession(epicDir, sess);
 }
 
-function logAction(epicDir: string, action: SessionAction): void {
-  const sess = readActiveSession(epicDir);
-  if (!sess) return;
-  sess.actions.push(action);
-  writeActiveSession(epicDir, sess);
-}
+// ── Command registration ──────────────────────────────────────────────────────
 
-const ctx: CliContext = {
-  root,
-  config,
-  respond,
-  findActiveEpic,
-  readStdin,
-  ensureSession,
-  logAction,
-};
+const sharedOpts = makeGlobalOpts();
 
-registerLifecycleCommands(program, ctx);
-registerStepsCommands(program, ctx);
-registerTasksCommands(program, ctx);
-registerNotesCommands(program, ctx);
-registerSessionCommands(program, ctx);
-registerArtifactsCommands(program, ctx);
-registerEpicCommands(program, ctx);
-registerConfigCommands(program, ctx);
+// `tx issue open/close/status`
+registerIssueCommands(program, sharedOpts);
 
-// ─── Default action (no subcommand) ──────────────────────────────────────────
+// `tx cycle start/pull/close`
+registerCycleCommands(program, sharedOpts);
 
-program.action(() => {
-  const epics = findEpics(root);
-  if (epics.length === 0) {
-    respond({ status: "ok", command: "interactive", display: "No epics. Run: tx open <name>" });
-  } else {
-    const lines = epics.map((e) => {
-      try {
-        const s = readCoreState(e.dir);
-        return `${s.epic}  ${s.lane}  ${s.step}  ${s.status}`;
-      } catch {
-        return `${e.epic}  (unreadable state)`;
-      }
-    });
-    respond({ status: "ok", command: "interactive", display: lines.join("\n") });
-  }
+// `tx note`
+registerNoteCommand(program, sharedOpts);
+
+// `tx pickup` / `tx handoff` / `tx checkpoint` / `tx session status`
+registerSessionCommands(program, sharedOpts);
+
+// `tx config`
+registerConfigCommands(program, sharedOpts);
+
+// `tx init` — local, no socket; only needs agent/yolo flags
+registerInitCommand(program, {
+  get agent(): boolean {
+    return (program.opts<{ agent: boolean }>().agent) ?? false;
+  },
+  get yolo(): boolean {
+    return (program.opts<{ yolo: boolean }>().yolo) ?? false;
+  },
 });
 
-program.parseAsync(process.argv).catch((err: Error) => {
-  process.stderr.write(`Error: ${err.message}\n`);
-  process.exit(1);
+// ── tx next (top-level shorthand) ─────────────────────────────────────────────
+
+program
+  .command('next [slug]')
+  .description('Advance the active issue one step (engine-driven)')
+  .action(async (slug: string | undefined) => {
+    setCurrentCommand('next');
+    const agent = getAgent();
+    const adapter = await ensureDaemon();
+
+    // Resolve the active issue slug when none is provided.
+    // Ask the daemon for a status overview and pick the first open issue.
+    let issueSlug = slug;
+    if (issueSlug === undefined) {
+      const statusRes = await adapter.send({ command: 'status' });
+      if (statusRes.status === 'ok') {
+        // data is `unknown` — narrow to the expected status payload shape.
+        const data = statusRes.data as { issues?: Array<{ issue: string; status: string }> } | null;
+        const active = data?.issues?.find((i) => i.status === 'open');
+        if (active !== undefined) {
+          issueSlug = active.issue;
+        }
+      }
+    }
+
+    if (issueSlug === undefined) {
+      await adapter.close();
+      printError('No active issue found. Pass a slug: tx next <slug>', agent);
+    }
+
+    const res = await adapter.send({ command: 'next', issue_slug: issueSlug });
+    await adapter.close();
+    printResponse(res, agent);
+  });
+
+// ── Parse ─────────────────────────────────────────────────────────────────────
+
+program.parseAsync(process.argv).catch((err: unknown) => {
+  const message = err instanceof Error ? err.message : String(err);
+  printError(message, getAgent());
 });
