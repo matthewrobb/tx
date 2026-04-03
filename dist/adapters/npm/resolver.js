@@ -10,7 +10,7 @@
 // unit-tested without those real-world dependencies.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile, mkdir, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
 const execFileAsync = promisify(execFile);
@@ -62,6 +62,65 @@ export class NpmPackageResolver {
     // Base directory for per-project installs; typically ~/.twisted/projects/
     baseDir) {
         this.baseDir = baseDir;
+    }
+    /**
+     * Install a git repo that has no package.json (e.g. mattpocock/skills).
+     *
+     * Shallow-clones the repo into node_modules/{name}/, scans for SKILL.md
+     * directories, and writes a synthetic package.json so resolve()/discover()
+     * work normally.
+     */
+    async installGit(name, repoUrl, projectId) {
+        const installDir = path.join(this.baseDir, projectId);
+        const pkgDir = path.join(installDir, 'node_modules', name);
+        await mkdir(path.dirname(pkgDir), { recursive: true });
+        // Clone (or pull if already exists).
+        const exists = await readPackageJson(path.join(pkgDir, 'package.json'));
+        if (exists !== null) {
+            // Already cloned — pull latest.
+            await execFileAsync('git', ['-C', pkgDir, 'pull', '--ff-only'], { shell: true });
+        }
+        else {
+            await execFileAsync('git', [
+                'clone', '--depth', '1', repoUrl, pkgDir,
+            ], { shell: true });
+        }
+        // Discover skills by scanning for directories containing SKILL.md.
+        let entries;
+        try {
+            entries = await readdir(pkgDir);
+        }
+        catch {
+            entries = [];
+        }
+        const skills = [];
+        for (const entry of entries) {
+            if (entry.startsWith('.'))
+                continue;
+            const skillPath = path.join(pkgDir, entry, 'SKILL.md');
+            try {
+                await readFile(skillPath);
+                skills.push(entry);
+            }
+            catch {
+                // Not a skill directory.
+            }
+        }
+        // Write a synthetic package.json so resolve()/discover() work.
+        const syntheticPkg = {
+            name,
+            version: '0.0.0-git',
+            description: `Git-cloned from ${repoUrl}`,
+            keywords: ['twisted-workflow'],
+            twisted: { skills },
+        };
+        await writeFile(path.join(pkgDir, 'package.json'), JSON.stringify(syntheticPkg, null, 2), 'utf-8');
+        return {
+            name,
+            version: '0.0.0-git',
+            installPath: pkgDir,
+            manifest: toManifest(syntheticPkg),
+        };
     }
     /**
      * Install a package to the project's package directory.

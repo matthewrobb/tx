@@ -53,14 +53,22 @@ export function registerInstallCommand(program, opts) {
         }
         const results = [];
         for (const [name, spec] of Object.entries(packages)) {
-            // For dependencies, the spec is the version/URL to install.
-            // For a CLI argument, name and spec are the same string.
-            const installSpec = name === spec ? name : `${name}@${spec}`;
             try {
-                const resolved = await resolver.install(installSpec, projectId);
+                let resolved;
+                if (spec.startsWith('github:')) {
+                    // Git repo without package.json — clone directly.
+                    const repoUrl = `https://github.com/${spec.slice('github:'.length)}.git`;
+                    resolved = await resolver.installGit(name, repoUrl, projectId);
+                }
+                else {
+                    const installSpec = name === spec ? name : `${name}@${spec}`;
+                    resolved = await resolver.install(installSpec, projectId);
+                }
                 results.push({ name: resolved.name, version: resolved.version, status: 'ok' });
                 if (!opts.agent) {
-                    console.log(`  ✓ ${resolved.name}@${resolved.version}`);
+                    const skills = resolved.manifest.skills ?? [];
+                    const skillInfo = skills.length > 0 ? ` (${skills.length} skills: ${skills.join(', ')})` : '';
+                    console.log(`  ✓ ${resolved.name}@${resolved.version}${skillInfo}`);
                 }
             }
             catch (err) {

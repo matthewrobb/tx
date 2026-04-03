@@ -3,6 +3,14 @@ export declare class NpmPackageResolver implements PackageResolverPort {
     private readonly baseDir;
     constructor(baseDir: string);
     /**
+     * Install a git repo that has no package.json (e.g. mattpocock/skills).
+     *
+     * Shallow-clones the repo into node_modules/{name}/, scans for SKILL.md
+     * directories, and writes a synthetic package.json so resolve()/discover()
+     * work normally.
+     */
+    installGit(name: string, repoUrl: string, projectId: string): Promise<ResolvedPackage>;
+    /**
      * Install a package to the project's package directory.
      *
      * Runs `npm install {packageName} --prefix {installDir} --save`.
