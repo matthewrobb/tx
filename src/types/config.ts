@@ -42,14 +42,24 @@ export interface WorkflowConfig {
 }
 
 /**
- * Placeholder for future policy configuration.
- * Policies will control things like branch protection, required approvals, etc.
+ * Policy hooks — named gates that evaluate before certain operations.
+ *
+ * Each hook is an expression string that evaluates to allow/block/require_approval.
+ * When no policy is configured for a hook, the operation is allowed by default.
  */
-export interface PolicyConfig {
-  // Reserved for future use — intentionally empty.
-  // Adding the interface now so the config shape is stable.
-  [key: string]: unknown;
-}
+export type PolicyHook =
+  | 'deferral'       // evaluated before deferring a step
+  | 'decision'       // evaluated before recording a decision note
+  | 'scope_change'   // evaluated before changing issue type or workflow
+  | 'issue_create';  // evaluated before creating a new issue
+
+/**
+ * Policy configuration — maps hook names to expression strings.
+ *
+ * Example:
+ *   { deferral: "confirm('Defer this step?')", scope_change: "allow" }
+ */
+export type PolicyConfig = Partial<Record<PolicyHook, string>>;
 
 /** Fully resolved configuration — all fields required. */
 export interface TwistedConfig {
