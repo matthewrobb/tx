@@ -1,41 +1,51 @@
+export interface DaemonConfig {
+    /** Directory for PGLite data files (e.g., .twisted/data). */
+    dataDir: string;
+    /** Base path for markdown projections (e.g., .twisted/). */
+    basePath: string;
+    /** Socket path for IPC. */
+    socketPath: string;
+}
+export declare class TwistedDaemon {
+    private readonly config;
+    private db;
+    private projection;
+    private flusher;
+    private server;
+    constructor(config: DaemonConfig);
+    /**
+     * Start the daemon: create PGLite adapter, bind socket, start listening.
+     *
+     * Ensures the data directory exists, initializes the storage adapter (which
+     * runs migrations), creates the projection adapter and flusher, then binds
+     * the net.Server to the configured socket path.
+     */
+    start(): Promise<void>;
+    /**
+     * Stop the daemon: close socket, flush dirty projections, close DB.
+     *
+     * Order matters: stop accepting new connections first, flush pending
+     * projections, then release the database.
+     */
+    stop(): Promise<void>;
+    /**
+     * Handle a single socket connection.
+     *
+     * Accumulates incoming data until a newline is found, parses the JSON
+     * request, dispatches to the appropriate handler, and writes the JSON
+     * response back. The connection is closed after the response.
+     */
+    private handleConnection;
+    /**
+     * Parse a request line, dispatch, write the response, and close.
+     */
+    private processRequest;
+}
 /**
- * Daemon server — listens on a socket for engine requests.
+ * Start a daemon for the current project.
  *
- * Extends SockDaemonServer with the required static getters.
- * The server dispatches to the engine and returns JSON responses.
+ * Resolves the project ID from `cwd`, derives the socket path and data
+ * directory, and starts the TwistedDaemon.
  */
-import { SockDaemonServer } from "sock-daemon";
-import type { MessageBase } from "sock-daemon";
-import type { EngineResult } from "../types/engine.js";
-interface DaemonRequest extends MessageBase {
-    command: "next" | "status";
-    epic?: string;
-    root?: string;
-}
-interface DaemonResponse extends MessageBase {
-    result?: EngineResult;
-    error?: string;
-}
-/**
- * Socket path for the daemon.
- *
- * Stored in the OS temp directory, keyed by a hash of the project root.
- * This avoids path-length issues on Windows and keeps sockets out of the repo.
- * Format: {tmpdir}/twisted-{8-char-hash}.sock
- */
-export declare function daemonSocketPath(twistedRoot: string): string;
-/**
- * Twisted-workflow daemon server.
- */
-export declare class TxDaemonServer extends SockDaemonServer<DaemonRequest, DaemonResponse> {
-    #private;
-    static get serviceName(): string;
-    constructor(twistedRoot: string);
-    handle(req: DaemonRequest): Promise<Omit<DaemonResponse, "id">>;
-}
-/**
- * Start the daemon server and write server.json.
- */
-export declare function startServer(twistedRoot: string): void;
-export {};
+export declare function startDaemon(cwd?: string): Promise<TwistedDaemon>;
 //# sourceMappingURL=server.d.ts.map

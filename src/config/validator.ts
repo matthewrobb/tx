@@ -82,7 +82,7 @@ export function validateConfig(config: TwistedConfig): ValidatedResult {
     // Check for cycles in the extends chain
     const chain: string[] = [workflow.id];
     const visited = new Set<string>([workflow.id]);
-    let current = workflow.extends;
+    let current: string | undefined = workflow.extends;
 
     while (current !== undefined) {
       if (visited.has(current)) {

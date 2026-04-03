@@ -1,18 +1,15 @@
 /**
- * Complete built-in defaults — every TwistedConfig field present.
- * This is Layer 1 of the 2-layer config resolution.
- */
-import type { TwistedConfig } from "../types/config.js";
-/**
- * Built-in defaults — artifact-driven engine with 6-lane filesystem.
+ * Built-in default TwistedConfig — every field present.
  *
- * Lane model:
- *   0-backlog: understand the work (research → scope → estimate)
- *   1-ready:   break it down (plan → estimate-tasks → decompose)
- *   2-active:  do the work (build)
- *   3-review:  review (release types only)
- *   4-done:    complete
- *   5-archive: abandoned / superseded
+ * This is Layer 1 of the 2-layer config resolution. Project-level
+ * settings (Layer 2) are deep-merged on top of these defaults.
+ *
+ * Four built-in workflows cover the common issue types:
+ *   feature: research → scope → plan → build (linear chain)
+ *   bug:     reproduce → fix → verify
+ *   chore:   do (single step)
+ *   spike:   research → recommend
  */
-export declare const defaults: TwistedConfig;
+import type { TwistedConfig } from '../types/config.js';
+export declare const DEFAULT_CONFIG: TwistedConfig;
 //# sourceMappingURL=defaults.d.ts.map

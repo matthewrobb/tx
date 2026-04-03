@@ -1,108 +1,59 @@
 /**
- * Complete built-in defaults — every TwistedConfig field present.
- * This is Layer 1 of the 2-layer config resolution.
- */
-/**
- * Built-in defaults — artifact-driven engine with 6-lane filesystem.
+ * Built-in default TwistedConfig — every field present.
  *
- * Lane model:
- *   0-backlog: understand the work (research → scope → estimate)
- *   1-ready:   break it down (plan → estimate-tasks → decompose)
- *   2-active:  do the work (build)
- *   3-review:  review (release types only)
- *   4-done:    complete
- *   5-archive: abandoned / superseded
+ * This is Layer 1 of the 2-layer config resolution. Project-level
+ * settings (Layer 2) are deep-merged on top of these defaults.
+ *
+ * Four built-in workflows cover the common issue types:
+ *   feature: research → scope → plan → build (linear chain)
+ *   bug:     reproduce → fix → verify
+ *   chore:   do (single step)
+ *   spike:   research → recommend
  */
-export const defaults = {
-    version: "4.0",
-    lanes: [
+export const DEFAULT_CONFIG = {
+    version: '4.0',
+    workflows: [
         {
-            name: "backlog",
-            dir: "0-backlog",
+            id: 'feature',
+            title: 'Feature',
+            default_for: ['feature'],
             steps: [
-                {
-                    name: "research",
-                    produces: [{ path: "research/research.md" }],
-                    exit_when: [{ name: "artifact.exists", args: { path: "research/research.md" } }],
-                },
-                {
-                    name: "scope",
-                    requires: [{ path: "research/research.md" }],
-                    produces: [{ path: "scope.md" }],
-                    exit_when: [{ name: "artifact.exists", args: { path: "scope.md" } }],
-                },
-                {
-                    name: "estimate",
-                    requires: [{ path: "scope.md" }],
-                    produces: [{ path: "estimate.json" }],
-                    exit_when: [{ name: "artifact.exists", args: { path: "estimate.json" } }],
-                },
+                { id: 'research', title: 'Research', needs: [] },
+                { id: 'scope', title: 'Scope', needs: ['research'] },
+                { id: 'plan', title: 'Plan', needs: ['scope'] },
+                { id: 'build', title: 'Build', needs: ['plan'] },
             ],
         },
         {
-            name: "ready",
-            dir: "1-ready",
+            id: 'bug',
+            title: 'Bug',
+            default_for: ['bug'],
             steps: [
-                {
-                    name: "plan",
-                    requires: [{ path: "estimate.json" }],
-                    produces: [{ path: "plan.md" }],
-                    exit_when: [{ name: "artifact.exists", args: { path: "plan.md" } }],
-                },
-                {
-                    name: "estimate-tasks",
-                    requires: [{ path: "plan.md" }],
-                    produces: [{ path: "tasks.json" }],
-                    exit_when: [{ name: "artifact.exists", args: { path: "tasks.json" } }],
-                },
-                {
-                    name: "decompose",
-                    requires: [{ path: "tasks.json" }],
-                    produces: [{ path: "stories.json" }],
-                    exit_when: [{ name: "artifact.exists", args: { path: "stories.json" } }],
-                },
+                { id: 'reproduce', title: 'Reproduce', needs: [] },
+                { id: 'fix', title: 'Fix', needs: ['reproduce'] },
+                { id: 'verify', title: 'Verify', needs: ['fix'] },
             ],
         },
         {
-            name: "active",
-            dir: "2-active",
+            id: 'chore',
+            title: 'Chore',
+            default_for: ['chore'],
             steps: [
-                {
-                    name: "build",
-                    requires: [{ path: "stories.json" }],
-                    exit_when: [{ name: "tasks.all_done" }],
-                },
+                { id: 'do', title: 'Do', needs: [] },
             ],
         },
         {
-            name: "review",
-            dir: "3-review",
+            id: 'spike',
+            title: 'Spike',
+            default_for: ['spike'],
             steps: [
-                {
-                    name: "review",
-                    produces: [{ path: "review.md" }],
-                    exit_when: [{ name: "artifact.exists", args: { path: "review.md" } }],
-                },
+                { id: 'research', title: 'Research', needs: [] },
+                { id: 'recommend', title: 'Recommend', needs: ['research'] },
             ],
         },
-        {
-            name: "done",
-            dir: "4-done",
-            steps: [],
-        },
-        {
-            name: "archive",
-            dir: "5-archive",
-            steps: [],
-        },
-    ],
-    types: [
-        { type: "feature", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
-        { type: "bug", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
-        { type: "spike", lanes: ["0-backlog", "4-done"] },
-        { type: "chore", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
-        { type: "release", lanes: ["0-backlog", "1-ready", "2-active", "3-review", "4-done"] },
     ],
     context_skills: [],
+    step_skills: {},
+    step_review_skills: {},
 };
 //# sourceMappingURL=defaults.js.map

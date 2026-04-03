@@ -1,13 +1,31 @@
-export function registerConfigCommands(program, ctx) {
-    const { config, respond } = ctx;
-    // ─── config ────────────────────────────────────────────────────────────────
+// src/cli/commands/config.ts — `tx config` command for v4 CLI.
+//
+// Fetches the merged config from the daemon (status command returns it) and
+// displays it. The daemon owns config resolution in v4; we do not read
+// settings.json directly in the CLI.
+//
+// NOTE: This file replaces the v3 config.ts. The v3 implementation responded
+// with a locally-resolved config; v4 asks the daemon for the canonical view.
+import { printResponse, setCurrentCommand } from '../output.js';
+/**
+ * Register the `tx config` command onto `program`.
+ *
+ * Usage:
+ *   tx config
+ *
+ * Sends a generic status request; the daemon includes the current resolved
+ * config in the response payload.
+ */
+export function registerConfigCommands(program, opts) {
     program
-        .command("config")
-        .description("Show config")
-        .argument("[section]", "config section")
-        .argument("[subsection]", "config subsection")
-        .action(() => {
-        respond({ status: "ok", command: "config", config: config, display: JSON.stringify(config, null, 2) });
+        .command('config')
+        .description('Show current configuration')
+        .action(async () => {
+        setCurrentCommand('config');
+        const adapter = await opts.getAdapter();
+        const res = await adapter.send({ command: 'status' });
+        await adapter.close();
+        printResponse(res, opts.agent);
     });
 }
 //# sourceMappingURL=config.js.map

@@ -1,7 +1,7 @@
 {
   "name": "twisted-workflow",
   "description": "Artifact-driven agentic orchestration for Claude Code — 6-lane epic lifecycle, XState engine, story tier, daemon, and preset-based configuration",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "author": {
     "name": "Matthew Robb"
   },

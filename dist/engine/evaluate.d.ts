@@ -1,35 +1,42 @@
+import type { StoragePort } from '../ports/storage.js';
+import type { ExpressionEvaluatorPort } from '../ports/expression.js';
+import type { Workflow } from '../types/workflow.js';
+import type { Issue, IssueStatus } from '../types/issue.js';
+import type { ExpressionContext } from '../types/expressions.js';
+import type { AgentAction } from '../types/protocol.js';
+export type StepResolution = 'pending' | 'ready' | 'active' | 'skip' | 'done' | 'blocked' | 'paused';
+export interface StepEvaluation {
+    step: string;
+    resolution: StepResolution;
+    action?: AgentAction;
+    missing_needs?: string[];
+}
+export interface EvaluationResult {
+    evaluations: StepEvaluation[];
+    /** The active step (if any) — the first 'ready' or 'active' step. */
+    current_step: string | null;
+    /** Overall issue status derived from evaluations. */
+    status: IssueStatus;
+}
 /**
- * Step evaluator — computes StepEvaluation[] for all steps in a lane.
+ * Evaluate all steps in a workflow for a given issue and context.
  *
- * Each step is evaluated against its requires (artifacts) and exit_when (predicates).
- * The current active step is "active"; completed steps are "complete"; blocked steps are "blocked".
+ * Walks steps in topological order (from resolveDag). For each step:
+ *   1. Check dependencies — any needed step not done/skip => 'pending'
+ *   2. Evaluate skip_when — true => 'skip'
+ *   3. Evaluate done_when — true => 'done'
+ *   4. Evaluate block_when — true => 'blocked'
+ *   5. Compare to issue.step — match => 'active'
+ *   6. Otherwise => 'ready'
+ *
+ * If any expression returns a paused result, the step is marked 'paused'
+ * with the associated AgentAction.
+ *
+ * @param _db - StoragePort reserved for future per-step context queries.
+ * @param workflow - The workflow whose steps to evaluate.
+ * @param issue - The issue being evaluated (provides current step pointer).
+ * @param context - Pre-built ExpressionContext for expression evaluation.
+ * @param evaluator - Expression evaluator (supports interactive functions).
  */
-import type { LaneConfig, StepEvaluation } from "../types/index.js";
-import type { PredicateContext } from "./predicates.js";
-/**
- * Evaluate all steps in a lane and return their status.
- *
- * Algorithm:
- * - Walk steps in order.
- * - A step is "complete" when its exit_when predicates all pass.
- * - The first non-complete step is "active" if its requires are met, else "blocked".
- * - Steps after the first non-complete step are "pending".
- *
- * @param lane - The lane configuration containing steps.
- * @param epicDir - Absolute path to the epic's current lane directory.
- * @param ctx - Predicate evaluation context.
- */
-export declare function evaluateSteps(lane: LaneConfig, epicDir: string, ctx: PredicateContext): StepEvaluation[];
-/**
- * Return the name of the currently active step, or null if all steps are complete.
- *
- * @param evaluations - Step evaluations from evaluateSteps().
- */
-export declare function activeStep(evaluations: StepEvaluation[]): string | null;
-/**
- * Return true when all steps in the lane are complete.
- *
- * @param evaluations - Step evaluations from evaluateSteps().
- */
-export declare function laneComplete(evaluations: StepEvaluation[]): boolean;
+export declare function evaluateSteps(_db: StoragePort, workflow: Workflow, issue: Issue, context: ExpressionContext, evaluator: ExpressionEvaluatorPort): Promise<EvaluationResult>;
 //# sourceMappingURL=evaluate.d.ts.map
