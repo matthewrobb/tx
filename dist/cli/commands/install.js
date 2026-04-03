@@ -24,13 +24,16 @@ async function loadDependencies(cwd) {
     }
 }
 export function registerInstallCommand(program, opts) {
+    // tx install [package] [--force]
     program
         .command('install [package]')
         .description('Install skill/persona packages from dependencies or by name')
-        .action(async (packageArg) => {
+        .option('-f, --force', 'Delete and re-install packages from scratch')
+        .action(async (packageArg, cmdOpts) => {
         const cwd = process.cwd();
         const projectId = getProjectId(cwd);
         const resolver = createNpmResolver();
+        const force = cmdOpts.force ?? false;
         // Determine what to install.
         let packages;
         if (packageArg !== undefined) {
@@ -55,6 +58,11 @@ export function registerInstallCommand(program, opts) {
         const installed = [];
         for (const [name, spec] of Object.entries(packages)) {
             try {
+                // Force: delete existing package first.
+                if (force) {
+                    await resolver.removePackage(name, projectId);
+                    await resolver.removeManifestEntry(name, projectId);
+                }
                 let resolved;
                 if (spec.startsWith('github:')) {
                     const repoUrl = `https://github.com/${spec.slice('github:'.length)}.git`;
@@ -109,6 +117,28 @@ export function registerInstallCommand(program, opts) {
         }
         else if (skillFiles.length > 0) {
             console.log(`\n  ${skillFiles.length} skills discovered — run with -a for agent-driven manifest analysis.`);
+        }
+    });
+    // tx uninstall <package>
+    program
+        .command('uninstall <package>')
+        .description('Remove an installed skill/persona package')
+        .action(async (packageName) => {
+        const cwd = process.cwd();
+        const projectId = getProjectId(cwd);
+        const resolver = createNpmResolver();
+        await resolver.removePackage(packageName, projectId);
+        await resolver.removeManifestEntry(packageName, projectId);
+        if (opts.agent) {
+            console.log(JSON.stringify({
+                status: 'ok',
+                command: 'uninstall',
+                display: `Removed ${packageName}`,
+                data: { name: packageName },
+            }));
+        }
+        else {
+            console.log(`  ✓ Removed ${packageName}`);
         }
     });
 }

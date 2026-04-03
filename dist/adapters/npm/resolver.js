@@ -10,7 +10,7 @@
 // unit-tested without those real-world dependencies.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
 const execFileAsync = promisify(execFile);
@@ -250,6 +250,33 @@ export class NpmPackageResolver {
             });
         }
         return results;
+    }
+    /**
+     * Remove an installed package directory.
+     * No-op if the package doesn't exist.
+     */
+    async removePackage(packageName, projectId) {
+        const pkgDir = path.join(this.baseDir, projectId, 'node_modules', packageName);
+        await rm(pkgDir, { recursive: true, force: true });
+    }
+    /**
+     * Remove a package entry from the skill manifest.
+     * No-op if the manifest doesn't exist or the package isn't in it.
+     */
+    async removeManifestEntry(packageName, projectId) {
+        const manifestPath = path.join(this.baseDir, projectId, 'skill-manifest.json');
+        let content;
+        try {
+            const raw = await readFile(manifestPath, 'utf-8');
+            content = JSON.parse(raw);
+        }
+        catch {
+            return; // No manifest — nothing to clean.
+        }
+        if (!(packageName in content))
+            return;
+        delete content[packageName];
+        await writeFile(manifestPath, JSON.stringify(content, null, 2), 'utf-8');
     }
 }
 // ── Factory ───────────────────────────────────────────────────────────────

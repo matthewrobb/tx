@@ -45,6 +45,16 @@ export declare class NpmPackageResolver implements PackageResolverPort {
      * (i.e., they have a `twisted` field or list "twisted-workflow" in keywords).
      */
     discover(projectId: string): Promise<ResolvedPackage[]>;
+    /**
+     * Remove an installed package directory.
+     * No-op if the package doesn't exist.
+     */
+    removePackage(packageName: string, projectId: string): Promise<void>;
+    /**
+     * Remove a package entry from the skill manifest.
+     * No-op if the manifest doesn't exist or the package isn't in it.
+     */
+    removeManifestEntry(packageName: string, projectId: string): Promise<void>;
 }
 /**
  * Create a resolver using ~/.twisted/projects/ as the base directory.
