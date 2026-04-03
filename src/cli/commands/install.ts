@@ -102,10 +102,6 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
         }
       }
 
-      const manifestPath = join(
-        resolver.getBaseDir(), projectId, 'skill-manifest.json',
-      );
-
       if (opts.agent) {
         const response: Record<string, unknown> = {
           status: results.every((r) => r.status === 'ok') ? 'ok' : 'error',
@@ -120,7 +116,7 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
         if (skillFiles.length > 0) {
           response.action = {
             type: 'prompt_user',
-            prompt: buildAnalysisPrompt(skillFiles, manifestPath),
+            prompt: buildAnalysisPrompt(skillFiles),
           };
         }
 
@@ -135,7 +131,6 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
 
 function buildAnalysisPrompt(
   skillFiles: Array<{ package: string; skill: string; path: string }>,
-  manifestPath: string,
 ): string {
   const fileList = skillFiles
     .map((s) => `- **${s.package}/${s.skill}**: \`${s.path}\``)
@@ -170,9 +165,13 @@ For each skill, read its SKILL.md file and analyze:
 
 ## Output
 
-Write the manifest as JSON to: \`${manifestPath}\`
+Construct the manifest as JSON using this schema, then pipe it to \`tx manifest write\`:
 
-Use this schema:
+\`\`\`bash
+echo '<manifest JSON>' | tx manifest write
+\`\`\`
+
+Schema:
 
 \`\`\`json
 {
@@ -197,5 +196,7 @@ Use this schema:
 }
 \`\`\`
 
-Only include entries in \`detected_outputs\` and \`suggested_overrides\` when you actually find matching instructions in the skill. Skills with no external outputs should have empty arrays.`;
+Only include entries in \`detected_outputs\` and \`suggested_overrides\` when you actually find matching instructions in the skill. Skills with no external outputs should have empty arrays.
+
+Use \`tx manifest show\` to verify the result.`;
 }

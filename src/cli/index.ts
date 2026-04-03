@@ -27,6 +27,7 @@ import { registerSessionCommands } from './commands/session.js';
 import { registerConfigCommands } from './commands/config.js';
 import { registerInitCommand } from './commands/init.js';
 import { registerInstallCommand } from './commands/install.js';
+import { registerManifestCommands } from './commands/manifest.js';
 
 // ── Program setup ─────────────────────────────────────────────────────────────
 
@@ -145,6 +146,16 @@ registerSessionCommands(program, sharedOpts);
 
 // `tx config`
 registerConfigCommands(program, sharedOpts);
+
+// `tx manifest write|show` — local, no socket
+registerManifestCommands(program, {
+  get agent(): boolean {
+    return (program.opts<{ agent: boolean }>().agent) ?? false;
+  },
+  get yolo(): boolean {
+    return (program.opts<{ yolo: boolean }>().yolo) ?? false;
+  },
+});
 
 // `tx install [package]` — local, no socket; only needs agent/yolo flags
 registerInstallCommand(program, {

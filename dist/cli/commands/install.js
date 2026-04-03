@@ -91,7 +91,6 @@ export function registerInstallCommand(program, opts) {
                 });
             }
         }
-        const manifestPath = join(resolver.getBaseDir(), projectId, 'skill-manifest.json');
         if (opts.agent) {
             const response = {
                 status: results.every((r) => r.status === 'ok') ? 'ok' : 'error',
@@ -103,7 +102,7 @@ export function registerInstallCommand(program, opts) {
             if (skillFiles.length > 0) {
                 response.action = {
                     type: 'prompt_user',
-                    prompt: buildAnalysisPrompt(skillFiles, manifestPath),
+                    prompt: buildAnalysisPrompt(skillFiles),
                 };
             }
             console.log(JSON.stringify(response));
@@ -114,7 +113,7 @@ export function registerInstallCommand(program, opts) {
     });
 }
 // ── Prompt builder ───────────────────────────────────────────────────────
-function buildAnalysisPrompt(skillFiles, manifestPath) {
+function buildAnalysisPrompt(skillFiles) {
     const fileList = skillFiles
         .map((s) => `- **${s.package}/${s.skill}**: \`${s.path}\``)
         .join('\n');
@@ -147,9 +146,13 @@ For each skill, read its SKILL.md file and analyze:
 
 ## Output
 
-Write the manifest as JSON to: \`${manifestPath}\`
+Construct the manifest as JSON using this schema, then pipe it to \`tx manifest write\`:
 
-Use this schema:
+\`\`\`bash
+echo '<manifest JSON>' | tx manifest write
+\`\`\`
+
+Schema:
 
 \`\`\`json
 {
@@ -174,6 +177,8 @@ Use this schema:
 }
 \`\`\`
 
-Only include entries in \`detected_outputs\` and \`suggested_overrides\` when you actually find matching instructions in the skill. Skills with no external outputs should have empty arrays.`;
+Only include entries in \`detected_outputs\` and \`suggested_overrides\` when you actually find matching instructions in the skill. Skills with no external outputs should have empty arrays.
+
+Use \`tx manifest show\` to verify the result.`;
 }
 //# sourceMappingURL=install.js.map

@@ -1,0 +1,1 @@
+{"version":3,"file":"manifest.d.ts","sourceRoot":"","sources":["../../../src/cli/commands/manifest.ts"],"names":[],"mappings":"AAKA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAMpC,MAAM,WAAW,UAAU;IACzB,KAAK,EAAE,OAAO,CAAC;IACf,IAAI,EAAE,OAAO,CAAC;CACf;AAQD,wBAAgB,wBAAwB,CAAC,OAAO,EAAE,OAAO,EAAE,IAAI,EAAE,UAAU,GAAG,IAAI,CA0FjF"}
