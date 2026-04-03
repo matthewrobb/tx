@@ -26,6 +26,7 @@ import { registerNoteCommand } from './commands/note.js';
 import { registerSessionCommands } from './commands/session.js';
 import { registerConfigCommands } from './commands/config.js';
 import { registerInitCommand } from './commands/init.js';
+import { registerInstallCommand } from './commands/install.js';
 
 // ── Program setup ─────────────────────────────────────────────────────────────
 
@@ -144,6 +145,16 @@ registerSessionCommands(program, sharedOpts);
 
 // `tx config`
 registerConfigCommands(program, sharedOpts);
+
+// `tx install [package]` — local, no socket; only needs agent/yolo flags
+registerInstallCommand(program, {
+  get agent(): boolean {
+    return (program.opts<{ agent: boolean }>().agent) ?? false;
+  },
+  get yolo(): boolean {
+    return (program.opts<{ yolo: boolean }>().yolo) ?? false;
+  },
+});
 
 // `tx init` — local, no socket; only needs agent/yolo flags
 registerInitCommand(program, {
