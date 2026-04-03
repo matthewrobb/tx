@@ -1,3 +1,35 @@
+# v4.1.0 — TDD Gaps, Backfill Audit, Dependency Management
+
+## What shipped
+
+### Engine fixes (TDD gaps from v4.0.0)
+- **Cycle daemon handlers**: `cycle_start`, `cycle_pull`, `cycle_close` wired to existing lifecycle functions via `handleCycleStart/Pull/Close`
+- **Cycle context**: `buildContext()` now queries the active cycle from PGLite instead of hardcoding `null` — expressions like `cycle.status == 'active'` work
+- **Artifact context**: `buildContext()` loads the current step's `produces` array and checks the vars table for present artifacts — `artifacts.all_present` works end-to-end
+- **Artifact key convention**: `StepArtifact.path` = var key (aligned with `handleWrite`'s `req.type`)
+
+### Backfill tests
+- `MarkdownProjectionAdapter`: filesystem integration tests for `renderCycle`, `renderCheckpoint`, `renderSnapshot`, `deleteIssue` (9 tests)
+- `writeCheckpointFile`: filename convention, idempotency, issue_slug (4 tests)
+
+### Dependency management
+- `tx install [package] [--force]` — installs from `.twisted/settings.json` dependencies or by name
+- `tx uninstall <package>` — removes package directory + manifest entry
+- `tx manifest write` / `tx manifest show` — manage skill manifest via CLI
+- `github:` spec support — shallow clones git repos, discovers SKILL.md files, writes synthetic `package.json`
+- Agent-driven manifest analysis: after install, returns a `prompt_user` action instructing the agent to read each SKILL.md, detect external outputs (GitHub issues, PRs, file writes, git ops), and generate override suggestions
+
+### Vendor removal
+- Removed `skills/mattpocock/` (vendored copies) and `build/skills/vendor.ts`
+- Skills now declared as dependencies: `"@mattpocock/skills": "github:mattpocock/skills"`
+
+### Other
+- `/dogfood` project-local skill for build → test → commit → worktree sync
+- `dependencies` field added to `TwistedConfig` type and JSON schema
+- 382 → 415 tests (33 new), all green
+
+---
+
 # Retro: mattpocock-skills-integration
 
 ## What shipped
