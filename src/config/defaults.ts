@@ -1,124 +1,63 @@
 /**
- * Complete built-in defaults — every TwistedConfig field present.
- * This is Layer 1 of the 2-layer config resolution.
- */
-
-import type { TwistedConfig } from "../types/config.js";
-
-/**
- * Built-in defaults — artifact-driven engine with 6-lane filesystem.
+ * Built-in default TwistedConfig — every field present.
  *
- * Lane model:
- *   0-backlog: understand the work (research → scope → estimate)
- *   1-ready:   break it down (plan → estimate-tasks → decompose)
- *   2-active:  do the work (build)
- *   3-review:  review (release types only)
- *   4-done:    complete
- *   5-archive: abandoned / superseded
+ * This is Layer 1 of the 2-layer config resolution. Project-level
+ * settings (Layer 2) are deep-merged on top of these defaults.
+ *
+ * Four built-in workflows cover the common issue types:
+ *   feature: research → scope → plan → build (linear chain)
+ *   bug:     reproduce → fix → verify
+ *   chore:   do (single step)
+ *   spike:   research → recommend
  */
-export const defaults: TwistedConfig = {
-  version: "4.0",
 
-  lanes: [
-    {
-      name: "backlog",
-      dir: "0-backlog",
-      steps: [
-        {
-          name: "research",
-          produces: [{ path: "research/research.md" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "research/research.md" } }],
-        },
-        {
-          name: "scope",
-          requires: [{ path: "research/research.md" }],
-          produces: [{ path: "scope.md" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "scope.md" } }],
-        },
-        {
-          name: "estimate",
-          requires: [{ path: "scope.md" }],
-          produces: [{ path: "estimate.json" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "estimate.json" } }],
-        },
-      ],
-    },
-    {
-      name: "ready",
-      dir: "1-ready",
-      steps: [
-        {
-          name: "plan",
-          requires: [{ path: "estimate.json" }],
-          produces: [{ path: "plan.md" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "plan.md" } }],
-        },
-        {
-          name: "estimate-tasks",
-          requires: [{ path: "plan.md" }],
-          produces: [{ path: "tasks.json" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "tasks.json" } }],
-        },
-        {
-          name: "decompose",
-          requires: [{ path: "tasks.json" }],
-          produces: [{ path: "stories.json" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "stories.json" } }],
-        },
-      ],
-    },
-    {
-      name: "active",
-      dir: "2-active",
-      steps: [
-        {
-          name: "build",
-          requires: [{ path: "stories.json" }],
-          exit_when: [{ name: "tasks.all_done" }],
-        },
-      ],
-    },
-    {
-      name: "review",
-      dir: "3-review",
-      steps: [
-        {
-          name: "review",
-          produces: [{ path: "review.md" }],
-          exit_when: [{ name: "artifact.exists", args: { path: "review.md" } }],
-        },
-      ],
-    },
-    {
-      name: "done",
-      dir: "4-done",
-      steps: [],
-    },
-    {
-      name: "archive",
-      dir: "5-archive",
-      steps: [],
-    },
-  ],
+import type { TwistedConfig } from '../types/config.js';
 
-  types: [
-    { type: "feature", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
-    { type: "bug", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
-    { type: "spike", lanes: ["0-backlog", "4-done"] },
-    { type: "chore", lanes: ["0-backlog", "1-ready", "2-active", "4-done"] },
-    { type: "release", lanes: ["0-backlog", "1-ready", "2-active", "3-review", "4-done"] },
+export const DEFAULT_CONFIG: TwistedConfig = {
+  version: '4.0',
+
+  workflows: [
+    {
+      id: 'feature',
+      title: 'Feature',
+      default_for: ['feature'],
+      steps: [
+        { id: 'research', title: 'Research', needs: [] },
+        { id: 'scope', title: 'Scope', needs: ['research'] },
+        { id: 'plan', title: 'Plan', needs: ['scope'] },
+        { id: 'build', title: 'Build', needs: ['plan'] },
+      ],
+    },
+    {
+      id: 'bug',
+      title: 'Bug',
+      default_for: ['bug'],
+      steps: [
+        { id: 'reproduce', title: 'Reproduce', needs: [] },
+        { id: 'fix', title: 'Fix', needs: ['reproduce'] },
+        { id: 'verify', title: 'Verify', needs: ['fix'] },
+      ],
+    },
+    {
+      id: 'chore',
+      title: 'Chore',
+      default_for: ['chore'],
+      steps: [
+        { id: 'do', title: 'Do', needs: [] },
+      ],
+    },
+    {
+      id: 'spike',
+      title: 'Spike',
+      default_for: ['spike'],
+      steps: [
+        { id: 'research', title: 'Research', needs: [] },
+        { id: 'recommend', title: 'Recommend', needs: ['research'] },
+      ],
+    },
   ],
 
   context_skills: [],
-
-  step_skills: {
-    scope:    "skills/mattpocock/write-a-prd",
-    plan:     "skills/mattpocock/prd-to-plan",
-    decompose: "skills/mattpocock/prd-to-issues",
-    build:    "skills/mattpocock/tdd",
-  },
-
-  step_review_skills: {
-    plan: "skills/mattpocock/grill-me",
-  },
+  step_skills: {},
+  step_review_skills: {},
 };
