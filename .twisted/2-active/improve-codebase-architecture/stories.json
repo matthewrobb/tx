@@ -1,0 +1,196 @@
+{
+  "epic": "improve-codebase-architecture",
+  "stories": [
+    {
+      "id": "S-001",
+      "summary": "Define core v4 types (Issue, Cycle, Workflow, StepDef, Phase, Artifact, Note, Checkpoint, ValidConfig, DaemonProtocol)",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-002",
+      "summary": "Define port interfaces (StoragePort, TransportPort, ProjectionPort, ExpressionEvaluatorPort, PackageResolverPort)",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-003",
+      "summary": "Implement PGLite storage adapter with schema, migrations, and JSONB query builders",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-004",
+      "summary": "Implement in-memory storage adapter (contract tests shared with PGLite)",
+      "acceptance": [],
+      "done": true,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-005",
+      "summary": "Build expression parser (tokenizer + AST) and evaluator with context namespace resolution",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-006",
+      "summary": "Implement interactive expression functions (confirm, prompt, choose) with pause/resume semantics",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-007",
+      "summary": "Config validation with branded ValidConfig, extends chain resolution, and structured errors",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-008",
+      "summary": "DAG resolver: topological sort, parallel group detection, cycle detection from workflow step needs",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-009",
+      "summary": "XState v5 machine generator: workflow definition to state machine config at load time",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-010",
+      "summary": "Step evaluation against DB state via expressions (skip, block, done, needs resolution)",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-011",
+      "summary": "Atomic txNext(): orchestrate evaluate → machine → persist in single DB transaction",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-012",
+      "summary": "Issue CRUD: create, update, close, archive, list with recursive parent/child hierarchy",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-013",
+      "summary": "Deferrals: create sibling issues with traceability metadata and deferral notes",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-014",
+      "summary": "Issue workflow: assign workflow by type, advance independently via tx next without cycle",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-015",
+      "summary": "Cycle lifecycle: start, pull issues, close with retro + checkpoint generation",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-016",
+      "summary": "Checkpoint system: handoff/pickup context bridges between LLM sessions",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-017",
+      "summary": "Policy engine: expression-based deferral/decision/scope_change/issue_create policies with pause semantics",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-018",
+      "summary": "Daemon server: PGLite owner, request queue, dirty tracking, batched flush, recovery",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-019",
+      "summary": "Socket transport adapter with named pipe support on Windows",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-020",
+      "summary": "CLI: thin socket client with all commands (issue, cycle, next, step, write, read, note, config, status)",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-021",
+      "summary": "Agent response contract: AgentResponse shape with issue/cycle state, action types, human/JSON output",
+      "acceptance": [],
+      "done": true,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-022",
+      "summary": "Projection adapter: DB to filesystem markdown rendering (open, active, closed, checkpoints, snapshot)",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-023",
+      "summary": "Skill/persona npm resolution: install, discover, manifest, 3-layer merge",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-024",
+      "summary": "Guided setup: conversational tx init flow with workflow templates and skill suggestions",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-025",
+      "summary": "Workflow migration: tx migrate with declarative rules and agent-aided structural changes",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-026",
+      "summary": "Build system: JSON schema generation for all types, SKILL.md update, commit templates",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    },
+    {
+      "id": "S-027",
+      "summary": "End-to-end lifecycle tests: full issue, cycle, deferral, checkpoint, and migration flows",
+      "acceptance": [],
+      "done": false,
+      "created": "2026-04-03"
+    }
+  ],
+  "created": "2026-04-03T01:00:32.791Z",
+  "updated": "2026-04-03T01:28:09.678Z"
+}
