@@ -133,35 +133,43 @@ Changes from initial decomposition:
 - **Merged S-004 (in-memory adapter) into S-003** — PGLite in-memory mode replaces separate adapter
 - Original IDs preserved to match story tracker. S-004 and S-021 marked done (absorbed).
 
-| ID | Story | Wave | Depends On |
-|----|-------|------|------------|
-| S-001 | Define core v4 types incl. AgentResponse (Issue, Cycle, Workflow, StepDef, Phase, Artifact, Note, Checkpoint, ValidConfig, DaemonProtocol, AgentResponse) | 0 | — |
-| S-002 | Define port interfaces (StoragePort, TransportPort, ProjectionPort, ExpressionEvaluatorPort, PackageResolverPort) | 0 | — |
-| S-003 | Implement PGLite storage adapter with schema, migrations, JSONB query builders (in-memory mode for tests) | 1 | S-001, S-002 |
-| ~~S-004~~ | ~~Absorbed into S-003~~ | — | — |
-| S-005 | Build expression parser (tokenizer + AST) and evaluator with context namespace resolution | 1 | S-002 |
-| S-006 | Implement interactive expression functions (confirm, prompt, choose) with pause/resume semantics | 2 | S-005 |
-| S-007 | Config validation with branded ValidConfig, extends chain resolution, and structured errors | 2 | S-001, S-005 |
-| S-008 | DAG resolver: topological sort, parallel group detection, cycle detection from workflow step needs | 1 | S-001 |
-| S-009 | XState v5 machine generator: workflow definition to state machine config at load time | 2 | S-001, S-008 |
-| S-010 | Step evaluation against DB state via expressions (skip, block, done, needs resolution) | 2 | S-001, S-002, S-005 |
-| S-011 | Atomic txNext(): orchestrate evaluate, machine, persist in single DB transaction | 3 | S-009, S-010, S-003 |
-| S-012 | Issue CRUD: create, update, close, archive, list with recursive parent/child hierarchy | 2 | S-001, S-002, S-003 |
-| S-013 | Deferrals: create sibling issues with traceability metadata and deferral notes | 3 | S-012 |
-| S-014 | Issue workflow: assign workflow by type, advance independently via tx next without cycle | 4 | S-012, S-011 |
-| S-015 | Cycle lifecycle: start, pull issues, close with retro + checkpoint generation | 5 | S-012, S-014 |
-| S-016 | Checkpoint system: handoff/pickup context bridges between LLM sessions | 1 | S-001, S-002 |
-| S-017 | Policy engine: expression-based deferral/decision/scope_change/issue_create policies with pause semantics | 3 | S-005, S-006 |
-| S-018 | Daemon server: PGLite owner, request queue, dirty tracking, batched flush, recovery | 4 | S-011, S-003 |
-| S-019 | Socket transport adapter with named pipe support on Windows | 1 | S-002 |
-| S-020 | CLI: thin socket client with all commands and agent response contract | 5 | S-018, S-019 |
-| ~~S-021~~ | ~~Absorbed into S-001~~ | — | — |
-| S-022 | Projection adapter: DB to filesystem markdown rendering (open, active, closed, checkpoints, snapshot) | 2 | S-001, S-002, S-003 |
-| S-023 | Skill/persona npm resolution: install, discover, manifest, 3-layer merge | 3 | S-002, S-007 |
-| S-024 | Guided setup: conversational tx init flow with workflow templates and skill suggestions | 4 | S-007, S-023 |
-| S-025 | Workflow migration: tx migrate with declarative rules and agent-aided structural changes | 4 | S-007, S-011 |
-| S-026 | Build system: JSON schema generation for all types, SKILL.md update, commit templates | 1 | S-001 |
-| S-027 | End-to-end lifecycle tests: full issue, cycle, deferral, checkpoint, and migration flows | 6 | S-011, S-012, S-013, S-015, S-016, S-025 |
+### Model Assignment
+
+Subagents use the `model` parameter (`opus`, `sonnet`, `haiku`) to match story complexity:
+
+- **opus** — foundational types everything depends on, complex algorithms, orchestration logic, architectural decisions
+- **sonnet** — well-defined contracts, CRUD implementations, mechanical adapters, template-driven work
+- **haiku** — simple generation, formatting, schema output
+
+| ID | Story | Wave | Model | Depends On |
+|----|-------|------|-------|------------|
+| S-001 | Define core v4 types incl. AgentResponse | 0 | **opus** | — |
+| S-002 | Define port interfaces (StoragePort, TransportPort, ProjectionPort, ExpressionEvaluatorPort, PackageResolverPort) | 0 | **opus** | — |
+| S-003 | Implement PGLite storage adapter with schema, migrations, JSONB query builders (in-memory mode for tests) | 1 | **sonnet** | S-001, S-002 |
+| ~~S-004~~ | ~~Absorbed into S-003~~ | — | — | — |
+| S-005 | Build expression parser (tokenizer + AST) and evaluator with context namespace resolution | 1 | **opus** | S-002 |
+| S-006 | Implement interactive expression functions (confirm, prompt, choose) with pause/resume semantics | 2 | **opus** | S-005 |
+| S-007 | Config validation with branded ValidConfig, extends chain resolution, and structured errors | 2 | **opus** | S-001, S-005 |
+| S-008 | DAG resolver: topological sort, parallel group detection, cycle detection from workflow step needs | 1 | **opus** | S-001 |
+| S-009 | XState v5 machine generator: workflow definition to state machine config at load time | 2 | **opus** | S-001, S-008 |
+| S-010 | Step evaluation against DB state via expressions (skip, block, done, needs resolution) | 2 | **opus** | S-001, S-002, S-005 |
+| S-011 | Atomic txNext(): orchestrate evaluate, machine, persist in single DB transaction | 3 | **opus** | S-009, S-010, S-003 |
+| S-012 | Issue CRUD: create, update, close, archive, list with recursive parent/child hierarchy | 2 | **sonnet** | S-001, S-002, S-003 |
+| S-013 | Deferrals: create sibling issues with traceability metadata and deferral notes | 3 | **sonnet** | S-012 |
+| S-014 | Issue workflow: assign workflow by type, advance independently via tx next without cycle | 4 | **opus** | S-012, S-011 |
+| S-015 | Cycle lifecycle: start, pull issues, close with retro + checkpoint generation | 5 | **sonnet** | S-012, S-014 |
+| S-016 | Checkpoint system: handoff/pickup context bridges between LLM sessions | 1 | **sonnet** | S-001, S-002 |
+| S-017 | Policy engine: expression-based deferral/decision/scope_change/issue_create policies with pause semantics | 3 | **opus** | S-005, S-006 |
+| S-018 | Daemon server: PGLite owner, request queue, dirty tracking, batched flush, recovery | 4 | **opus** | S-011, S-003 |
+| S-019 | Socket transport adapter with named pipe support on Windows | 1 | **sonnet** | S-002 |
+| S-020 | CLI: thin socket client with all commands and agent response contract | 5 | **sonnet** | S-018, S-019 |
+| ~~S-021~~ | ~~Absorbed into S-001~~ | — | — | — |
+| S-022 | Projection adapter: DB to filesystem markdown rendering (open, active, closed, checkpoints, snapshot) | 2 | **sonnet** | S-001, S-002, S-003 |
+| S-023 | Skill/persona npm resolution: install, discover, manifest, 3-layer merge | 3 | **sonnet** | S-002, S-007 |
+| S-024 | Guided setup: conversational tx init flow with workflow templates and skill suggestions | 4 | **sonnet** | S-007, S-023 |
+| S-025 | Workflow migration: tx migrate with declarative rules and agent-aided structural changes | 4 | **opus** | S-007, S-011 |
+| S-026 | Build system: JSON schema generation for all types, SKILL.md update, commit templates | 1 | **haiku** | S-001 |
+| S-027 | End-to-end lifecycle tests: full issue, cycle, deferral, checkpoint, and migration flows | 6 | **opus** | S-011, S-012, S-013, S-015, S-016, S-025 |
 
 ### Wave Map
 
