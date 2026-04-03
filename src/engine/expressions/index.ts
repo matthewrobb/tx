@@ -1,0 +1,11 @@
+// src/engine/expressions/index.ts — barrel export
+
+export { parse, tokenize } from './parser.js';
+export type { ParseResult, TokenizeResult, Token, TokenKind } from './parser.js';
+
+export { ExpressionEvaluator } from './evaluator.js';
+
+export { buildTaskContext, buildArtifactContext } from './context.js';
+
+export { createBuiltinFunctions } from './functions.js';
+export type { ExprFn } from './functions.js';
