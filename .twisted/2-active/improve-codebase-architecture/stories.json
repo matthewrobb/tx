@@ -19,7 +19,7 @@
       "id": "S-003",
       "summary": "Implement PGLite storage adapter with schema, migrations, and JSONB query builders",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -33,7 +33,7 @@
       "id": "S-005",
       "summary": "Build expression parser (tokenizer + AST) and evaluator with context namespace resolution",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -54,7 +54,7 @@
       "id": "S-008",
       "summary": "DAG resolver: topological sort, parallel group detection, cycle detection from workflow step needs",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -110,7 +110,7 @@
       "id": "S-016",
       "summary": "Checkpoint system: handoff/pickup context bridges between LLM sessions",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -131,7 +131,7 @@
       "id": "S-019",
       "summary": "Socket transport adapter with named pipe support on Windows",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -192,5 +192,5 @@
     }
   ],
   "created": "2026-04-03T01:00:32.791Z",
-  "updated": "2026-04-03T02:07:16.460Z"
+  "updated": "2026-04-03T02:23:33.297Z"
 }
