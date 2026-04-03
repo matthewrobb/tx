@@ -1,0 +1,12 @@
+{
+  "epic": "improve-codebase-architecture",
+  "description": "Explore the twisted-workflow codebase for architectural friction, surface module-deepening opportunities, and design improved interfaces",
+  "type": "feature",
+  "lane": "1-ready",
+  "step": "plan",
+  "status": "active",
+  "tasks_done": 0,
+  "tasks_total": null,
+  "created": "2026-04-02",
+  "updated": "2026-04-03T00:46:36.656Z"
+}

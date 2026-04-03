@@ -1,0 +1,9 @@
+{
+  "epic": "improve-codebase-architecture",
+  "size": "XL",
+  "confidence": 3,
+  "rationale": "Full rewrite of the core engine, storage layer, daemon, CLI, config system, expression evaluator, skill/persona resolution, and projection system. New concepts (cycles, policies, workflow DAG, PGLite) require ground-up implementation. Ports and adapters pattern adds interface design overhead. Schema generation for all data types. Guided setup flow. ~3600 LOC existing codebase being replaced entirely.",
+  "timebox": "P21D",
+  "created": "2026-04-03T00:45:08.239Z",
+  "updated": "2026-04-03T00:45:08.239Z"
+}
