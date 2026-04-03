@@ -26,7 +26,15 @@
 ### Other
 - `/dogfood` project-local skill for build → test → commit → worktree sync
 - `dependencies` field added to `TwistedConfig` type and JSON schema
-- 382 → 415 tests (33 new), all green
+- `tx skills` — list installed skills from manifest
+- `tx config merge` — deep-merge JSON from stdin into settings.json
+- `tx config show` — show resolved config (renamed from `tx config`)
+- `filterUnboundSkills()` — skip already-configured skills on re-install (4 tests)
+- Feature workflow extended with `decompose` step (plan → decompose → build)
+- All steps configured with `produces`, `done_when`, and step skill bindings
+- TECHNICAL-DESIGN.md — narrative technical article covering full architecture
+- `/dogfood` project-local skill for build → test → commit → worktree sync
+- 382 → 422 tests (40 new), all green
 
 ---
 

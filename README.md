@@ -29,7 +29,7 @@ Issues have workflows — DAGs of steps that advance when expression conditions 
 
 | Workflow | Steps | Default for |
 |----------|-------|-------------|
-| `feature` | research → scope → plan → build | feature |
+| `feature` | research → scope → plan → decompose → build | feature |
 | `bug` | reproduce → fix → verify | bug |
 | `chore` | do | chore |
 | `spike` | research → recommend | spike |
@@ -53,8 +53,13 @@ tx cycle close <summary>               # Close cycle (retro + checkpoint)
 # Dependencies
 tx install [package] [--force]         # Install from settings or by name
 tx uninstall <package>                 # Remove package + manifest entry
+tx skills                              # List installed skills from manifest
 tx manifest write                      # Write manifest from stdin (JSON)
 tx manifest show                       # Show current manifest
+
+# Config
+tx config show                         # Show resolved config
+tx config merge                        # Deep-merge JSON from stdin into settings
 
 # Artifacts
 tx write <type> --issue <slug>         # Write artifact (stdin)
@@ -153,7 +158,7 @@ Agents read `action` to know what to do next:
 npm install          # install dependencies
 npm run build        # generate skills/, schemas/
 npm run build:cli    # compile tx binary to dist/
-npm test             # 415 tests across 37 files
+npm test             # 422 tests across 39 files
 ```
 
 **Runtime** (`src/`):

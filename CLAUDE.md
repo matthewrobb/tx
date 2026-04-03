@@ -63,7 +63,7 @@ Types live in `src/types/` with an `index.ts` barrel — import from
 ```
 npm run build       # generate skills/, schemas/
 npm run build:cli   # compile tx binary to dist/
-npm test            # 415 tests across 37 files
+npm test            # 422 tests across 39 files
 ```
 
 ## Workflow Model
@@ -72,7 +72,7 @@ Issues have workflows (DAGs of steps). Default workflows:
 
 | Workflow | Steps | Default for |
 |----------|-------|-------------|
-| `feature` | research → scope → plan → build | feature |
+| `feature` | research → scope → plan → decompose → build | feature |
 | `bug` | reproduce → fix → verify | bug |
 | `chore` | do | chore |
 | `spike` | research → recommend | spike |
@@ -99,6 +99,7 @@ tx cycle close <summary>             — close cycle (retro + checkpoint)
 
 tx install [package] [--force]       — install skill packages from deps or by name
 tx uninstall <package>               — remove installed package + manifest entry
+tx skills                            — list installed skills from manifest
 tx manifest write                    — write skill manifest from stdin (JSON)
 tx manifest show                     — show current skill manifest
 
@@ -112,7 +113,8 @@ tx pickup [name]                     — start session
 tx handoff                           — end session
 tx checkpoint <summary>              — create context checkpoint
 
-tx config                            — show config
+tx config show                       — show resolved config
+tx config merge                      — deep-merge JSON from stdin into settings
 
 Flags:
   -a, --agent       JSON output (AgentResponse)
