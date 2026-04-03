@@ -2,5 +2,81 @@
   "$schema": "../.claude/worktrees/twisted-workflow/schemas/settings.schema.json",
   "dependencies": {
     "@mattpocock/skills": "github:mattpocock/skills"
+  },
+  "workflows": [
+    {
+      "id": "feature",
+      "steps": [
+        {
+          "id": "research",
+          "title": "Research",
+          "needs": [],
+          "produces": [
+            {
+              "path": "research"
+            }
+          ],
+          "done_when": "artifacts.all_present"
+        },
+        {
+          "id": "scope",
+          "title": "Scope",
+          "needs": [
+            "research"
+          ],
+          "produces": [
+            {
+              "path": "scope"
+            }
+          ],
+          "done_when": "artifacts.all_present"
+        },
+        {
+          "id": "plan",
+          "title": "Plan",
+          "needs": [
+            "scope"
+          ],
+          "produces": [
+            {
+              "path": "plan"
+            }
+          ],
+          "done_when": "artifacts.all_present"
+        },
+        {
+          "id": "decompose",
+          "title": "Decompose",
+          "needs": [
+            "plan"
+          ],
+          "produces": [
+            {
+              "path": "decompose_complete"
+            }
+          ],
+          "done_when": "artifacts.all_present",
+          "prompt": "Break the plan into tasks using tx tasks add. When all tasks are added, signal completion: echo done | tx write decompose_complete"
+        },
+        {
+          "id": "build",
+          "title": "Build",
+          "needs": [
+            "decompose"
+          ],
+          "done_when": "tasks.all_done"
+        }
+      ]
+    }
+  ],
+  "step_skills": {
+    "research": "@mattpocock/skills/improve-codebase-architecture",
+    "scope": "@mattpocock/skills/write-a-prd",
+    "plan": "@mattpocock/skills/prd-to-plan",
+    "decompose": "@mattpocock/skills/prd-to-issues",
+    "build": "@mattpocock/skills/tdd"
+  },
+  "step_review_skills": {
+    "plan": "@mattpocock/skills/grill-me"
   }
 }
