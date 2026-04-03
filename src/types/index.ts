@@ -1,13 +1,7 @@
-// src/types/index.ts — barrel re-export for all type definitions
-export type * from "./commands.js";
-export type * from "./config.js";
-export type * from "./engine.js";
-export type * from "./epic.js";
-export type * from "./estimate.js";
-export type * from "./notes.js";
-export type * from "./output.js";
-export type * from "./session.js";
-export type * from "./state.js";
-export type * from "./stories.js";
-export type * from "./tasks.js";
-export type * from "./xstate.js";
+// src/types/index.ts — barrel re-export for all v4 type definitions
+export type * from './issue.js';
+export type * from './cycle.js';
+export type * from './workflow.js';
+export type * from './config.js';
+export type * from './protocol.js';
+export type * from './expressions.js';
