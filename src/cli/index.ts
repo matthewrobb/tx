@@ -34,7 +34,7 @@ const program = new Command();
 program
   .name('tx')
   .description('twisted-workflow CLI')
-  .version('4.0.0', '-v, --version')
+  .version('4.1.0', '-v, --version')
   .option('-a, --agent', 'JSON output (prints AgentResponse)', false)
   .option('-y, --yolo', 'skip confirmations', false);
 
