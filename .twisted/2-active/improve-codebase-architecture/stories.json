@@ -96,7 +96,7 @@
       "id": "S-014",
       "summary": "Issue workflow: assign workflow by type, advance independently via tx next without cycle",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -124,7 +124,7 @@
       "id": "S-018",
       "summary": "Daemon server: PGLite owner, request queue, dirty tracking, batched flush, recovery",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -166,14 +166,14 @@
       "id": "S-024",
       "summary": "Guided setup: conversational tx init flow with workflow templates and skill suggestions",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
       "id": "S-025",
       "summary": "Workflow migration: tx migrate with declarative rules and agent-aided structural changes",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -192,5 +192,5 @@
     }
   ],
   "created": "2026-04-03T01:00:32.791Z",
-  "updated": "2026-04-03T03:04:33.970Z"
+  "updated": "2026-04-03T03:13:50.694Z"
 }
