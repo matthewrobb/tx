@@ -10,9 +10,9 @@ describe("extractDeclaration", () => {
   });
 
   test("extracts an interface declaration", () => {
-    const code = extractDeclaration("src/engine/evaluate.ts", "laneComplete");
-    expect(code).toContain("laneComplete");
-    expect(code).toContain("evaluations");
+    const code = extractDeclaration("src/engine/evaluate.ts", "evaluateSteps");
+    expect(code).toContain("evaluateSteps");
+    expect(code).toContain("workflow");
   });
 
   test("extracts a const declaration", () => {
