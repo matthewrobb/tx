@@ -1,12 +1,12 @@
 ---
 name: dogfood
-description: Build, test, commit, and sync the twisted-workflow worktree for local dogfooding. Use after making source changes that need to be tested via the live tx CLI.
+description: Build, test, commit, and sync the tx worktree for local dogfooding. Use after making source changes that need to be tested via the live tx CLI.
 user-invocable: true
 ---
 
 # Dogfood: Build + Sync Worktree
 
-Rebuild twisted-workflow and sync the worktree so the globally-linked `tx` CLI picks up changes.
+Rebuild tx and sync the worktree so the globally-linked `tx` CLI picks up changes.
 
 ## Steps
 
@@ -35,7 +35,7 @@ Rebuild twisted-workflow and sync the worktree so the globally-linked `tx` CLI p
 
 5. **Sync the worktree** so the globally-linked `tx` binary picks up the new dist/:
    ```bash
-   git -C .claude/worktrees/twisted-workflow merge <current-branch> --no-edit
+   git -C .claude/worktrees/tx merge <current-branch> --no-edit
    ```
    Replace `<current-branch>` with the output of `git branch --show-current`.
 
@@ -46,6 +46,6 @@ Rebuild twisted-workflow and sync the worktree so the globally-linked `tx` CLI p
 
 ## Notes
 
-- The global `tx` binary is npm-linked to `.claude/worktrees/twisted-workflow/`, not the main repo. The worktree merge is what makes changes visible to the CLI.
+- The global `tx` binary is npm-linked to `.claude/worktrees/tx/`, not the main repo. The worktree merge is what makes changes visible to the CLI.
 - If you bumped the version in package.json, also update it in `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and `src/cli/index.ts` (hardcoded `.version()` call).
 - Run `npm link` in the main repo if the worktree link is broken.

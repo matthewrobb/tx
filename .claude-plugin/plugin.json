@@ -1,13 +1,13 @@
 {
-  "name": "twisted-workflow",
-  "description": "Artifact-driven agentic orchestration for Claude Code — 6-lane epic lifecycle, XState engine, story tier, daemon, and preset-based configuration",
+  "name": "tx",
+  "description": "tx — data-driven DAG workflow engine for agentic development with issues, cycles, sessions, and expression-based step automation.",
   "version": "4.1.0",
   "author": {
     "name": "Matthew Robb"
   },
-  "homepage": "https://github.com/matthewrobb/twisted-workflow",
-  "repository": "https://github.com/matthewrobb/twisted-workflow",
-  "license": "MIT",
+  "homepage": "https://github.com/matthewrobb/tx",
+  "repository": "https://github.com/matthewrobb/tx",
+  "license": "GPL-3.0-only",
   "keywords": ["workflow", "kanban", "planning", "parallel", "agentic", "xstate", "stories"],
   "skills": "./skills/"
 }

@@ -36,7 +36,7 @@ const program = new Command();
 
 program
   .name('tx')
-  .description('twisted-workflow CLI')
+  .description('tx — agentic workflow engine')
   .version('4.1.0', '-v, --version')
   .option('-a, --agent', 'JSON output (prints AgentResponse)', false)
   .option('-y, --yolo', 'skip confirmations', false);

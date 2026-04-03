@@ -41,7 +41,7 @@ async function seedPackage(name: string, skills: string[]): Promise<string> {
   const pkg = {
     name,
     version: '0.0.0-git',
-    keywords: ['twisted-workflow'],
+    keywords: ['@twisted.works/tx'],
     twisted: { skills },
   };
   await writeFile(join(pkgDir, 'package.json'), JSON.stringify(pkg), 'utf-8');

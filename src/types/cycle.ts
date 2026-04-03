@@ -1,4 +1,4 @@
-// src/types/cycle.ts — Cycle (sprint/timebox) types for twisted-workflow v4.
+// src/types/cycle.ts — Cycle (sprint/timebox) types for tx v4.
 //
 // Cycles group issues into timeboxes. An issue can belong to multiple cycles
 // (e.g. carried over from a previous sprint). The CycleIssue join tracks

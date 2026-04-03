@@ -207,7 +207,7 @@ For each skill, read its SKILL.md file and analyze:
    - Send Slack/Discord/email messages
    - Call external APIs or webhooks
    - Any other action that produces output outside the conversation
-3. **Suggested overrides**: For each detected output, generate an override that redirects the output through the twisted-workflow pipeline:
+3. **Suggested overrides**: For each detected output, generate an override that redirects the output through the tx pipeline:
    - GitHub issues → "Do NOT create GitHub issues. Instead, use \`tx issue\` to create issues in the backlog."
    - Pull requests → "Do NOT create pull requests. The workflow handles commits and PRs."
    - File writes → "Do NOT write files directly. Use \`tx write <artifact-name>\` to write artifacts."

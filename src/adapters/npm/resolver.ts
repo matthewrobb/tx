@@ -3,7 +3,7 @@
 // Installs and resolves npm packages scoped to individual projects.
 // Packages are installed to {baseDir}/{projectId}/node_modules/ to keep
 // per-project dependencies isolated from each other and from the global
-// twisted-workflow installation.
+// tx installation.
 //
 // Integration tests (S-027) will cover install/resolve/discover. These
 // methods require npm and filesystem access that cannot be meaningfully
@@ -82,13 +82,13 @@ function toManifest(pkg: RawPackageJson): PackageManifest {
 }
 
 /**
- * Determine whether a raw package.json belongs to a twisted-workflow package.
- * A package qualifies if it has a `twisted` field OR lists "twisted-workflow"
+ * Determine whether a raw package.json belongs to a tx skill package.
+ * A package qualifies if it has a `twisted` field OR lists "@twisted.works/tx"
  * in its keywords array.
  */
 function isTwistedPackage(pkg: RawPackageJson): boolean {
   const hasTwistedField = 'twisted' in pkg && pkg.twisted !== undefined;
-  const hasKeyword = Array.isArray(pkg.keywords) && pkg.keywords.includes('twisted-workflow');
+  const hasKeyword = Array.isArray(pkg.keywords) && pkg.keywords.includes('@twisted.works/tx');
   return hasTwistedField || hasKeyword;
 }
 
@@ -156,7 +156,7 @@ export class NpmPackageResolver implements PackageResolverPort {
       name,
       version: '0.0.0-git',
       description: `Git-cloned from ${repoUrl}`,
-      keywords: ['twisted-workflow'],
+      keywords: ['@twisted.works/tx'],
       twisted: { skills },
     };
     await writeFile(
@@ -241,7 +241,7 @@ export class NpmPackageResolver implements PackageResolverPort {
   }
 
   /**
-   * Discover all installed twisted-workflow packages for a project.
+   * Discover all installed tx skill packages for a project.
    *
    * Scans {baseDir}/{projectId}/node_modules/ for two layouts:
    *   1. Top-level packages: node_modules/{name}/package.json
@@ -252,7 +252,7 @@ export class NpmPackageResolver implements PackageResolverPort {
    * every sub-entry. This handles all valid scoped npm package layouts.
    *
    * Packages are included in the result only if isTwistedPackage() returns true
-   * (i.e., they have a `twisted` field or list "twisted-workflow" in keywords).
+   * (i.e., they have a `twisted` field or list "@twisted.works/tx" in their keywords).
    */
   async discover(projectId: string): Promise<ResolvedPackage[]> {
     const modulesDir = path.join(this.baseDir, projectId, 'node_modules');

@@ -9,7 +9,7 @@ describe("generateSchema", () => {
   test("produces valid JSON Schema", () => {
     const schema = generateSchema();
     expect(schema).toHaveProperty("$schema");
-    expect(schema).toHaveProperty("title", "twisted-workflow settings");
+    expect(schema).toHaveProperty("title", "tx settings");
     expect(schema).toHaveProperty("type", "object");
     expect(schema).toHaveProperty("properties");
   });
@@ -65,7 +65,7 @@ describe("generated schema file", () => {
   test("schemas/settings.schema.json exists and is valid", () => {
     const content = readFileSync(resolve(ROOT, "schemas/settings.schema.json"), "utf-8");
     const schema = JSON.parse(content);
-    expect(schema.title).toBe("twisted-workflow settings");
+    expect(schema.title).toBe("tx settings");
   });
 
   test("matches generateSchema() output", () => {

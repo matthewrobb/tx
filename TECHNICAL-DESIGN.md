@@ -1,4 +1,4 @@
-# twisted-workflow — Technical Design
+# tx — Technical Design
 
 ## Why This Exists
 
@@ -10,7 +10,7 @@ The human is the continuity. The process is just ceremony around that continuity
 stand-ups to sync humans, sprints to batch human attention, Jira boards to track
 what humans are doing.
 
-AI agents don't work that way. A Claude Code session lasts minutes to hours, not
+AI agents don't work that way. An agent session lasts minutes to hours, not
 days. Context resets completely between sessions. The agent has no memory of what
 it did yesterday. It can't pick up where it left off unless someone — or something
 — tells it where "off" was.
@@ -27,7 +27,7 @@ planning. Research before you scope. Scope before you plan. Plan before you buil
 Check your work at each boundary. Except now the entity doing the work forgets
 everything between steps. So the process itself has to carry the context.
 
-That's what twisted-workflow does. It's the memory and the process in one system.
+That's what tx does. It's the memory and the process in one system.
 Each step produces artifacts. Artifacts carry context forward. The next session
 reads the artifacts, knows where things stand, and picks up cleanly. The agent
 doesn't need memory — the workflow has it.
@@ -73,7 +73,7 @@ it's a narrative summary that captures working context.
 
 ## The Cast
 
-twisted-workflow solves these problems with a small set of interlocking concepts.
+tx solves these problems with a small set of interlocking concepts.
 Before diving into implementation, here's who they are and how they relate.
 
 ### Issues
@@ -195,7 +195,7 @@ as the community figures out what works.
 
 The problem is that skills are written by different people with different
 assumptions. One skill creates GitHub issues as output. Another writes files to
-`./plans/`. A third makes git commits. twisted-workflow can't require every skill
+`./plans/`. A third makes git commits. tx can't require every skill
 author to conform to its pipeline — the ecosystem moves too fast and most skill
 authors have never heard of this engine. Instead, the engine adapts to skills.
 
@@ -203,7 +203,7 @@ Skills are installed as dependencies, not bundled. `tx install` clones them from
 git (or installs from npm) into `~/.twisted/projects/{id}/node_modules/`. After
 installation, the agent analyzes each skill's SKILL.md, detects external outputs,
 and generates a manifest with override suggestions that redirect those outputs
-through the twisted-workflow pipeline. The skill author writes for a generic
+through the tx pipeline. The skill author writes for a generic
 audience. The manifest adapter translates for this specific engine. When the skill
 updates, the agent re-analyzes and the manifest updates. No bespoke integration
 code required.
@@ -277,7 +277,7 @@ The engine resolves execution order using Kahn's algorithm — a BFS-based
 topological sort that processes steps level by level.
 
 Each level is a parallel execution group: steps within a group have no dependencies
-on each other. Today, twisted-workflow processes one step at a time. The group
+on each other. Today, tx processes one step at a time. The group
 information is preserved for future parallel agent dispatch.
 
 Cycle detection walks dependency chains and reports each distinct cycle as an
@@ -533,7 +533,7 @@ At runtime, skill invocation merges three layers:
 
 This means you can install any skill from the ecosystem, get smart defaults from
 the manifest, and customize further in your config. The skill author doesn't need
-to know about twisted-workflow. The manifest adapter bridges the gap. When the
+to know about tx. The manifest adapter bridges the gap. When the
 skill publishes a new version that changes its output format, re-running
 `tx install --force` regenerates the manifest with updated overrides. No code
 changes, no manual adapter maintenance — the agent re-analyzes and adapts.
@@ -584,7 +584,7 @@ Six action types form a closed protocol:
 | `done` | Pipeline complete |
 | `install_cli` | Show CLI installation instructions |
 
-The orchestrating agent (the `/tx` skill in Claude Code) reads the response,
+The orchestrating agent (e.g. the `/tx` skill) reads the response,
 executes the action, and calls the next command. The engine drives the agent,
 not the other way around.
 

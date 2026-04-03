@@ -7,7 +7,7 @@ When communicating with the user, refer to commands using the skill syntax \`/tx
 
 ## Using the tx CLI
 
-All twisted-workflow operations go through \`tx\` commands. Use \`-a\` (\`--agent\`) for JSON output when working programmatically.
+All tx operations go through \`tx\` commands. Use \`-a\` (\`--agent\`) for JSON output when working programmatically.
 
 ### Issues
 
@@ -162,7 +162,7 @@ When a step command returns \`invoke_skill\`, follow this sequence:
 export const twistedWork: SkillDefinition = {
   frontmatter: {
     name: "tx",
-    description: "Orchestrator for the twisted-workflow pipeline — issue-driven workflow with cycles, sessions, and data-driven steps",
+    description: "Orchestrator for the tx pipeline — issue-driven workflow with cycles, sessions, and data-driven steps",
     "user-invocable": true,
     "argument-hint": "[issue open <slug> | issue close <slug> | issue status | next [slug] | cycle start <slug> | cycle pull [slug] | cycle close | pickup [name] | checkpoint | write <type> [slug] | read <type> [slug] | note | config] [-a] [-y]",
   },

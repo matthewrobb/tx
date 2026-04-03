@@ -1,13 +1,13 @@
-# twisted-workflow
+# tx — agentic workflow engine
 
-Data-driven workflow engine for agentic development with Claude Code —
+Data-driven workflow engine for agentic development —
 issue/cycle model, expression-based DAG engine, PGLite storage, and
 daemon architecture.
 
 ## Project Structure
 
 ```
-twisted-workflow/
+tx/
 ├── CLAUDE.md
 ├── .claude-plugin/
 │   ├── plugin.json
@@ -154,5 +154,5 @@ deepMerge(defaults, projectSettings ?? {})
 
 The `/dogfood` skill automates the build → test → commit → worktree sync cycle
 for local development. The global `tx` binary is npm-linked to
-`.claude/worktrees/twisted-workflow/`, so the worktree merge is what makes
+`.claude/worktrees/tx/`, so the worktree merge is what makes
 changes visible to the CLI.

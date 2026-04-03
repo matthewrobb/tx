@@ -10,7 +10,7 @@ import { twistedWork } from "./skills/twisted-work.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
-console.log("Building twisted-workflow...\n");
+console.log("Building @twisted.works/tx...\n");
 
 // --- Skills ---
 console.log("Skills:");

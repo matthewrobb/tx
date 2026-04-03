@@ -1,13 +1,13 @@
 {
-  "name": "twisted-workflow",
-  "description": "Artifact-driven agentic orchestration for Claude Code",
+  "name": "twisted.works",
+  "description": "tx — data-driven DAG workflow engine for agentic development",
   "owner": {
     "name": "Matthew Robb"
   },
   "plugins": [
     {
-      "name": "twisted-workflow",
-      "description": "Artifact-driven agentic orchestration for Claude Code — 6-lane epic lifecycle, XState engine, story tier, daemon, and preset-based configuration",
+      "name": "tx",
+      "description": "tx — data-driven DAG workflow engine for agentic development with issues, cycles, sessions, and expression-based step automation.",
       "version": "4.1.0",
       "source": "./",
       "author": {

@@ -1,7 +1,17 @@
 {
-  "name": "twisted-workflow",
+  "name": "@twisted.works/tx",
   "version": "4.1.0",
+  "description": "Data-driven DAG workflow engine for agentic development — issues, cycles, sessions, and expression-based step automation",
   "type": "module",
+  "license": "GPL-3.0-only",
+  "author": "Matt Robb",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthewrobb/tx.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "tx": "./dist/cli/index.js"
   },
@@ -13,6 +23,7 @@
   "scripts": {
     "build": "tsx build/build.ts",
     "build:cli": "tsc -p tsconfig.cli.json",
+    "prepublishOnly": "npm run build:cli && npm run build",
     "dev": "node ./dist/cli/index.js",
     "test": "vitest run"
   },

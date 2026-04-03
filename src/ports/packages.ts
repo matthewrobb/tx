@@ -6,14 +6,14 @@
  *
  * Packages are installed to ~/.twisted/projects/{projectId}/node_modules/
  * to keep project-level dependencies isolated from each other and from the
- * global twisted-workflow installation.
+ * global tx installation.
  */
 
 import type { WorkflowConfig } from '../types/config.js';
 
 // ── Package types ──────────────────────────────────────────────
 
-/** The parsed package.json of a twisted-workflow skill/persona package. */
+/** The parsed package.json of a tx skill/persona package. */
 export interface PackageManifest {
   readonly name: string;
   readonly version: string;
@@ -67,7 +67,7 @@ export interface PackageResolverPort {
   ): Promise<ResolvedPackage | null>;
 
   /**
-   * Discover all installed twisted-workflow packages for a project.
+   * Discover all installed tx packages for a project.
    * Scans the project's node_modules for packages with skill/persona manifests.
    *
    * @param projectId - Project identifier to scan

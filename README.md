@@ -1,19 +1,19 @@
-# twisted-workflow
+# tx — agentic workflow engine
 
-Data-driven workflow engine for agentic development with Claude Code — issue/cycle model, expression-based DAG engine, PGLite storage, and daemon architecture.
+Data-driven DAG workflow engine for agentic development — issues, cycles, sessions, and expression-based step automation. Works with AI coding agents such as Claude Code.
 
 ## How It Works
 
 Claude Code sessions end. Context resets. Work disappears.
 
-twisted-workflow stores all state in PGLite (embedded Postgres) and projects it to `.twisted/` as markdown files for humans and git. Start a session with `tx pickup`, work, end it with `tx handoff` — the next session picks up exactly where you left off.
+tx stores all state in PGLite (embedded Postgres) and projects it to `.twisted/` as markdown files for humans and git. Start a session with `tx pickup`, work, end it with `tx handoff` — the next session picks up exactly where you left off.
 
 The engine is **data-driven**: workflows are DAGs of steps with expression-based conditions. `tx next` evaluates those conditions against vars, tasks, artifacts, and cycle state, then advances automatically.
 
 ## Quick Start
 
 ```bash
-npm install -g twisted-workflow
+npm install -g @twisted.works/tx
 
 tx init                    # Initialize .twisted/ in your project
 tx open my-feature --type feature   # Create a new epic
@@ -200,8 +200,8 @@ tx manifest show             # inspect the manifest
 
 ## Contributing
 
-Issues and pull requests welcome at [matthewrobb/twisted-workflow](https://github.com/matthewrobb/twisted-workflow).
+Issues and pull requests welcome at [matthewrobb/tx](https://github.com/matthewrobb/tx).
 
 ## License
 
-MIT
+GPL-3.0

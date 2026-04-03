@@ -2,6 +2,6 @@
   "enabledPlugins": {
     "elements-of-style@superpowers-marketplace": true,
     "superpowers-developing-for-claude-code@superpowers-marketplace": true,
-    "twisted-workflow@twisted-workflow": true
+    "tx@twisted.works": true
   }
 }

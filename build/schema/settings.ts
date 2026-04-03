@@ -13,9 +13,9 @@
 export function generateSchema(): object {
   return {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    title: "twisted-workflow settings",
+    title: "tx settings",
     description:
-      "Configuration for twisted-workflow v4. All fields are optional — only include values you want to override from defaults.",
+      "Configuration for tx — agentic workflow engine. All fields are optional — only include values you want to override from defaults.",
     type: "object",
     additionalProperties: false,
     properties: {
