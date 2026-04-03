@@ -82,6 +82,32 @@ vi.mock('../../config/defaults.js', () => ({
           { id: 'next', title: 'Next', needs: ['idle'] },
         ],
       },
+      {
+        // Cycle-gated workflow: done_when checks active cycle.
+        id: 'test-cycle',
+        title: 'Test Cycle',
+        default_for: [],
+        steps: [
+          { id: 'wait-for-cycle', title: 'Wait', needs: [], done_when: "cycle.status == 'active'" },
+          { id: 'after-cycle', title: 'After', needs: ['wait-for-cycle'] },
+        ],
+      },
+      {
+        // Artifact-gated workflow: done_when checks artifacts.all_present.
+        id: 'test-artifacts',
+        title: 'Test Artifacts',
+        default_for: [],
+        steps: [
+          {
+            id: 'write-scope',
+            title: 'Write Scope',
+            needs: [],
+            produces: [{ path: 'scope' }],
+            done_when: 'artifacts.all_present',
+          },
+          { id: 'after-scope', title: 'After Scope', needs: ['write-scope'] },
+        ],
+      },
     ],
     context_skills: [],
     step_skills: {},
@@ -319,8 +345,68 @@ describe('txNext', () => {
     expect(projection.calls).toContain('renderIssue:proj-1');
   });
 
-  // 10. Transaction atomicity: projection failure does not roll back DB state.
-  test('10. transaction atomicity — projection failure preserves DB state', async () => {
+  // 10. Cycle context: no active cycle → no_change (cycle is null).
+  test('10. cycle context — no active cycle, cycle expression evaluates null → no_change', async () => {
+    await seedIssue(db, 'cyc-1', 'test-cycle', 'wait-for-cycle');
+
+    const result = await txNext(db, projection, { issue_slug: 'cyc-1' });
+
+    // cycle.status == 'active' → null == 'active' → false → no_change
+    expect(result.status).toBe('no_change');
+  });
+
+  // 11. Cycle context: active cycle → advances (cycle.status == 'active' is true).
+  test('11. cycle context — active cycle populates context, expression evaluates true → advance', async () => {
+    await seedIssue(db, 'cyc-2', 'test-cycle', 'wait-for-cycle');
+
+    // Start a cycle so the context includes it.
+    const now = new Date().toISOString();
+    await db.query(
+      `INSERT INTO cycles (id, slug, title, status, started_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      ['cycle-id-1', 'sprint-1', 'Sprint 1', 'active', now],
+    );
+
+    const result = await txNext(db, projection, { issue_slug: 'cyc-2' });
+
+    expect(result.status).toBe('advanced');
+    if (result.status === 'advanced') {
+      expect(result.from_step).toBe('wait-for-cycle');
+      expect(result.to_step).toBe('after-cycle');
+    }
+  });
+
+  // 12. Artifact context: no artifacts written → no_change (all_present is false).
+  test('12. artifact context — no artifacts written, all_present false → no_change', async () => {
+    await seedIssue(db, 'art-1', 'test-artifacts', 'write-scope');
+
+    const result = await txNext(db, projection, { issue_slug: 'art-1' });
+
+    expect(result.status).toBe('no_change');
+  });
+
+  // 13. Artifact context: artifact written → advances (all_present is true).
+  test('13. artifact context — artifact written, all_present true → advance', async () => {
+    await seedIssue(db, 'art-2', 'test-artifacts', 'write-scope');
+
+    // Write the 'scope' artifact into vars for this issue+step.
+    await db.query(
+      `INSERT INTO vars (issue_slug, step, key, value)
+       VALUES ($1, $2, $3, $4::jsonb)`,
+      ['art-2', 'write-scope', 'scope', JSON.stringify('scope content')],
+    );
+
+    const result = await txNext(db, projection, { issue_slug: 'art-2' });
+
+    expect(result.status).toBe('advanced');
+    if (result.status === 'advanced') {
+      expect(result.from_step).toBe('write-scope');
+      expect(result.to_step).toBe('after-scope');
+    }
+  });
+
+  // 14. Transaction atomicity: projection failure does not roll back DB state.
+  test('14. transaction atomicity — projection failure preserves DB state', async () => {
     await seedIssue(db, 'atomic-1', 'test-advance', 'step-a');
 
     const failProjection: ProjectionPort = {

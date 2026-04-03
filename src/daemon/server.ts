@@ -40,6 +40,9 @@ import {
   handlePickup,
   handleHandoff,
   handleCheckpoint,
+  handleCycleStart,
+  handleCyclePull,
+  handleCycleClose,
 } from './handlers.js';
 
 // ── Request dispatch ──────────────────────────────────────────────────────
@@ -97,17 +100,17 @@ async function dispatch(
       const response = await handleCheckpoint(db, req);
       return { response };
     }
-    // Cycle commands — handlers are implemented in S-021 (cycle engine).
-    // Stubs here keep the dispatch exhaustiveness guard satisfied at compile time.
-    case 'cycle_start':
-    case 'cycle_pull':
+    case 'cycle_start': {
+      const response = await handleCycleStart(db, req);
+      return { response };
+    }
+    case 'cycle_pull': {
+      const response = await handleCyclePull(db, req);
+      return { response };
+    }
     case 'cycle_close': {
-      return {
-        response: {
-          status: 'error',
-          message: `Cycle command '${req.command}' not yet implemented (S-021).`,
-        },
-      };
+      const response = await handleCycleClose(db, req);
+      return { response };
     }
     default: {
       // Exhaustiveness guard: if a new command is added to DaemonRequest but not

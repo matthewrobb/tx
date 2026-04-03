@@ -16,6 +16,7 @@ import type { IssueType } from '../types/issue.js';
 import { txNext } from '../engine/state.js';
 import { createIssue, listIssues, getIssueBySlug, closeIssue } from '../issues/crud.js';
 import { createCheckpoint } from '../checkpoints/crud.js';
+import { startCycle, pullIssues, closeCycle } from '../cycles/lifecycle.js';
 import { DEFAULT_CONFIG } from '../config/defaults.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -217,4 +218,71 @@ export async function handleCheckpoint(
   });
 
   return { status: 'ok', data: checkpoint };
+}
+
+// ── Cycle handlers ───────────────────────────────────────────────────────
+
+export async function handleCycleStart(
+  db: StoragePort,
+  req: Extract<DaemonRequest, { command: 'cycle_start' }>,
+): Promise<DaemonResponse> {
+  try {
+    const cycle = await startCycle(db, {
+      slug: req.slug,
+      title: req.title,
+      description: req.description,
+    });
+    return { status: 'ok', data: cycle };
+  } catch (err) {
+    return { status: 'error', message: (err as Error).message };
+  }
+}
+
+export async function handleCyclePull(
+  db: StoragePort,
+  req: Extract<DaemonRequest, { command: 'cycle_pull' }>,
+): Promise<DaemonResponse> {
+  // The request doesn't include a cycle slug — find the active cycle.
+  interface ActiveRow { slug: string }
+  const result = await db.query<ActiveRow>(
+    "SELECT slug FROM cycles WHERE status = 'active' LIMIT 1",
+    [],
+  );
+  const row = result.rows[0];
+  if (row === undefined) {
+    return { status: 'error', message: 'No active cycle. Start one with cycle_start first.' };
+  }
+
+  try {
+    const pullResult = await pullIssues(db, row.slug, req.issue_slugs);
+    return { status: 'ok', data: pullResult };
+  } catch (err) {
+    return { status: 'error', message: (err as Error).message };
+  }
+}
+
+export async function handleCycleClose(
+  db: StoragePort,
+  req: Extract<DaemonRequest, { command: 'cycle_close' }>,
+): Promise<DaemonResponse> {
+  // Find the active cycle — the request only has the summary.
+  interface ActiveRow { slug: string }
+  const result = await db.query<ActiveRow>(
+    "SELECT slug FROM cycles WHERE status = 'active' LIMIT 1",
+    [],
+  );
+  const row = result.rows[0];
+  if (row === undefined) {
+    return { status: 'error', message: 'No active cycle to close.' };
+  }
+
+  try {
+    const closeResult = await closeCycle(db, {
+      cycleSlug: row.slug,
+      summary: req.summary,
+    });
+    return { status: 'ok', data: closeResult };
+  } catch (err) {
+    return { status: 'error', message: (err as Error).message };
+  }
 }

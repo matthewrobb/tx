@@ -17,8 +17,9 @@ import type { ProjectionPort } from '../ports/projection.js';
 import type { Issue } from '../types/issue.js';
 import type { Json } from '../types/issue.js';
 import type { IssueState, AgentAction } from '../types/protocol.js';
-import type { ExpressionContext } from '../types/expressions.js';
-import type { Workflow, WorkflowId } from '../types/workflow.js';
+import type { ExpressionContext, CycleContext } from '../types/expressions.js';
+import type { CycleId, CycleStatus } from '../types/cycle.js';
+import type { Workflow, WorkflowId, StepArtifact } from '../types/workflow.js';
 import type { WorkflowConfig } from '../types/config.js';
 import type { StepEvaluation } from './evaluate.js';
 
@@ -134,20 +135,75 @@ async function loadTasks(
   return result.rows.map((r) => ({ done: r.done !== 0 }));
 }
 
+/** DB row shape for active cycle query. */
+interface CycleRow {
+  id: string;
+  slug: string;
+  status: string;
+}
+
+/**
+ * Load the active cycle (if any) for expression context.
+ */
+async function loadActiveCycle(
+  db: StoragePort,
+  tx: StorageTx,
+): Promise<CycleContext | null> {
+  const result = await db.query<CycleRow>(
+    "SELECT id, slug, status FROM cycles WHERE status = 'active' LIMIT 1",
+    [],
+    tx,
+  );
+  const row = result.rows[0];
+  if (row === undefined) return null;
+  return {
+    id: row.id as CycleId,
+    slug: row.slug,
+    status: row.status as CycleStatus,
+  };
+}
+
+/**
+ * Load which artifact keys exist in the vars table for the given issue+step.
+ * Only checks keys from the `required` set to avoid a full table scan.
+ */
+async function loadPresentArtifacts(
+  db: StoragePort,
+  issueSlug: string,
+  step: string,
+  required: string[],
+  tx: StorageTx,
+): Promise<string[]> {
+  if (required.length === 0) return [];
+  // Query for existence of each required key. With a small set of required
+  // artifacts (typically 1–3), individual queries are fine.
+  const result = await db.query<{ key: string }>(
+    `SELECT key FROM vars WHERE issue_slug = $1 AND step = $2 AND key = ANY($3)`,
+    [issueSlug, step, required],
+    tx,
+  );
+  return result.rows.map((r) => r.key);
+}
+
 /**
  * Build the full ExpressionContext for evaluation.
  */
 async function buildContext(
   db: StoragePort,
   issue: Issue,
+  produces: StepArtifact[],
   tx: StorageTx,
 ): Promise<{ context: ExpressionContext; tasksDone: number; tasksTotal: number | null }> {
   const vars = await loadVars(db, issue.slug, issue.step, tx);
   const taskRows = await loadTasks(db, issue.slug, tx);
   const taskContext = buildTaskContext(taskRows);
 
-  // Artifact tracking is future work — pass empty for now.
-  const artifactContext = buildArtifactContext([], []);
+  // Artifact path = var key (handleWrite stores by req.type which matches StepArtifact.path).
+  const requiredPaths = produces.map((a) => a.path);
+  const presentPaths = await loadPresentArtifacts(db, issue.slug, issue.step, requiredPaths, tx);
+  const artifactContext = buildArtifactContext(requiredPaths, presentPaths);
+
+  const cycleContext = await loadActiveCycle(db, tx);
 
   const issueState: IssueState = {
     issue: issue.slug,
@@ -166,7 +222,7 @@ async function buildContext(
     vars,
     tasks: taskContext,
     artifacts: artifactContext,
-    cycle: null, // Cycle integration is future work.
+    cycle: cycleContext,
   };
 
   return {
@@ -263,7 +319,9 @@ export async function txNext(
     }
 
     // 3b. Build ExpressionContext (re-reads vars so resume_response is visible).
-    const { context, tasksDone, tasksTotal } = await buildContext(db, issue, tx);
+    const currentStepDef = workflow.steps.find((s) => s.id === issue.step);
+    const produces = currentStepDef?.produces ?? [];
+    const { context, tasksDone, tasksTotal } = await buildContext(db, issue, produces, tx);
 
     // 4. Evaluate steps using interactive evaluator.
     const evaluator = createInteractiveEvaluator();
