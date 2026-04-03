@@ -1,0 +1,1 @@
+{"version":3,"file":"skills.d.ts","sourceRoot":"","sources":["../../../src/cli/commands/skills.ts"],"names":[],"mappings":"AAKA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAMpC,MAAM,WAAW,UAAU;IACzB,KAAK,EAAE,OAAO,CAAC;IACf,IAAI,EAAE,OAAO,CAAC;CACf;AAUD,wBAAgB,qBAAqB,CAAC,OAAO,EAAE,OAAO,EAAE,IAAI,EAAE,UAAU,GAAG,IAAI,CA2E9E"}

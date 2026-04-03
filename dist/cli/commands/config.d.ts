@@ -6,13 +6,7 @@ export interface GlobalOpts {
     getAdapter: () => Promise<SocketTransportAdapter>;
 }
 /**
- * Register the `tx config` command onto `program`.
- *
- * Usage:
- *   tx config
- *
- * Sends a generic status request; the daemon includes the current resolved
- * config in the response payload.
+ * Register the `tx config` and `tx config merge` commands onto `program`.
  */
 export declare function registerConfigCommands(program: Command, opts: GlobalOpts): void;
 //# sourceMappingURL=config.d.ts.map

@@ -209,6 +209,26 @@ Schema:
 
 Only include entries in \`detected_outputs\` and \`suggested_overrides\` when you actually find matching instructions in the skill. Skills with no external outputs should have empty arrays.
 
-Use \`tx manifest show\` to verify the result.`;
+Use \`tx manifest show\` to verify the result.
+
+## Step 2: Suggest Step-Skill Bindings
+
+After writing the manifest, suggest which skills to bind to which workflow steps. Consider the current workflow (run \`tx config show\` to see steps) and match skills by purpose:
+
+- Research/exploration skills → \`research\` step
+- PRD/scoping skills → \`scope\` step
+- Planning/architecture skills → \`plan\` step
+- TDD/implementation skills → \`build\` step
+- Review/grilling skills → \`step_review_skills\` for the appropriate step
+
+Skills can also come from Claude Code plugin registries (e.g. \`plugin-name:skill-name\`). Include those if they're relevant to the workflow.
+
+Present 2-3 options to the user as numbered choices. After the user picks, write the config via:
+
+\`\`\`bash
+echo '{"step_skills":{"build":"@pkg/tdd","scope":"@pkg/write-a-prd"},"step_review_skills":{"plan":"@pkg/grill-me"}}' | tx config merge
+\`\`\`
+
+This deep-merges into \`.twisted/settings.json\` without clobbering existing settings.`;
 }
 //# sourceMappingURL=install.js.map

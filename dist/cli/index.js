@@ -25,6 +25,7 @@ import { registerConfigCommands } from './commands/config.js';
 import { registerInitCommand } from './commands/init.js';
 import { registerInstallCommand } from './commands/install.js';
 import { registerManifestCommands } from './commands/manifest.js';
+import { registerSkillsCommand } from './commands/skills.js';
 // ── Program setup ─────────────────────────────────────────────────────────────
 const program = new Command();
 program
@@ -112,6 +113,15 @@ registerNoteCommand(program, sharedOpts);
 registerSessionCommands(program, sharedOpts);
 // `tx config`
 registerConfigCommands(program, sharedOpts);
+// `tx skills` — local, no socket
+registerSkillsCommand(program, {
+    get agent() {
+        return (program.opts().agent) ?? false;
+    },
+    get yolo() {
+        return (program.opts().yolo) ?? false;
+    },
+});
 // `tx manifest write|show` — local, no socket
 registerManifestCommands(program, {
     get agent() {
