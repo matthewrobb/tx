@@ -56,11 +56,15 @@ research if we already have it from a previous cycle" is not. "Block the build
 step until the user confirms the plan" requires interaction. Conditions need to be
 expressive, composable, and capable of pausing for human input.
 
-**Skill incompatibility.** Third-party skills (like mattpocock's TDD skill or
-PRD writer) produce outputs in their own way — creating GitHub issues, writing
-files to arbitrary paths, making git commits. A workflow engine needs to intercept
-these outputs and redirect them through its own pipeline. You can't just "use a
-skill" — you need to adapt its outputs.
+**Skill incompatibility.** The agentic skill ecosystem is evolving fast. New skills
+hit GitHub every week — TDD methodologies, PRD writers, code reviewers, triage
+workflows, architecture analyzers. Each one produces outputs in its own way:
+creating GitHub issues, writing files to arbitrary paths, making git commits,
+posting to Slack. A workflow engine can't assume skills will conform to its
+conventions. It needs to adapt any skill's outputs into its own pipeline without
+requiring the skill author to know the engine exists. And it needs to do this
+gracefully as new skills appear and existing ones change, because the landscape
+won't hold still long enough to write bespoke adapters for each one.
 
 **Session handoff.** The human starts a session, works with an agent for an hour,
 stops. Tomorrow, a fresh agent needs to know: what was done, what's next, what
@@ -184,17 +188,28 @@ writes for N rapid mutations — they coalesce into one render per slug.
 ### Skills
 
 **Skills** are reusable methodology packages — instructions for how to do a kind
-of work. mattpocock's TDD skill teaches red-green-refactor. His write-a-prd skill
-structures a user interview into a product requirements document.
+of work. A TDD skill teaches red-green-refactor. A PRD skill structures a user
+interview into a product requirements document. A triage skill walks through bug
+reports and produces actionable issue specs. New ones appear on GitHub constantly
+as the community figures out what works.
+
+The problem is that skills are written by different people with different
+assumptions. One skill creates GitHub issues as output. Another writes files to
+`./plans/`. A third makes git commits. twisted-workflow can't require every skill
+author to conform to its pipeline — the ecosystem moves too fast and most skill
+authors have never heard of this engine. Instead, the engine adapts to skills.
 
 Skills are installed as dependencies, not bundled. `tx install` clones them from
 git (or installs from npm) into `~/.twisted/projects/{id}/node_modules/`. After
-installation, the agent analyzes each skill's SKILL.md, detects external outputs
-(GitHub issues, file writes, git commits), and generates a manifest with override
-suggestions that redirect those outputs through the twisted-workflow pipeline.
+installation, the agent analyzes each skill's SKILL.md, detects external outputs,
+and generates a manifest with override suggestions that redirect those outputs
+through the twisted-workflow pipeline. The skill author writes for a generic
+audience. The manifest adapter translates for this specific engine. When the skill
+updates, the agent re-analyzes and the manifest updates. No bespoke integration
+code required.
 
 This is the three-layer merge:
-1. Skill content (SKILL.md from the package)
+1. Skill content (SKILL.md from the package — untouched)
 2. Manifest overrides (agent-derived on install — "skip step 7, use `tx issue` instead of `gh issue create`")
 3. Config overrides (user-written in `.twisted/settings.json` — explicit wins)
 
@@ -453,7 +468,7 @@ Skill packages are declared in `.twisted/settings.json`:
 ```json
 {
   "dependencies": {
-    "@mattpocock/skills": "github:mattpocock/skills"
+    "@community/skills": "github:someone/skills"
   }
 }
 ```
@@ -466,8 +481,10 @@ metadata.
 
 **Git repos without `package.json`** — shallow clones into `node_modules/{name}/`,
 scans for directories containing SKILL.md files, and writes a synthetic
-`package.json` with the discovered skills. This is how mattpocock's skills repo
-works — it's just a flat directory of skill folders, not an npm package.
+`package.json` with the discovered skills. This matters because most skill repos
+in the wild are just flat directories of markdown files — not npm packages. The
+ecosystem hasn't standardized on a distribution format yet, and the engine
+shouldn't wait for it to. It adapts to whatever it finds.
 
 Packages live in `~/.twisted/projects/{id}/node_modules/` — out of the repo,
 in user-local space. Each project gets its own isolated dependency tree.
@@ -482,7 +499,7 @@ The manifest records what each skill does and how to adapt it:
 
 ```json
 {
-  "@mattpocock/skills": {
+  "@community/skills": {
     "version": "0.0.0-git",
     "discovered": "2026-04-03T05:00:00.000Z",
     "skills": {
@@ -514,9 +531,12 @@ At runtime, skill invocation merges three layers:
 2. **Manifest overrides** — agent-derived on install ("skip step 5, redirect to `tx write`")
 3. **Config overrides** — user-written in `.twisted/settings.json` (explicit wins)
 
-This means you can install a skill, get smart defaults from the manifest, and
-customize further in your config. The skill author doesn't need to know about
-twisted-workflow. The manifest adapter bridges the gap.
+This means you can install any skill from the ecosystem, get smart defaults from
+the manifest, and customize further in your config. The skill author doesn't need
+to know about twisted-workflow. The manifest adapter bridges the gap. When the
+skill publishes a new version that changes its output format, re-running
+`tx install --force` regenerates the manifest with updated overrides. No code
+changes, no manual adapter maintenance — the agent re-analyzes and adapts.
 
 ## The CLI
 
@@ -583,7 +603,7 @@ Each integration/E2E test gets a fresh `createInMemoryStorageAdapter()` — a re
 PGLite WASM instance with the full schema applied. No cross-test leakage. Projection
 tests use real temp directories, created in `beforeEach` and cleaned up in `afterEach`.
 
-The TDD methodology (via mattpocock's skill) is vertical slices: one test, one
-implementation, repeat. Each test responds to what you learned from the previous
-cycle. Horizontal slicing (all tests first, all implementation second) produces
-tests that verify imagined behavior, not actual behavior.
+The TDD methodology is vertical slices: one test, one implementation, repeat.
+Each test responds to what you learned from the previous cycle. Horizontal slicing
+(all tests first, all implementation second) produces tests that verify imagined
+behavior, not actual behavior.
