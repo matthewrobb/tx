@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { createNpmResolver } from '../../adapters/npm/resolver.js';
 import { getProjectId } from '../../adapters/socket/paths.js';
 import { printError } from '../output.js';
+import { filterUnboundSkills } from './install-filter.js';
 import type { ResolvedPackage } from '../../ports/packages.js';
 
 export interface GlobalOpts {
@@ -100,16 +101,30 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
       }
 
       // Build the list of discovered skill files for agent analysis.
-      const skillFiles: Array<{ package: string; skill: string; path: string }> = [];
+      const allSkillFiles: Array<{ package: string; skill: string; path: string }> = [];
       for (const pkg of installed) {
         for (const skill of pkg.manifest.skills ?? []) {
-          skillFiles.push({
+          allSkillFiles.push({
             package: pkg.name,
             skill,
             path: join(pkg.installPath, skill, 'SKILL.md'),
           });
         }
       }
+
+      // Load existing manifest to filter out already-analyzed skills.
+      const manifestPath = join(resolver.getBaseDir(), projectId, 'skill-manifest.json');
+      let existingManifest: Record<string, unknown> = {};
+      try {
+        existingManifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
+      } catch {
+        // No manifest yet — all skills need analysis.
+      }
+
+      // Skills needing manifest analysis (no entry or no overrides yet).
+      const needsAnalysis = filterUnboundSkills(allSkillFiles, existingManifest);
+      // Skills needing step-binding suggestions (entry exists but binding is null).
+      const needsBinding = filterUnboundSkills(allSkillFiles, existingManifest);
 
       if (opts.agent) {
         const response: Record<string, unknown> = {
@@ -121,17 +136,21 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
           data: results,
         };
 
-        // If skills were installed, return an action for the agent to analyze them.
-        if (skillFiles.length > 0) {
+        if (needsAnalysis.length > 0) {
           response.action = {
             type: 'prompt_user',
-            prompt: buildAnalysisPrompt(skillFiles),
+            prompt: buildAnalysisPrompt(needsAnalysis),
           };
+        } else if (allSkillFiles.length > 0) {
+          // All skills already analyzed — no action needed.
+          response.display += `\n\nAll ${allSkillFiles.length} skills already have manifest entries.`;
         }
 
         console.log(JSON.stringify(response));
-      } else if (skillFiles.length > 0) {
-        console.log(`\n  ${skillFiles.length} skills discovered — run with -a for agent-driven manifest analysis.`);
+      } else if (needsAnalysis.length > 0) {
+        console.log(`\n  ${needsAnalysis.length} skills need analysis — run with -a for agent-driven manifest.`);
+      } else if (allSkillFiles.length > 0) {
+        console.log(`\n  All ${allSkillFiles.length} skills already analyzed. Use tx skills to view.`);
       }
     });
 
@@ -222,12 +241,21 @@ Schema:
             "Do NOT create GitHub issues. Instead, use \`tx issue\` to create issues in the backlog.",
             "Write all outputs as artifacts via \`tx write <type>\`. Do NOT write files directly."
           ]
-        }
+        },
+        "suggested_step_binding": null
       }
     }
   }
 }
 \`\`\`
+
+Set \`suggested_step_binding\` to \`null\` for all skills initially. After the user picks bindings in Step 2, update the manifest with the chosen binding:
+
+\`\`\`json
+"suggested_step_binding": { "step": "build", "type": "step_skills" }
+\`\`\`
+
+Valid types: \`"step_skills"\`, \`"step_review_skills"\`, \`"context_skills"\`. Set to \`{ "step": "none", "type": "skip" }\` if the user explicitly declines a binding. This prevents re-prompting on future installs.
 
 Only include entries in \`detected_outputs\` and \`suggested_overrides\` when you actually find matching instructions in the skill. Skills with no external outputs should have empty arrays.
 
