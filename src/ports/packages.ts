@@ -9,6 +9,8 @@
  * global twisted-workflow installation.
  */
 
+import type { WorkflowConfig } from '../types/config.js';
+
 // ── Package types ──────────────────────────────────────────────
 
 /** The parsed package.json of a twisted-workflow skill/persona package. */
@@ -22,6 +24,12 @@ export interface PackageManifest {
   readonly personas?: readonly string[];
   /** Relative path to the package's main entry file (e.g., skill definition). */
   readonly entry?: string;
+  /**
+   * Workflow definitions contributed by this package.
+   * Mapped from the `twisted.workflows` field in the package's package.json.
+   * These are appended to the base config's workflow list during mergeWithPackage.
+   */
+  readonly workflows?: readonly WorkflowConfig[];
 }
 
 /** A fully resolved, installed package with its location and manifest. */
