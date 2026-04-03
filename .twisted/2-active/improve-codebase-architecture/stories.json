@@ -187,10 +187,10 @@
       "id": "S-027",
       "summary": "End-to-end lifecycle tests: full issue, cycle, deferral, checkpoint, and migration flows",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     }
   ],
   "created": "2026-04-03T01:00:32.791Z",
-  "updated": "2026-04-03T03:25:07.937Z"
+  "updated": "2026-04-03T03:39:00.347Z"
 }
