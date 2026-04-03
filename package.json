@@ -24,6 +24,7 @@
     "vitest": "^2"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.4.3",
     "commander": "^14.0.3",
     "sock-daemon": "^1.4.2",
     "symlink-dir": "^10.0.1",
