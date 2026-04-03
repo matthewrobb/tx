@@ -16,14 +16,38 @@ An embedded graph database (PGLite + pgvector + Apache AGE) running inside the w
 
 Agents read before exploring and write after discovering. The first agent in a cycle pays the exploration cost. Every agent after that inherits the accumulated understanding.
 
+## How It's Built
+
+Two data sources feed the graph:
+
+**LSP (structural ground truth)** — At cycle start, the daemon queries the project's language server for the full symbol graph: every definition, every reference, every call hierarchy, every type signature. This is compiler-grade accuracy — not regex parsing, not heuristics. The LSP already maintains an incremental model of the codebase internally, so the snapshot is fast and precise.
+
+**Agent exploration (semantic knowledge)** — As agents work, they contribute understanding the LSP can't provide: architectural rationale, design patterns, "why is it this way." These entries layer on top of the structural graph, linked to the same nodes.
+
+The split:
+
+- **LSP provides** — symbols, references, types, call hierarchy, import graph
+- **Agents provide** — rationale, patterns, context, "what I learned exploring this"
+- **pgvector enables** — fuzzy retrieval across both
+- **Commits trigger** — invalidation
+
+## Lifecycle
+
+**Cycle start — snapshot:** The daemon queries the LSP for the full symbol graph and hashes every source file. This is the one expensive pass. The graph starts with structural nodes (files, symbols, dependencies) and gets enriched with semantic knowledge as agents explore.
+
+**During the cycle — commit-driven invalidation:** Each commit is a manifest of exactly which files changed. The daemon diffs file hashes against the graph, marks affected entries stale, and walks dependency edges to propagate. No file watchers, no polling — commits are the perfect invalidation signal because they're atomic and tell you exactly what changed.
+
+Since the daemon serializes all agent requests through its queue: commit lands → invalidation runs → next agent gets fresh state. No race conditions.
+
 ## Self-Healing Invalidation
 
 When code changes, the graph doesn't rebuild — it heals surgically:
 
 **1.** Content hashes detect which source files changed
-**2.** Provenance edges identify which knowledge entries derived from those files
-**3.** Dependency traversal marks transitively affected entries stale
-**4.** Early cutoff stops propagation when an entry's output didn't actually change *(e.g., whitespace edit, comment change)*
+**2.** LSP provides the precise blast radius — what symbols were affected, what references them
+**3.** Provenance edges identify which knowledge entries derived from those symbols
+**4.** Dependency traversal marks transitively affected entries stale
+**5.** Early cutoff stops propagation when an entry's output didn't actually change *(e.g., whitespace edit, comment change, function body edit that doesn't alter the signature)*
 
 Stale entries are excluded from queries or recomputed lazily when the next agent touches that area.
 
@@ -43,6 +67,7 @@ The same graph that stores codebase knowledge also connects issues, stories, and
 
 - **Explore once, know everywhere** — understanding persists across agent invocations within a cycle
 - **Semantic recall** — agents describe what they need, not exact file paths
+- **Compiler-grade structure** — the graph knows every symbol, reference, and type relationship via LSP
 - **Surgical precision** — a file change invalidates only what's affected, not the whole cache
 - **Computed critical path** — optimal parallelism derived from the dependency graph, not intuition
 - **Zero infrastructure** — everything runs inside a single embedded database in the daemon process

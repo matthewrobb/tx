@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shared Consciousness Layer</title>
 <style>
-  :root { --bg: #0d1117; --fg: #c9d1d9; --accent: #58a6ff; --muted: #8b949e; --surface: #161b22; --border: #30363d; --green: #3fb950; --purple: #bc8cff; }
+  :root { --bg: #0d1117; --fg: #c9d1d9; --accent: #58a6ff; --muted: #8b949e; --surface: #161b22; --border: #30363d; --green: #3fb950; --purple: #bc8cff; --orange: #d29922; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.7; max-width: 780px; margin: 0 auto; padding: 3rem 2rem; }
   h1 { color: #fff; font-size: 2rem; margin-bottom: 0.5rem; }
@@ -14,20 +14,28 @@
   p { margin-bottom: 1rem; }
   strong { color: #fff; }
   em { color: var(--muted); font-style: normal; }
-  ul { margin: 0.5rem 0 1rem 1.5rem; }
+  ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
   li { margin-bottom: 0.5rem; }
   table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
   th { text-align: left; color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.5rem 1rem; border-bottom: 2px solid var(--border); }
   td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); }
   tr:hover td { background: var(--surface); }
   .query-type { color: var(--purple); font-weight: 600; }
-  .tech { color: var(--muted); font-size: 0.9rem; }
+  .source-type { color: var(--orange); font-weight: 600; }
   .steps { counter-reset: step; list-style: none; margin-left: 0; }
   .steps li { counter-increment: step; padding-left: 2.5rem; position: relative; margin-bottom: 0.75rem; }
   .steps li::before { content: counter(step); position: absolute; left: 0; top: 0.1rem; width: 1.6rem; height: 1.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; text-align: center; line-height: 1.6rem; font-size: 0.8rem; color: var(--green); font-weight: 600; }
   .shift { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-top: 2rem; }
   .shift p:last-child { margin-bottom: 0; }
+  .two-phase { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .phase { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+  .phase h3 { color: var(--green); font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .phase p { font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .phase p:last-child { margin-bottom: 0; }
   code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: var(--purple); }
+  .flow { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; color: var(--muted); line-height: 1.8; }
+  .flow .arrow { color: var(--green); }
+  .flow .highlight { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -52,14 +60,51 @@
 
 <p>Agents read before exploring and write after discovering. The first agent in a cycle pays the exploration cost. Every agent after that inherits the accumulated understanding.</p>
 
+<h2>How It&rsquo;s Built</h2>
+<p>Two data sources feed the graph:</p>
+
+<table>
+  <thead><tr><th>Source</th><th>Provides</th><th>Character</th></tr></thead>
+  <tbody>
+    <tr><td class="source-type">LSP</td><td>Symbols, references, types, call hierarchy, import graph</td><td>Structural ground truth &mdash; compiler-grade accuracy</td></tr>
+    <tr><td class="source-type">Agent exploration</td><td>Rationale, patterns, context, &ldquo;what I learned&rdquo;</td><td>Semantic knowledge the LSP can&rsquo;t provide</td></tr>
+    <tr><td class="source-type">pgvector</td><td>Fuzzy retrieval across both layers</td><td>Queries by meaning, not exact keys</td></tr>
+    <tr><td class="source-type">Commits</td><td>Invalidation signal</td><td>Atomic, precise, already happening</td></tr>
+  </tbody>
+</table>
+
+<p>At cycle start, the daemon queries the project&rsquo;s language server for the full symbol graph: every definition, every reference, every call hierarchy, every type signature. This is compiler-grade accuracy &mdash; not regex parsing, not heuristics. As agents work, they contribute understanding the LSP can&rsquo;t provide: architectural rationale, design patterns, &ldquo;why is it this way.&rdquo; These entries layer on top of the structural graph, linked to the same nodes.</p>
+
+<h2>Lifecycle</h2>
+
+<div class="two-phase">
+  <div class="phase">
+    <h3>Cycle Start &mdash; Snapshot</h3>
+    <p>The daemon queries the LSP for the full symbol graph and hashes every source file. This is the one expensive pass.</p>
+    <p>The graph starts with structural nodes (files, symbols, dependencies) and gets enriched with semantic knowledge as agents explore.</p>
+  </div>
+  <div class="phase">
+    <h3>During Cycle &mdash; Commit-Driven</h3>
+    <p>Each commit is a manifest of exactly which files changed. The daemon diffs file hashes, marks affected entries stale, walks dependency edges to propagate.</p>
+    <p>No file watchers, no polling. Commits are the perfect invalidation signal.</p>
+  </div>
+</div>
+
+<div class="flow">
+  <span class="highlight">commit lands</span> <span class="arrow">&rarr;</span> daemon diffs hashes <span class="arrow">&rarr;</span> LSP provides blast radius <span class="arrow">&rarr;</span> stale entries marked <span class="arrow">&rarr;</span> <span class="highlight">next agent gets fresh state</span>
+</div>
+
+<p>Since the daemon serializes all agent requests through its queue, ordering is guaranteed. No race conditions.</p>
+
 <h2>Self-Healing Invalidation</h2>
 <p>When code changes, the graph doesn&rsquo;t rebuild &mdash; it heals surgically:</p>
 
 <ol class="steps">
   <li><strong>Content hashes</strong> detect which source files changed</li>
-  <li><strong>Provenance edges</strong> identify which knowledge entries derived from those files</li>
+  <li><strong>LSP blast radius</strong> identifies exactly which symbols were affected and what references them</li>
+  <li><strong>Provenance edges</strong> identify which knowledge entries derived from those symbols</li>
   <li><strong>Dependency traversal</strong> marks transitively affected entries stale</li>
-  <li><strong>Early cutoff</strong> stops propagation when an entry&rsquo;s output didn&rsquo;t actually change <em>(e.g., whitespace edit, comment change)</em></li>
+  <li><strong>Early cutoff</strong> stops propagation when an entry&rsquo;s output didn&rsquo;t actually change <em>(e.g., whitespace edit, comment change, function body edit that doesn&rsquo;t alter the signature)</em></li>
 </ol>
 
 <p>Stale entries are excluded from queries or recomputed lazily when the next agent touches that area.</p>
@@ -81,6 +126,7 @@
 <ul>
   <li><strong>Explore once, know everywhere</strong> &mdash; understanding persists across agent invocations within a cycle</li>
   <li><strong>Semantic recall</strong> &mdash; agents describe what they need, not exact file paths</li>
+  <li><strong>Compiler-grade structure</strong> &mdash; the graph knows every symbol, reference, and type relationship via LSP</li>
   <li><strong>Surgical precision</strong> &mdash; a file change invalidates only what&rsquo;s affected, not the whole cache</li>
   <li><strong>Computed critical path</strong> &mdash; optimal parallelism derived from the dependency graph, not intuition</li>
   <li><strong>Zero infrastructure</strong> &mdash; everything runs inside a single embedded database in the daemon process</li>
