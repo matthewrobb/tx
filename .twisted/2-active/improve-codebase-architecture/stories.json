@@ -5,14 +5,14 @@
       "id": "S-001",
       "summary": "Define core v4 types (Issue, Cycle, Workflow, StepDef, Phase, Artifact, Note, Checkpoint, ValidConfig, DaemonProtocol)",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
       "id": "S-002",
       "summary": "Define port interfaces (StoragePort, TransportPort, ProjectionPort, ExpressionEvaluatorPort, PackageResolverPort)",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -192,5 +192,5 @@
     }
   ],
   "created": "2026-04-03T01:00:32.791Z",
-  "updated": "2026-04-03T01:28:09.678Z"
+  "updated": "2026-04-03T02:07:16.460Z"
 }
