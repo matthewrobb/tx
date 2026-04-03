@@ -9,3 +9,5 @@ export { buildTaskContext, buildArtifactContext } from './context.js';
 
 export { createBuiltinFunctions } from './functions.js';
 export type { ExprFn } from './functions.js';
+
+export { createInteractiveFunctions, createInteractiveEvaluator } from './interactive.js';

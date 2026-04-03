@@ -11,7 +11,7 @@
 
 import type { Json } from './issue.js';
 import type { CycleId, CycleStatus } from './cycle.js';
-import type { IssueState } from './protocol.js';
+import type { IssueState, AgentAction } from './protocol.js';
 
 // ---------------------------------------------------------------------------
 // AST node types — discriminated union on `kind`
@@ -130,7 +130,14 @@ export interface ExpressionContext {
  * This makes error handling explicit in the engine — a failed expression
  * evaluation (e.g. undefined variable) is a value, not an exception,
  * so the engine can decide how to handle it (block the step, log a warning, etc.).
+ *
+ * The 'paused' variant signals that evaluation cannot continue until the user
+ * responds to an interactive prompt (confirm/prompt/choose). The engine (S-011)
+ * detects this result, persists the paused state to the DB, and surfaces the
+ * AgentAction to the CLI. Paused results propagate upward like errors — any
+ * parent node that receives a paused child immediately returns it.
  */
 export type EvalResult =
   | { ok: true; value: Json }
-  | { ok: false; error: string };
+  | { ok: false; error: string }
+  | { ok: 'paused'; action: AgentAction };

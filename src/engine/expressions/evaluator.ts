@@ -105,7 +105,7 @@ export class ExpressionEvaluator implements ExpressionEvaluatorPort {
     ctx: ExpressionContext,
   ): EvalResult {
     const objResult = this.evalNode(node.object, ctx);
-    if (!objResult.ok) return objResult;
+    if (objResult.ok !== true) return objResult;
 
     const obj = objResult.value;
 
@@ -148,11 +148,11 @@ export class ExpressionEvaluator implements ExpressionEvaluatorPort {
       return { ok: false, error: `Unknown function: ${name}` };
     }
 
-    // Evaluate all arguments
+    // Evaluate all arguments — propagate errors and paused results upward
     const args: Json[] = [];
     for (const argNode of node.args) {
       const result = this.evalNode(argNode, ctx);
-      if (!result.ok) return result;
+      if (result.ok !== true) return result;
       args.push(result.value);
     }
 
@@ -189,30 +189,33 @@ export class ExpressionEvaluator implements ExpressionEvaluatorPort {
     node: { op: string; left: ExpressionNode; right: ExpressionNode },
     ctx: ExpressionContext,
   ): EvalResult {
-    // Short-circuit: evaluate left first for and/or
+    // Short-circuit: evaluate left first for and/or.
+    // Paused results propagate upward like errors — if a sub-expression needs
+    // user input, the entire expression pauses. But short-circuit semantics
+    // still apply: "false and confirm('x')" never reaches confirm.
     if (node.op === 'and') {
       const left = this.evalNode(node.left, ctx);
-      if (!left.ok) return left;
+      if (left.ok !== true) return left;
       if (!isTruthy(left.value)) return { ok: true, value: false };
       const right = this.evalNode(node.right, ctx);
-      if (!right.ok) return right;
+      if (right.ok !== true) return right;
       return { ok: true, value: isTruthy(right.value) };
     }
 
     if (node.op === 'or') {
       const left = this.evalNode(node.left, ctx);
-      if (!left.ok) return left;
+      if (left.ok !== true) return left;
       if (isTruthy(left.value)) return { ok: true, value: true };
       const right = this.evalNode(node.right, ctx);
-      if (!right.ok) return right;
+      if (right.ok !== true) return right;
       return { ok: true, value: isTruthy(right.value) };
     }
 
     // Non-short-circuit: evaluate both sides
     const left = this.evalNode(node.left, ctx);
-    if (!left.ok) return left;
+    if (left.ok !== true) return left;
     const right = this.evalNode(node.right, ctx);
-    if (!right.ok) return right;
+    if (right.ok !== true) return right;
 
     switch (node.op) {
       case 'eq':
@@ -237,7 +240,7 @@ export class ExpressionEvaluator implements ExpressionEvaluatorPort {
     ctx: ExpressionContext,
   ): EvalResult {
     const result = this.evalNode(node.operand, ctx);
-    if (!result.ok) return result;
+    if (result.ok !== true) return result;
     return { ok: true, value: !isTruthy(result.value) };
   }
 
