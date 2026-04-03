@@ -63,6 +63,10 @@ export class NpmPackageResolver {
     baseDir) {
         this.baseDir = baseDir;
     }
+    /** Expose the base dir so callers can construct manifest paths. */
+    getBaseDir() {
+        return this.baseDir;
+    }
     /**
      * Install a git repo that has no package.json (e.g. mattpocock/skills).
      *

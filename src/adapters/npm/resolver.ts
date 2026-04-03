@@ -100,6 +100,11 @@ export class NpmPackageResolver implements PackageResolverPort {
     private readonly baseDir: string,
   ) {}
 
+  /** Expose the base dir so callers can construct manifest paths. */
+  getBaseDir(): string {
+    return this.baseDir;
+  }
+
   /**
    * Install a git repo that has no package.json (e.g. mattpocock/skills).
    *

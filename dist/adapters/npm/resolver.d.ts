@@ -2,6 +2,8 @@ import type { PackageResolverPort, ResolvedPackage } from '../../ports/packages.
 export declare class NpmPackageResolver implements PackageResolverPort {
     private readonly baseDir;
     constructor(baseDir: string);
+    /** Expose the base dir so callers can construct manifest paths. */
+    getBaseDir(): string;
     /**
      * Install a git repo that has no package.json (e.g. mattpocock/skills).
      *
