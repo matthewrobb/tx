@@ -180,7 +180,7 @@
       "id": "S-026",
       "summary": "Build system: JSON schema generation for all types, SKILL.md update, commit templates",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -192,5 +192,5 @@
     }
   ],
   "created": "2026-04-03T01:00:32.791Z",
-  "updated": "2026-04-03T02:23:33.297Z"
+  "updated": "2026-04-03T02:26:47.221Z"
 }
