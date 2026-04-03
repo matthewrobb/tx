@@ -1,12 +1,13 @@
 /**
  * JSON Schema generator for .twisted/settings.json.
  *
- * Mirrors TwistedSettings (Partial<TwistedConfig>):
- *   - lanes: override lane definitions
- *   - types: override epic type → lane sequences
+ * Mirrors TwistedSettings (DeepPartial<TwistedConfig>):
+ *   - version: must be "4.0" when present
+ *   - workflows: override or add workflow definitions
  *   - context_skills: inject skills at every step
  *   - step_skills: per-step primary skill overrides
  *   - step_review_skills: per-step review skill overrides
+ *   - policies: expression-based operation gates
  */
 
 export function generateSchema(): object {
@@ -14,7 +15,7 @@ export function generateSchema(): object {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     title: "twisted-workflow settings",
     description:
-      "Configuration for twisted-workflow. All fields are optional — only include values you want to override from defaults.",
+      "Configuration for twisted-workflow v4. All fields are optional — only include values you want to override from defaults.",
     type: "object",
     additionalProperties: false,
     properties: {
@@ -23,82 +24,45 @@ export function generateSchema(): object {
         description: "JSON Schema reference.",
       },
 
-      lanes: {
+      version: {
+        type: "string",
+        const: "4.0",
+        description: "Config version — must be \"4.0\" when present.",
+      },
+
+      workflows: {
         type: "array",
         description:
-          "Override lane definitions. Replaces the full lane array. Default: 6 lanes from 0-backlog to 5-archive.",
+          "Workflow definitions. Each entry can define a new workflow or override a built-in (feature, bug, chore, spike) by matching id.",
         items: {
           type: "object",
-          required: ["name", "dir", "steps"],
+          required: ["id"],
           additionalProperties: false,
           properties: {
-            name: {
+            id: {
               type: "string",
-              description: "Display name for the lane (e.g. \"backlog\", \"active\").",
+              description: "Unique workflow identifier (e.g. \"feature\", \"my-custom-flow\").",
             },
-            dir: {
+            extends: {
               type: "string",
-              description: "Directory name with numeric prefix (e.g. \"0-backlog\", \"2-active\").",
+              description: "Extend a built-in workflow by id. Only overridden fields need to be provided.",
+            },
+            title: {
+              type: "string",
+              description: "Display name for the workflow.",
+            },
+            default_for: {
+              type: "array",
+              items: {
+                type: "string",
+                enum: ["feature", "bug", "spike", "chore", "release"],
+              },
+              description: "Issue types that automatically use this workflow.",
             },
             steps: {
               type: "array",
-              description: "Steps within this lane.",
-              items: {
-                type: "object",
-                required: ["name"],
-                additionalProperties: false,
-                properties: {
-                  name: { type: "string", description: "Step name." },
-                  produces: {
-                    type: "array",
-                    items: artifactRefSchema(),
-                    description: "Artifacts this step produces on completion.",
-                  },
-                  requires: {
-                    type: "array",
-                    items: artifactRefSchema(),
-                    description: "Artifacts required before this step can begin.",
-                  },
-                  exit_when: {
-                    type: "array",
-                    items: predicateRefSchema(),
-                    description: "Predicates that must pass for the step to be considered complete.",
-                  },
-                  prompt: {
-                    type: "string",
-                    description: "Agent prompt template for this step.",
-                  },
-                },
-              },
-            },
-            entry_requires: {
-              type: "array",
-              items: predicateRefSchema(),
-              description: "Predicates that must pass before an epic can enter this lane.",
-            },
-          },
-        },
-      },
-
-      types: {
-        type: "array",
-        description:
-          "Override epic type → lane sequences. Replaces the full types array.",
-        items: {
-          type: "object",
-          required: ["type", "lanes"],
-          additionalProperties: false,
-          properties: {
-            type: {
-              type: "string",
-              enum: ["feature", "bug", "spike", "chore", "release"],
-              description: "Epic type.",
-            },
-            lanes: {
-              type: "array",
-              items: { type: "string" },
-              description:
-                "Ordered lane directory names this type traverses (e.g. [\"0-backlog\", \"2-active\", \"4-done\"]).",
+              description: "Step definitions forming a DAG via needs[].",
+              items: stepDefSchema(),
             },
           },
         },
@@ -108,21 +72,76 @@ export function generateSchema(): object {
         type: "array",
         items: { type: "string" },
         description:
-          "Skills injected at the start of every pipeline step. Example: [\"skills/mattpocock/tdd\"]. Default: []",
+          "Skills injected at the start of every pipeline step. Example: [\"skills/review\"]. Default: []",
       },
 
       step_skills: {
         type: "object",
         additionalProperties: { type: "string" },
         description:
-          "Per-step primary skill overrides. Key = step name, value = path to skill directory (e.g. \"skills/mattpocock/tdd\"). Set to \"\" to disable the default skill for a step.",
+          "Per-step primary skill overrides. Key = step id, value = skill path. Set to \"\" to disable.",
       },
 
       step_review_skills: {
         type: "object",
         additionalProperties: { type: "string" },
         description:
-          "Per-step review skill overrides. Offered to the user after the primary skill writes its artifact. Key = step name, value = path to skill directory. Set to \"\" to disable.",
+          "Per-step review skill overrides. Offered after the primary skill writes its artifact.",
+      },
+
+      policies: {
+        type: "object",
+        additionalProperties: false,
+        description: "Expression-based policy gates. Each value is an expression string.",
+        properties: {
+          deferral: {
+            type: "string",
+            description: "Evaluated before deferring a step. Example: \"confirm('Defer this step?')\"",
+          },
+          decision: {
+            type: "string",
+            description: "Evaluated before recording a decision note.",
+          },
+          scope_change: {
+            type: "string",
+            description: "Evaluated before changing issue type or workflow.",
+          },
+          issue_create: {
+            type: "string",
+            description: "Evaluated before creating a new issue.",
+          },
+        },
+      },
+    },
+  };
+}
+
+function stepDefSchema(): object {
+  return {
+    type: "object",
+    required: ["id", "title", "needs"],
+    additionalProperties: false,
+    properties: {
+      id: { type: "string", description: "Unique step identifier within the workflow." },
+      title: { type: "string", description: "Display name." },
+      needs: {
+        type: "array",
+        items: { type: "string" },
+        description: "Step IDs that must complete before this step can start.",
+      },
+      skip_when: { type: "string", description: "Expression — if true, step auto-skips." },
+      done_when: { type: "string", description: "Expression — if true, step is complete." },
+      block_when: { type: "string", description: "Expression — if true, step is blocked." },
+      prompt: { type: "string", description: "Agent prompt template." },
+      produces: {
+        type: "array",
+        items: artifactRefSchema(),
+        description: "Artifact files this step writes.",
+      },
+      requires: {
+        type: "array",
+        items: artifactRefSchema(),
+        description: "Artifact files required before this step can start.",
       },
     },
   };
@@ -134,32 +153,8 @@ function artifactRefSchema(): object {
     required: ["path"],
     additionalProperties: false,
     properties: {
-      path: {
-        type: "string",
-        description: "File path relative to the epic's lane directory.",
-      },
-      predicate: {
-        type: "string",
-        description: "Optional predicate name to validate content (e.g. \"non-empty\").",
-      },
-    },
-  };
-}
-
-function predicateRefSchema(): object {
-  return {
-    type: "object",
-    required: ["name"],
-    additionalProperties: false,
-    properties: {
-      name: {
-        type: "string",
-        description: "Predicate name (e.g. \"artifact.exists\", \"tasks.all_done\").",
-      },
-      args: {
-        type: "object",
-        description: "Arguments passed to the predicate.",
-      },
+      path: { type: "string", description: "File path relative to the issue's data directory." },
+      predicate: { type: "string", description: "Optional content validator (e.g. \"non-empty\")." },
     },
   };
 }

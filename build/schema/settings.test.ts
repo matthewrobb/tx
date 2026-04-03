@@ -18,40 +18,39 @@ describe("generateSchema", () => {
     const schema = generateSchema() as any;
     const keys = Object.keys(schema.properties);
     expect(keys).toContain("$schema");
-    expect(keys).toContain("lanes");
-    expect(keys).toContain("types");
+    expect(keys).toContain("workflows");
     expect(keys).toContain("context_skills");
+    expect(keys).toContain("policies");
     // v3 fields must not be present
-    expect(keys).not.toContain("presets");
-    expect(keys).not.toContain("pipeline");
-    expect(keys).not.toContain("execution");
-    expect(keys).not.toContain("phases");
-    expect(keys).not.toContain("state");
-    expect(keys).not.toContain("flow");
+    expect(keys).not.toContain("lanes");
+    expect(keys).not.toContain("types");
   });
 
-  test("lanes items have name, dir, steps", () => {
+  test("workflows items have id and steps", () => {
     const schema = generateSchema() as any;
-    const laneProps = schema.properties.lanes.items.properties;
-    expect(laneProps).toHaveProperty("name");
-    expect(laneProps).toHaveProperty("dir");
-    expect(laneProps).toHaveProperty("steps");
-    expect(laneProps).toHaveProperty("entry_requires");
+    const workflowProps = schema.properties.workflows.items.properties;
+    expect(workflowProps).toHaveProperty("id");
+    expect(workflowProps).toHaveProperty("steps");
+    expect(workflowProps).toHaveProperty("default_for");
+    expect(workflowProps).toHaveProperty("extends");
   });
 
-  test("types items have type enum and lanes array", () => {
+  test("policies object has deferral and scope_change", () => {
     const schema = generateSchema() as any;
-    const typeProps = schema.properties.types.items.properties;
-    expect(typeProps.type.enum).toEqual(["feature", "bug", "spike", "chore", "release"]);
-    expect(typeProps.lanes.type).toBe("array");
+    const policyProps = schema.properties.policies.properties;
+    expect(policyProps).toHaveProperty("deferral");
+    expect(policyProps).toHaveProperty("scope_change");
+    expect(policyProps).toHaveProperty("decision");
+    expect(policyProps).toHaveProperty("issue_create");
   });
 
-  test("step items have produces, requires, exit_when, prompt", () => {
+  test("step items have id, title, needs, done_when, prompt", () => {
     const schema = generateSchema() as any;
-    const stepProps = schema.properties.lanes.items.properties.steps.items.properties;
-    expect(stepProps).toHaveProperty("produces");
-    expect(stepProps).toHaveProperty("requires");
-    expect(stepProps).toHaveProperty("exit_when");
+    const stepProps = schema.properties.workflows.items.properties.steps.items.properties;
+    expect(stepProps).toHaveProperty("id");
+    expect(stepProps).toHaveProperty("title");
+    expect(stepProps).toHaveProperty("needs");
+    expect(stepProps).toHaveProperty("done_when");
     expect(stepProps).toHaveProperty("prompt");
   });
 

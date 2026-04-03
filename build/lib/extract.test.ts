@@ -16,9 +16,9 @@ describe("extractDeclaration", () => {
   });
 
   test("extracts a const declaration", () => {
-    const code = extractDeclaration("src/engine/artifacts.ts", "artifactSatisfied");
-    expect(code).toContain("artifactSatisfied");
-    expect(code).toContain("epicDir");
+    const code = extractDeclaration("src/engine/dag.ts", "resolveDag");
+    expect(code).toContain("resolveDag");
+    expect(code).toContain("StepDef");
   });
 
   test("throws on missing declaration", () => {
@@ -38,10 +38,10 @@ describe("extractSignature", () => {
     expect(sig).not.toContain("deepMerge(");
   });
 
-  test("extracts artifactSatisfied signature", () => {
-    const sig = extractSignature("src/engine/artifacts.ts", "artifactSatisfied");
-    expect(sig).toContain("epicDir: string");
-    expect(sig).toContain("ArtifactRef");
+  test("extracts resolveDag signature", () => {
+    const sig = extractSignature("src/engine/dag.ts", "resolveDag");
+    expect(sig).toContain("StepDef");
+    expect(sig).toContain("DagResult");
     expect(sig).toContain("{ /* ... */ }");
   });
 });

@@ -5,25 +5,24 @@
 
 /** Map of module path → names it exports that skills might reference. */
 const SHARED_MODULES: Record<string, string[]> = {
-  "src/config/resolve.ts": ["resolveConfig", "getPrimaryStrategy", "getActiveStrategies"],
-  "src/config/defaults.ts": ["defaults"],
-  "src/config/merge.ts": ["deepMerge"],
-  "src/state/machine.ts": ["advanceState", "nextStep", "createInitialState", "getEffectiveSteps", "PIPELINE_ORDER"],
-  "src/strategies/worktree.ts": ["getWorktreePaths", "getWorktreeCommands"],
-  "src/pipeline/routing.ts": ["parseProvider", "shouldPause", "hasConfigChange", "getPhaseSettings"],
-  "src/pipeline/dispatch.ts": ["dispatchPhase"],
+  "src/config/resolve.ts": ["resolveConfig"],
+  "src/config/defaults.ts": ["DEFAULT_CONFIG"],
+  "src/config/validator.ts": ["validateConfig"],
+  "src/engine/state.ts": ["txNext"],
+  "src/engine/dag.ts": ["resolveDag"],
+  "src/engine/evaluate.ts": ["evaluateSteps"],
+  "src/issues/crud.ts": ["createIssue", "getIssueBySlug", "listIssues", "updateIssue", "closeIssue"],
+  "src/cycles/lifecycle.ts": ["startCycle", "pullIssues", "closeCycle"],
 };
 
 /** Map of type definition files → type names they export. */
 const TYPE_FILES: Record<string, string[]> = {
-  "src/types/config.d.ts": ["TwistedConfig", "TwistedSettings", "ArtifactRef", "PredicateRef", "StepConfig", "LaneConfig", "DeepPartial"],
-  "src/types/state.d.ts": ["CoreState", "EpicStatus"],
-  "src/types/commands.d.ts": ["ParsedCommand", "TwistedSubcommand", "ConfigSection", "ConfigParams"],
-  "src/types/engine.d.ts": ["EngineResult", "StepEvaluation", "StepStatus"],
-  "src/types/epic.d.ts": ["EpicType", "TypeConfig"],
-  "src/types/notes.d.ts": ["Note", "NoteType", "RetroNote", "BacklogCandidate"],
-  "src/types/tasks.d.ts": ["Task"],
-  "src/types/session.d.ts": ["ActiveSession", "SessionData", "SessionSummary"],
+  "src/types/issue.ts": ["Issue", "IssueId", "IssueType", "IssueStatus", "Json"],
+  "src/types/cycle.ts": ["Cycle", "CycleId", "CycleStatus", "CycleIssue"],
+  "src/types/workflow.ts": ["Workflow", "WorkflowId", "StepDef", "StepArtifact"],
+  "src/types/config.ts": ["TwistedConfig", "TwistedSettings", "ValidConfig", "WorkflowConfig", "DeepPartial"],
+  "src/types/protocol.ts": ["DaemonRequest", "DaemonResponse", "AgentResponse", "AgentAction", "IssueState"],
+  "src/types/expressions.ts": ["ExpressionNode", "ExpressionContext", "EvalResult"],
 };
 
 /**
