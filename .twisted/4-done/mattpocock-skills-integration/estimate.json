@@ -1,8 +1,0 @@
-{
-  "epic": "mattpocock-skills-integration",
-  "size": "M",
-  "confidence": 3,
-  "rationale": "Requires understanding 4 mattpocock skills, mapping them to twisted-workflow steps, designing pluggable skill config schema, and wiring into step execution — moderate scope with clear boundaries",
-  "created": "2026-04-02T01:38:07.405Z",
-  "updated": "2026-04-02T01:38:07.405Z"
-}
