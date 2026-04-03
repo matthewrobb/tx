@@ -75,7 +75,7 @@
       "id": "S-011",
       "summary": "Atomic txNext(): orchestrate evaluate → machine → persist in single DB transaction",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -89,7 +89,7 @@
       "id": "S-013",
       "summary": "Deferrals: create sibling issues with traceability metadata and deferral notes",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -117,7 +117,7 @@
       "id": "S-017",
       "summary": "Policy engine: expression-based deferral/decision/scope_change/issue_create policies with pause semantics",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -159,7 +159,7 @@
       "id": "S-023",
       "summary": "Skill/persona npm resolution: install, discover, manifest, 3-layer merge",
       "acceptance": [],
-      "done": false,
+      "done": true,
       "created": "2026-04-03"
     },
     {
@@ -192,5 +192,5 @@
     }
   ],
   "created": "2026-04-03T01:00:32.791Z",
-  "updated": "2026-04-03T02:47:12.276Z"
+  "updated": "2026-04-03T03:04:33.970Z"
 }
