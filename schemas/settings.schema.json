@@ -184,6 +184,13 @@
           "description": "Evaluated before creating a new issue."
         }
       }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "npm-installable skill/persona/config packages. Key = package name, value = version spec or git URL."
     }
   }
 }

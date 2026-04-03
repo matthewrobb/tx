@@ -1,3 +1,6 @@
 {
-  "$schema": "../.claude/worktrees/twisted-workflow/schemas/settings.schema.json"
+  "$schema": "../.claude/worktrees/twisted-workflow/schemas/settings.schema.json",
+  "dependencies": {
+    "@mattpocock/skills": "github:mattpocock/skills"
+  }
 }

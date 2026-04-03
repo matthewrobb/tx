@@ -79,6 +79,9 @@ export interface TwistedConfig {
 
   /** Optional policy configuration — reserved for future use. */
   policies?: PolicyConfig;
+
+  /** npm-installable skill/persona/config packages (name → version/git URL). */
+  dependencies?: Record<string, string>;
 }
 
 /**

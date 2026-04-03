@@ -142,7 +142,7 @@ When a step command returns \`invoke_skill\`, follow this sequence:
 {
   // Override the primary skill for any step:
   "step_skills": {
-    "build": "skills/mattpocock/tdd",
+    "build": "@mattpocock/skills/tdd",
     "research": ""  // empty string disables the default
   },
   // Override the review skill for any step:
@@ -150,7 +150,11 @@ When a step command returns \`invoke_skill\`, follow this sequence:
     "plan": ""  // empty string disables review
   },
   // Inject skills as context before every step:
-  "context_skills": ["skills/mattpocock/tdd"]
+  "context_skills": ["@mattpocock/skills/tdd"],
+  // Skill packages installed via tx install:
+  "dependencies": {
+    "@mattpocock/skills": "github:mattpocock/skills"
+  }
 }
 \`\`\`
 `;

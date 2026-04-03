@@ -112,6 +112,12 @@ export function generateSchema(): object {
           },
         },
       },
+
+      dependencies: {
+        type: "object",
+        additionalProperties: { type: "string" },
+        description: "npm-installable skill/persona/config packages. Key = package name, value = version spec or git URL.",
+      },
     },
   };
 }

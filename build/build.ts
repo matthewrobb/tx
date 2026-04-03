@@ -7,18 +7,13 @@ import { resolve } from "path";
 import { writeJSON, writeSkill } from "./lib/skill.js";
 
 import { twistedWork } from "./skills/twisted-work.js";
-import { syncVendorSkills } from "./skills/vendor.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
 console.log("Building twisted-workflow...\n");
 
-// --- Vendor skills ---
-console.log("Vendor skills:");
-syncVendorSkills(ROOT);
-
 // --- Skills ---
-console.log("\nSkills:");
+console.log("Skills:");
 writeSkill(`${ROOT}/skills/tx/SKILL.md`, twistedWork);
 
 // --- Schema ---

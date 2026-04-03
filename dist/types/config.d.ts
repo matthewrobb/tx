@@ -52,6 +52,8 @@ export interface TwistedConfig {
     step_review_skills: Record<string, string>;
     /** Optional policy configuration — reserved for future use. */
     policies?: PolicyConfig;
+    /** npm-installable skill/persona/config packages (name → version/git URL). */
+    dependencies?: Record<string, string>;
 }
 /**
  * Branded TwistedConfig — produced only by the config validator (S-007).
