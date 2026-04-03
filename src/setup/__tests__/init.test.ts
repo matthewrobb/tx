@@ -6,7 +6,7 @@
 // Each test gets its own isolated directory; cleanup happens in afterEach.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { rm, readFile, mkdir } from 'node:fs/promises';
+import { rm, readFile, mkdir, access } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -286,6 +286,32 @@ describe('file system writes', () => {
     // File actually exists and is valid JSON
     const raw = await readFile(result.settingsPath, 'utf-8');
     expect(() => JSON.parse(raw)).not.toThrow();
+  });
+
+  it('settings.json includes $schema pointing to the package schema file', async () => {
+    const state: SetupState = {
+      step: 'confirm',
+      answers: {
+        workflow_style: 'standard',
+        install_packages: [],
+        enable_deferral_policy: false,
+      },
+    };
+
+    const result = await runInit({ cwd: tmpDir, state, response: 'yes' });
+    expect(result.status).toBe('complete');
+    if (result.status !== 'complete') return;
+
+    const raw = await readFile(result.settingsPath, 'utf-8');
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+
+    // $schema is present and is a relative path
+    expect(parsed['$schema']).toBeDefined();
+    expect(typeof parsed['$schema']).toBe('string');
+
+    // Resolve the $schema path relative to the settings file and verify it exists
+    const schemaAbsolute = path.resolve(path.dirname(result.settingsPath), parsed['$schema'] as string);
+    await expect(access(schemaAbsolute)).resolves.toBeUndefined();
   });
 
   it('creates .twisted/ directory if it does not exist', async () => {

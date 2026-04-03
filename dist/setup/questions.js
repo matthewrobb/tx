@@ -19,7 +19,7 @@ export function getPrompt(step, state) {
         case 'workflow_style':
             return {
                 type: 'prompt_user',
-                prompt: 'Welcome to twisted-workflow v4! How would you like to set up your workflow?\n\n' +
+                prompt: 'Welcome to tx! How would you like to set up your workflow?\n\n' +
                     '- simple: single "feature" workflow (research → scope → plan → build)\n' +
                     '- standard: feature + bug + chore + spike workflows\n' +
                     '- custom: define your own workflows',

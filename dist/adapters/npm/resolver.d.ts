@@ -31,7 +31,7 @@ export declare class NpmPackageResolver implements PackageResolverPort {
      */
     resolve(packageName: string, projectId: string): Promise<ResolvedPackage | null>;
     /**
-     * Discover all installed twisted-workflow packages for a project.
+     * Discover all installed tx skill packages for a project.
      *
      * Scans {baseDir}/{projectId}/node_modules/ for two layouts:
      *   1. Top-level packages: node_modules/{name}/package.json
@@ -42,7 +42,7 @@ export declare class NpmPackageResolver implements PackageResolverPort {
      * every sub-entry. This handles all valid scoped npm package layouts.
      *
      * Packages are included in the result only if isTwistedPackage() returns true
-     * (i.e., they have a `twisted` field or list "twisted-workflow" in keywords).
+     * (i.e., they have a `twisted` field or list "@twisted.works/tx" in their keywords).
      */
     discover(projectId: string): Promise<ResolvedPackage[]>;
     /**

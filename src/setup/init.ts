@@ -165,7 +165,10 @@ async function finalize(
     await mkdir(twistedDir, { recursive: true });
 
     const settingsPath = path.join(twistedDir, 'settings.json');
-    await writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+    const schemaAbsolute = path.resolve(import.meta.dirname, '../../schemas/settings.schema.json');
+    const schemaRelative = path.relative(twistedDir, schemaAbsolute);
+    const withSchema = { $schema: schemaRelative, ...settings };
+    await writeFile(settingsPath, JSON.stringify(withSchema, null, 2), 'utf-8');
 
     return { status: 'complete', config, settingsPath };
   } catch (err) {

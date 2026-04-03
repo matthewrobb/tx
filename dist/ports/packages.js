@@ -6,7 +6,7 @@
  *
  * Packages are installed to ~/.twisted/projects/{projectId}/node_modules/
  * to keep project-level dependencies isolated from each other and from the
- * global twisted-workflow installation.
+ * global tx installation.
  */
 export {};
 //# sourceMappingURL=packages.js.map

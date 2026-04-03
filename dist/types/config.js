@@ -1,4 +1,4 @@
-// src/types/config.ts — Configuration types for twisted-workflow v4.
+// src/types/config.ts — Configuration types for tx v4.
 //
 // Resolution order:
 //   1. Built-in defaults (complete TwistedConfig)
