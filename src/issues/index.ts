@@ -21,3 +21,9 @@ export {
   shouldAutoClose,
   propagateDone,
 } from './hierarchy.js';
+
+export {
+  resolveWorkflowId,
+  reassignWorkflow,
+  advanceIssue,
+} from './workflow.js';
