@@ -24,6 +24,11 @@ export function generateSchema(): object {
         description: "JSON Schema reference.",
       },
 
+      name: {
+        type: "string",
+        description: "Project name — used for the user-dir path (~/.twisted/projects/{name}/). Defaults to the project directory name.",
+      },
+
       version: {
         type: "string",
         const: "4.0",

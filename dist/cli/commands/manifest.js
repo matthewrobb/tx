@@ -5,11 +5,11 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { createNpmResolver } from '../../adapters/npm/resolver.js';
-import { getProjectId } from '../../adapters/socket/paths.js';
+import { resolveProjectName } from '../../config/project-name.js';
 function manifestPath(cwd) {
     const resolver = createNpmResolver();
-    const projectId = getProjectId(cwd);
-    return join(resolver.getBaseDir(), projectId, 'skill-manifest.json');
+    const projectName = resolveProjectName(cwd);
+    return join(resolver.getBaseDir(), projectName, 'skill-manifest.json');
 }
 export function registerManifestCommands(program, opts) {
     const manifest = program

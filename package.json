@@ -1,6 +1,6 @@
 {
   "name": "@twisted.works/tx",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "Data-driven DAG workflow engine for agentic development — issues, cycles, sessions, and expression-based step automation",
   "type": "module",
   "license": "GPL-3.0-only",

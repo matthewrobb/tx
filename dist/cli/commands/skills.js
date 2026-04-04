@@ -5,16 +5,16 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createNpmResolver } from '../../adapters/npm/resolver.js';
-import { getProjectId } from '../../adapters/socket/paths.js';
+import { resolveProjectName } from '../../config/project-name.js';
 export function registerSkillsCommand(program, opts) {
     program
         .command('skills')
         .description('List installed skills from the manifest')
         .action(async () => {
         const cwd = process.cwd();
-        const projectId = getProjectId(cwd);
+        const projectName = resolveProjectName(cwd);
         const resolver = createNpmResolver();
-        const manifestPath = join(resolver.getBaseDir(), projectId, 'skill-manifest.json');
+        const manifestPath = join(resolver.getBaseDir(), projectName, 'skill-manifest.json');
         let manifest;
         try {
             const raw = await readFile(manifestPath, 'utf-8');

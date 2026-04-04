@@ -66,5 +66,8 @@ export type ValidConfig = TwistedConfig & {
     readonly _brand: 'ValidConfig';
 };
 /** What the user writes in .twisted/settings.json — all fields optional. */
-export type TwistedSettings = DeepPartial<TwistedConfig>;
+export type TwistedSettings = DeepPartial<TwistedConfig> & {
+    /** Project name — used for the user-dir path (~/.twisted/projects/{name}/). */
+    name?: string;
+};
 //# sourceMappingURL=config.d.ts.map

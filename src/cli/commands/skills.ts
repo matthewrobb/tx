@@ -7,7 +7,7 @@ import { Command } from 'commander';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createNpmResolver } from '../../adapters/npm/resolver.js';
-import { getProjectId } from '../../adapters/socket/paths.js';
+import { resolveProjectName } from '../../config/project-name.js';
 
 export interface GlobalOpts {
   agent: boolean;
@@ -28,9 +28,9 @@ export function registerSkillsCommand(program: Command, opts: GlobalOpts): void 
     .description('List installed skills from the manifest')
     .action(async () => {
       const cwd = process.cwd();
-      const projectId = getProjectId(cwd);
+      const projectName = resolveProjectName(cwd);
       const resolver = createNpmResolver();
-      const manifestPath = join(resolver.getBaseDir(), projectId, 'skill-manifest.json');
+      const manifestPath = join(resolver.getBaseDir(), projectName, 'skill-manifest.json');
 
       let manifest: Record<string, { skills: Record<string, {
         description?: string;

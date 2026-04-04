@@ -1,9 +1,9 @@
 import { Command } from 'commander';
-import type { SocketTransportAdapter } from '../../adapters/socket/client.js';
+import type { TransportPort } from '../../ports/transport.js';
 export interface GlobalOpts {
     agent: boolean;
     yolo: boolean;
-    getAdapter: () => Promise<SocketTransportAdapter>;
+    getAdapter: () => Promise<TransportPort>;
 }
 /**
  * Register the `tx note` command onto `program`.

@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 // src/cli/index.ts — v4 entry point: thin socket client.
 //
-// Every command (except `tx init`) sends a DaemonRequest over a Unix socket
+// Every command (except `tx init`) sends a DaemonRequest via sock-daemon
 // and prints the DaemonResponse. No business logic lives here. The daemon owns
 // all state, config resolution, and workflow execution.
 //
-// E2E tests (S-027) cover CLI behaviour end-to-end with a live daemon.
-// Unit-testing this file in isolation is impractical: it requires a live socket
-// and daemon process. Mock-based tests would only validate the mock.
-//
 // Auto-start:
-//   Before the first socket send, ensureDaemon() checks whether the daemon is
-//   reachable. If not, it calls startDaemon() and retries 3 times with 500 ms
-//   delays before giving up.
+//   sock-daemon handles daemon lifecycle automatically. On the first request,
+//   if no daemon is running, the client spawns one via daemon-entry.ts. Stale
+//   process detection, PID tracking, and idle timeout are all built-in.
 
 import { Command } from 'commander';
+import { createRequire } from 'node:module';
 
-import { SocketTransportAdapter } from '../adapters/socket/client.js';
-import { startDaemon } from '../daemon/server.js';
+import { createTxClient } from '../daemon/tx-client.js';
 import { printError, printResponse, setCurrentCommand } from './output.js';
+import type { TransportPort } from '../ports/transport.js';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../../package.json') as { version: string };
 
 import { registerIssueCommands } from './commands/issue.js';
 import { registerCycleCommands } from './commands/cycle.js';
@@ -37,7 +37,7 @@ const program = new Command();
 program
   .name('tx')
   .description('tx — agentic workflow engine')
-  .version('4.1.0', '-v, --version')
+  .version(version, '-v, --version')
   .option('-a, --agent', 'JSON output (prints AgentResponse)', false)
   .option('-y, --yolo', 'skip confirmations', false);
 
@@ -50,65 +50,23 @@ function getAgent(): boolean {
   return (program.opts<{ agent: boolean }>().agent) ?? false;
 }
 
-// ── Daemon auto-start ────────────────────────────────────────────────────────
+// ── Daemon connection ────────────────────────────────────────────────────────
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+let clientPromise: Promise<TransportPort> | null = null;
 
 /**
- * Return a connected SocketTransportAdapter.
+ * Return a TransportPort connected to the daemon.
  *
- * If the daemon is not reachable, auto-start it via startDaemon() and retry
- * up to 3 times with 500 ms delays before giving up.
+ * sock-daemon handles auto-start, stale detection, PID tracking, and retry
+ * automatically. The first request triggers daemon spawn if needed.
  *
- * This function is called lazily — only when a command actually needs the
- * socket. `tx init` bypasses it entirely.
+ * Cached per process — all commands share the same client.
  */
-async function ensureDaemon(): Promise<SocketTransportAdapter> {
-  // Probe: attempt a connection with a short timeout.
-  const probe = new SocketTransportAdapter({ timeoutMs: 2_000 });
-  const probeRes = await probe.send({ command: 'status' });
-  await probe.close();
-
-  if (probeRes.status !== 'error') {
-    // Daemon is already running — return a fresh adapter for actual use.
-    return new SocketTransportAdapter();
+function ensureDaemon(): Promise<TransportPort> {
+  if (!clientPromise) {
+    clientPromise = createTxClient();
   }
-
-  // Daemon is not running — start it.
-  try {
-    await startDaemon(process.cwd());
-  } catch (err) {
-    printError(
-      `Failed to start daemon: ${err instanceof Error ? err.message : String(err)}`,
-      getAgent(),
-    );
-  }
-
-  // Retry up to 3 times with 500 ms delays to wait for the daemon to bind.
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY_MS = 500;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    await sleep(RETRY_DELAY_MS);
-
-    const retryAdapter = new SocketTransportAdapter({ timeoutMs: 2_000 });
-    const retryRes = await retryAdapter.send({ command: 'status' });
-
-    if (retryRes.status !== 'error') {
-      // Ready — close the probe and hand back a clean adapter.
-      await retryAdapter.close();
-      return new SocketTransportAdapter();
-    }
-
-    await retryAdapter.close();
-  }
-
-  printError(
-    `Daemon did not become ready after ${MAX_RETRIES} retries. Check .twisted/data/ for errors.`,
-    getAgent(),
-  );
+  return clientPromise;
 }
 
 // ── Shared opts factory ───────────────────────────────────────────────────────

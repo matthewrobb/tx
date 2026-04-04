@@ -4,14 +4,14 @@
 // and hand the DaemonResponse to printResponse(). No business logic lives here.
 
 import { Command } from 'commander';
-import type { SocketTransportAdapter } from '../../adapters/socket/client.js';
+import type { TransportPort } from '../../ports/transport.js';
 import { printResponse, printError, setCurrentCommand } from '../output.js';
 import type { IssueType } from '../../types/issue.js';
 
 export interface GlobalOpts {
   agent: boolean;
   yolo: boolean;
-  getAdapter: () => Promise<SocketTransportAdapter>;
+  getAdapter: () => Promise<TransportPort>;
 }
 
 /**

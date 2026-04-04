@@ -7,13 +7,13 @@
 // direct filesystem reads; v4 delegates all state to the daemon via DaemonRequest.
 
 import { Command } from 'commander';
-import type { SocketTransportAdapter } from '../../adapters/socket/client.js';
+import type { TransportPort } from '../../ports/transport.js';
 import { printResponse, setCurrentCommand } from '../output.js';
 
 export interface GlobalOpts {
   agent: boolean;
   yolo: boolean;
-  getAdapter: () => Promise<SocketTransportAdapter>;
+  getAdapter: () => Promise<TransportPort>;
 }
 
 /**

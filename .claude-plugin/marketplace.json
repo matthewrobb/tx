@@ -8,7 +8,7 @@
     {
       "name": "tx",
       "description": "tx — data-driven DAG workflow engine for agentic development with issues, cycles, sessions, and expression-based step automation.",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "source": "./",
       "author": {
         "name": "Matthew Robb"

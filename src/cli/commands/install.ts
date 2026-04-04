@@ -3,13 +3,13 @@
 // Installs skill/persona/config packages declared in .twisted/settings.json
 // dependencies (or a specific package passed as an argument). Runs locally —
 // no daemon needed. Uses NpmPackageResolver to install into
-// ~/.twisted/projects/{projectId}/node_modules/.
+// ~/.twisted/projects/{projectName}/node_modules/.
 
 import { Command } from 'commander';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createNpmResolver } from '../../adapters/npm/resolver.js';
-import { getProjectId } from '../../adapters/socket/paths.js';
+import { resolveProjectName } from '../../config/project-name.js';
 import { printError } from '../output.js';
 import { filterUnboundSkills } from './install-filter.js';
 import type { ResolvedPackage } from '../../ports/packages.js';
@@ -42,7 +42,7 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
     .option('-f, --force', 'Delete and re-install packages from scratch')
     .action(async (packageArg: string | undefined, cmdOpts: { force?: boolean }) => {
       const cwd = process.cwd();
-      const projectId = getProjectId(cwd);
+      const projectName = resolveProjectName(cwd);
       const resolver = createNpmResolver();
       const force = cmdOpts.force ?? false;
 
@@ -72,17 +72,17 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
         try {
           // Force: delete existing package first.
           if (force) {
-            await resolver.removePackage(name, projectId);
-            await resolver.removeManifestEntry(name, projectId);
+            await resolver.removePackage(name, projectName);
+            await resolver.removeManifestEntry(name, projectName);
           }
 
           let resolved;
           if (spec.startsWith('github:')) {
             const repoUrl = `https://github.com/${spec.slice('github:'.length)}.git`;
-            resolved = await resolver.installGit(name, repoUrl, projectId);
+            resolved = await resolver.installGit(name, repoUrl, projectName);
           } else {
             const installSpec = name === spec ? name : `${name}@${spec}`;
-            resolved = await resolver.install(installSpec, projectId);
+            resolved = await resolver.install(installSpec, projectName);
           }
           results.push({ name: resolved.name, version: resolved.version, status: 'ok' });
           installed.push(resolved);
@@ -113,7 +113,7 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
       }
 
       // Load existing manifest to filter out already-analyzed skills.
-      const manifestPath = join(resolver.getBaseDir(), projectId, 'skill-manifest.json');
+      const manifestPath = join(resolver.getBaseDir(), projectName, 'skill-manifest.json');
       let existingManifest: Record<string, unknown> = {};
       try {
         existingManifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
@@ -160,11 +160,11 @@ export function registerInstallCommand(program: Command, opts: GlobalOpts): void
     .description('Remove an installed skill/persona package')
     .action(async (packageName: string) => {
       const cwd = process.cwd();
-      const projectId = getProjectId(cwd);
+      const projectName = resolveProjectName(cwd);
       const resolver = createNpmResolver();
 
-      await resolver.removePackage(packageName, projectId);
-      await resolver.removeManifestEntry(packageName, projectId);
+      await resolver.removePackage(packageName, projectName);
+      await resolver.removeManifestEntry(packageName, projectName);
 
       if (opts.agent) {
         console.log(JSON.stringify({
