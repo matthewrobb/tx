@@ -17,7 +17,7 @@ import type { DaemonRequest, DaemonResponse } from '../types/protocol.js';
 import { resolveProjectDir } from '../config/project-name.js';
 
 class TxDaemonClient extends SockDaemonClient<TxRequest, TxResponse> {
-  static override get serviceName(): string { return 'tx'; }
+  static override get serviceName(): string { return ''; }
 
   static override get daemonScript(): string | URL {
     return new URL('./daemon-entry.js', import.meta.url);

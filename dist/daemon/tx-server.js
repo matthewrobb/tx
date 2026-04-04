@@ -15,7 +15,7 @@ import { ProjectionFlusher } from './flush.js';
 import { handleNext, handleStatus, handleOpen, handleClose, handleWrite, handleRead, handleNote, handlePickup, handleHandoff, handleCheckpoint, handleCycleStart, handleCyclePull, handleCycleClose, } from './handlers.js';
 // ── Server ───────────────────────────────────────────────────────────────
 export class TxDaemonServer extends SockDaemonServer {
-    static get serviceName() { return 'tx'; }
+    static get serviceName() { return ''; }
     db = null;
     projection = null;
     flusher = null;

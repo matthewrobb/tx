@@ -47,7 +47,7 @@ export type TxResponse = DaemonResponse & MessageBase;
 // ── Server ───────────────────────────────────────────────────────────────
 
 export class TxDaemonServer extends SockDaemonServer<TxRequest, TxResponse> {
-  static override get serviceName(): string { return 'tx'; }
+  static override get serviceName(): string { return ''; }
 
   private db: StoragePort | null = null;
   private projection: ProjectionPort | null = null;

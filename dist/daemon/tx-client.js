@@ -12,7 +12,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { resolveProjectDir } from '../config/project-name.js';
 class TxDaemonClient extends SockDaemonClient {
-    static get serviceName() { return 'tx'; }
+    static get serviceName() { return ''; }
     static get daemonScript() {
         return new URL('./daemon-entry.js', import.meta.url);
     }
