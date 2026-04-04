@@ -62,7 +62,7 @@ export class TxDaemonServer extends SockDaemonServer<TxRequest, TxResponse> {
   private initPromise: Promise<void> | null = null;
 
   constructor(options: { basePath: string; dataDir: string; idleTimeout?: number }) {
-    super({ idleTimeout: options.idleTimeout ?? 3_600_000 });
+    super({ idleTimeout: options.idleTimeout ?? 5 * 60_000 });
     this.basePath = options.basePath;
     this.dataDir = options.dataDir;
   }
